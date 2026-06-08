@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistem OCR PKJ</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg:           #F5F4F0;
+    --surface:      #FFFFFF;
+    --surface2:     #EFEDE6;
+    --border:       #E0DED6;
+    --text:         #1A1A18;
+    --text2:        #6B6960;
+    --text3:        #9E9C94;
+    --accent:       #1B4B3A;
+    --accent-lt:    #E8F2EE;
+    --danger:       #C0392B;
+    --danger-lt:    #FDECEA;
+    --warn:         #92600A;
+    --warn-lt:      #FFF8E7;
+    --bbr:          #185FA5;
+    --bbr-lt:       #E6F1FB;
+    --bmr:          #1B4B3A;
+    --bmr-lt:       #E8F2EE;
+    --bsr:          #854F0B;
+    --bsr-lt:       #FAEEDA;
+    --r:            10px;
+    --rl:           16px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* HEADER */
+  .hdr {
+    background: var(--accent); color: white;
+    padding: 13px 20px;
+    display: flex; align-items: center; gap: 10px;
+    position: sticky; top: 0; z-index: 100;
+    border-bottom: 1px solid rgba(0,0,0,0.15);
+  }
+  .hdr-logo {
+    width: 34px; height: 34px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; letter-spacing: 0.03em;
+    font-family: 'DM Mono', monospace;
+  }
+  .hdr-title { font-size: 14px; font-weight: 600; }
+  .hdr-sub   { font-size: 11px; opacity: 0.55; font-family: 'DM Mono', monospace; }
+  .step-dots { margin-left: auto; display: flex; gap: 5px; align-items: center; }
+  .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: rgba(255,255,255,0.22); transition: all 0.3s;
+  }
+  .dot.active { background: #fff; width: 18px; border-radius: 4px; }
+  .dot.done   { background: rgba(255,255,255,0.55); }
+
+  /* MAIN */
+  .main { max-width: 660px; margin: 0 auto; padding: 20px 14px 90px; }
+
+  /* CARD */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--rl);
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+  .card-ttl {
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text3); margin-bottom: 13px;
+    display: flex; align-items: center; gap: 7px;
+  }
+
+  /* SCREENS */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* FORM ELEMENTS */
+  input[type=text], input[type=number], select, textarea {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 9px 11px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.18s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  .mono-input { font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.02em; }
+  textarea { resize: vertical; min-height: 68px; }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%236B6960' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 9px center;
+    padding-right: 28px;
+  }
+  label.fl { font-size: 11px; font-weight: 500; color: var(--text2); display: block; margin-bottom: 4px; }
+  .req { color: var(--danger); }
+  .field { display: flex; flex-direction: column; gap: 3px; }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 6px; padding: 10px 18px;
+    border-radius: var(--r);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer; border: none;
+    transition: all 0.15s;
+  }
+  .btn:active { transform: scale(0.975); }
+  .btn-g   { background: var(--accent); color: #fff; }
+  .btn-g:hover { background: #143d2f; }
+  .btn-r   { background: var(--danger); color: #fff; }
+  .btn-r:hover { background: #a32822; }
+  .btn-o   { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-o:hover { background: var(--surface2); }
+  .btn-full { width: 100%; }
+  .btn-sm   { padding: 6px 12px; font-size: 12px; }
+
+  /* SETUP HERO */
+  .hero { text-align: center; padding: 26px 0 18px; }
+  .hero-icon {
+    width: 58px; height: 58px; background: var(--accent-lt);
+    border-radius: 14px; display: flex; align-items: center;
+    justify-content: center; margin: 0 auto 14px; font-size: 24px;
+  }
+  .hero h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 5px; }
+  .hero p  { font-size: 13px; color: var(--text2); }
+
+  /* DEPLOYMENT ID BOX */
+  .dep-wrap {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .dep-label { font-size: 11px; font-weight: 600; color: var(--text2); margin-bottom: 7px; display: flex; align-items: center; gap: 6px; }
+  .dep-hint  { font-size: 11px; color: var(--text3); margin-top: 6px; font-family: 'DM Mono', monospace; }
+
+  /* JENIS GRID */
+  .jenis-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 9px; }
+  .jenis-card {
+    border: 2px solid var(--border); border-radius: var(--r);
+    padding: 13px 8px; text-align: center; cursor: pointer;
+    transition: all 0.2s; background: var(--surface);
+    user-select: none;
+  }
+  .jenis-card:hover { border-color: #aaa; }
+  .jenis-card.sel.bbr { border-color: var(--bbr); background: var(--bbr-lt); }
+  .jenis-card.sel.bmr { border-color: var(--bmr); background: var(--bmr-lt); }
+  .jenis-card.sel.bsr { border-color: var(--bsr); background: var(--bsr-lt); }
+  .jenis-code { font-family: 'DM Mono', monospace; font-size: 17px; font-weight: 500; margin-bottom: 3px; color: var(--text2); }
+  .jenis-card.sel.bbr .jenis-code { color: var(--bbr); }
+  .jenis-card.sel.bmr .jenis-code { color: var(--bmr); }
+  .jenis-card.sel.bsr .jenis-code { color: var(--bsr); }
+  .jenis-name   { font-size: 10px; color: var(--text3); line-height: 1.3; }
+  .jenis-amount { font-size: 11px; font-weight: 600; margin-top: 5px; color: var(--text3); }
+  .jenis-card.sel.bbr .jenis-amount { color: var(--bbr); }
+  .jenis-card.sel.bmr .jenis-amount { color: var(--bmr); }
+  .jenis-card.sel.bsr .jenis-amount { color: var(--bsr); }
+
+  /* SCAN */
+  .scan-drop {
+    border: 2px dashed var(--border); border-radius: var(--rl);
+    padding: 32px 18px; text-align: center; cursor: pointer;
+    transition: all 0.2s; background: var(--surface2);
+    position: relative;
+  }
+  .scan-drop:hover { border-color: var(--accent); background: var(--accent-lt); }
+  .scan-drop.has-img { border-style: solid; padding: 0; overflow: hidden; cursor: default; border-color: var(--border); }
+  .scan-drop img { width: 100%; display: block; max-height: 360px; object-fit: contain; background: #111; border-radius: 13px; }
+  .scan-ico  { font-size: 32px; margin-bottom: 9px; }
+  .scan-txt  { font-size: 14px; font-weight: 500; color: var(--text2); }
+  .scan-sub  { font-size: 12px; color: var(--text3); margin-top: 3px; }
+  #fileInput { display: none; }
+  .scan-btns { display: flex; gap: 8px; margin-top: 9px; }
+
+  video#cam {
+    width: 100%; border-radius: 13px; display: none;
+    max-height: 360px; object-fit: cover; background: #000;
+  }
+  .cam-bar { display: none; gap: 8px; margin-top: 9px; }
+  .cam-bar.on { display: flex; }
+
+  /* OCR PROGRESS */
+  .ocr-box { display: none; text-align: center; padding: 30px 16px; }
+  .spin {
+    width: 36px; height: 36px; border: 3px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 0.75s linear infinite; margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .ocr-lbl  { font-size: 13px; color: var(--text2); margin-bottom: 4px; }
+  .ocr-prog { height: 4px; background: var(--border); border-radius: 2px; margin: 10px 0 0; overflow: hidden; }
+  .ocr-bar  { height: 100%; background: var(--accent); width: 0%; transition: width 0.4s ease; border-radius: 2px; }
+
+  /* ALERT */
+  .alert {
+    padding: 9px 12px; border-radius: var(--r);
+    font-size: 12px; line-height: 1.5;
+    display: flex; gap: 8px; align-items: flex-start;
+    margin-bottom: 11px;
+  }
+  .al-g { background: var(--accent-lt); color: #0E4030; border: 1px solid #b0d8cc; }
+  .al-y { background: var(--warn-lt);   color: var(--warn);  border: 1px solid #e8c96a; }
+  .al-r { background: var(--danger-lt); color: var(--danger); border: 1px solid #f0b8b4; }
+
+  /* PREVIEW FORM */
+  .prev-hdr {
+    display: flex; align-items: center; gap: 9px;
+    margin-bottom: 16px; padding-bottom: 13px;
+    border-bottom: 1px solid var(--border);
+  }
+  .prev-badge {
+    font-size: 11px; font-weight: 600; padding: 3px 9px;
+    border-radius: 5px; font-family: 'DM Mono', monospace;
+  }
+  .prev-badge.bbr { background: var(--bbr-lt); color: var(--bbr); }
+  .prev-badge.bmr { background: var(--bmr-lt); color: var(--bmr); }
+  .prev-badge.bsr { background: var(--bsr-lt); color: var(--bsr); }
+
+  .fsec { margin-bottom: 16px; }
+  .fsec-ttl {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.09em; color: var(--text3);
+    margin-bottom: 9px; padding-bottom: 5px;
+    border-bottom: 1px solid var(--border);
+  }
+  .frow  { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-bottom: 9px; }
+  .frow1 { grid-template-columns: 1fr; }
+
+  /* ACTION BAR */
+  .abar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--surface); border-top: 1px solid var(--border);
+    padding: 10px 14px; display: flex; gap: 9px; z-index: 99;
+  }
+  .abar .btn { flex: 1; }
+
+  /* SUCCESS */
+  .succ { text-align: center; padding: 42px 16px; }
+  .succ-ico {
+    width: 66px; height: 66px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px; font-size: 28px;
+    background: var(--accent-lt);
+  }
+  .succ-ico.tl { background: var(--danger-lt); }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 74px; left: 50%; transform: translateX(-50%);
+    background: #1A1A18; color: #fff;
+    padding: 8px 16px; border-radius: 18px;
+    font-size: 13px; font-weight: 500;
+    opacity: 0; transition: opacity 0.25s;
+    z-index: 200; white-space: nowrap; pointer-events: none;
+  }
+  .toast.on { opacity: 1; }
+
+  .divider { height: 1px; background: var(--border); margin: 13px 0; }
+
+  /* OCR confidence */
+  input.low  { border-color: #E8C96A !important; background: #FFFBF0 !important; }
+  input.good { border-color: #8FC89A !important; }
+
+  .steps-guide {
+    counter-reset: step;
+    list-style: none; padding: 0;
+  }
+  .steps-guide li {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 7px 0; border-bottom: 1px solid var(--border);
+    font-size: 12px; color: var(--text2);
+  }
+  .steps-guide li:last-child { border-bottom: none; }
+  .step-num {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--accent); color: #fff;
+    font-size: 10px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+
+  @media (max-width: 420px) {
+    .jenis-grid { grid-template-columns: 1fr; }
+    .frow       { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-logo">PKJ</div>
+  <div>
+    <div class="hdr-title">Sistem OCR Borang</div>
+    <div class="hdr-sub">Perbadanan Kemajuan Johor</div>
+  </div>
+  <div class="step-dots">
+    <div class="dot active" id="d1"></div>
+    <div class="dot" id="d2"></div>
+    <div class="dot" id="d3"></div>
+    <div class="dot" id="d4"></div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- ══════════════════════════════════════
+       SCREEN 1 — SETUP
+  ══════════════════════════════════════ -->
+  <div class="screen active" id="s1">
+
+    <div class="hero">
+      <div class="hero-icon">📋</div>
+      <h1>Sistem OCR PKJ</h1>
+      <p>Tetapkan Deployment ID Google Apps Script</p>
+    </div>
+
+    <div class="card">
+      <div class="card-ttl">⚙️ Konfigurasi</div>
+
+      <div class="dep-wrap">
+        <div class="dep-label">
+          <span>🔑</span> Deployment ID
+        </div>
+        <input type="text" id="depId" class="mono-input"
+          placeholder="AKfycby...xxxx">
+        <div class="dep-hint">Contoh: AKfycbxxxxxxxxxxxxxxxxxxxxxxxxxxx</div>
+      </div>
+
+      <div class="alert al-g" style="margin-bottom:13px">
+        <span>ℹ️</span>
+        <div>Deployment ID disimpan dalam peranti ini sahaja dan tidak dikongsikan. Cara mendapatkannya ditunjukkan di bawah.</div>
+      </div>
+
+      <button class="btn btn-g btn-full" onclick="saveConfig()">Simpan & Mula →</button>
+
+      <div class="divider"></div>
+      <div class="card-ttl">📖 Cara Dapatkan Deployment ID</div>
+      <ul class="steps-guide">
+        <li><div class="step-num">1</div><div>Buka Google Sheet Syafiq → klik <strong>Extensions</strong> → <strong>Apps Script</strong></div></li>
+        <li><div class="step-num">2</div><div>Dalam Apps Script, tampal kod yang telah diberi → klik <strong>Deploy</strong> → <strong>New deployment</strong></div></li>
+        <li><div class="step-num">3</div><div>Pilih type: <strong>Web app</strong> → Execute as: <strong>Me</strong> → Who has access: <strong>Anyone</strong></div></li>
+        <li><div class="step-num">4</div><div>Klik <strong>Deploy</strong> → salin <strong>Deployment ID</strong> (bukan URL) → tampal di atas</div></li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SCREEN 2 — JENIS + SCAN
+  ══════════════════════════════════════ -->
+  <div class="screen" id="s2">
+
+    <div class="card">
+      <div class="card-ttl">📄 Jenis Borang</div>
+      <div class="jenis-grid">
+        <div class="jenis-card bbr" onclick="pickJenis('BBR',this)">
+          <div class="jenis-code">BBR</div>
+          <div class="jenis-name">Bantuan Beli Rumah Pertama</div>
+          <div class="jenis-amount">RM 5,000</div>
+        </div>
+        <div class="jenis-card bmr" onclick="pickJenis('BMR',this)">
+          <div class="jenis-code">BMR</div>
+          <div class="jenis-name">Bantuan Masuk Rumah Pertama</div>
+          <div class="jenis-amount">RM 2,000</div>
+        </div>
+        <div class="jenis-card bsr" onclick="pickJenis('BSR',this)">
+          <div class="jenis-code">BSR</div>
+          <div class="jenis-name">Bantuan Sewa Rumah</div>
+          <div class="jenis-amount">RM 200/bln</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="scanCard" style="display:none">
+      <div class="card-ttl">📸 Imbas Borang</div>
+
+      <div class="alert al-g" id="scanHint" style="margin-bottom:11px">
+        <span>📌</span><span id="scanHintTxt"></span>
+      </div>
+
+      <!-- Drop zone -->
+      <div class="scan-drop" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <div class="scan-ico">📁</div>
+        <div class="scan-txt">Ketik untuk muat naik gambar</div>
+        <div class="scan-sub">JPG atau PNG</div>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)">
+
+      <!-- Camera -->
+      <video id="cam" autoplay playsinline></video>
+      <div class="cam-bar" id="camBar">
+        <button class="btn btn-g" style="flex:1" onclick="snapPhoto()">📷 Ambil Gambar</button>
+        <button class="btn btn-o" onclick="killCam()">✕ Tutup</button>
+      </div>
+
+      <div class="scan-btns">
+        <button class="btn btn-o" style="flex:1" onclick="openCam()">📷 Kamera</button>
+        <button class="btn btn-o" style="flex:1" onclick="document.getElementById('fileInput').click()">📁 Muat Naik</button>
+      </div>
+
+      <!-- OCR progress -->
+      <div class="ocr-box" id="ocrBox">
+        <div class="spin"></div>
+        <div class="ocr-lbl" id="ocrLbl">Memuatkan enjin OCR...</div>
+        <div class="ocr-prog"><div class="ocr-bar" id="ocrBar"></div></div>
+      </div>
+
+      <div id="retryDiv" style="display:none; margin-top:10px">
+        <div class="alert al-y"><span>⚠️</span><span>OCR selesai tetapi ada data yang mungkin tidak tepat. Sila semak dan edit dalam preview.</span></div>
+        <button class="btn btn-g btn-full" id="retryBtn" onclick="goPreview()">Teruskan ke Preview →</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SCREEN 3 — PREVIEW & EDIT
+  ══════════════════════════════════════ -->
+  <div class="screen" id="s3">
+    <div class="card">
+      <div class="prev-hdr">
+        <span id="prevBadge" class="prev-badge"></span>
+        <span style="font-size:13px; font-weight:500">Semak &amp; Edit Data</span>
+        <button class="btn btn-sm btn-o" style="margin-left:auto" onclick="goScan()">← Imbas Semula</button>
+      </div>
+
+      <div class="alert al-y">
+        <span>⚠️</span>
+        <span>OCR mungkin tidak sempurna. Sila semak setiap field sebelum menghantar. Field bertanda <span class="req">*</span> wajib diisi.</span>
+      </div>
+
+      <!-- A: Butiran Pemohon -->
+      <div class="fsec">
+        <div class="fsec-ttl" id="ttlA">A. Butiran Pemohon</div>
+        <div class="frow">
+          <div class="field">
+            <label class="fl">Nama Penerima <span class="req">*</span></label>
+            <input type="text" id="fNama" placeholder="Nama penuh pemohon">
+          </div>
+          <div class="field">
+            <label class="fl">No. Kad Pengenalan <span class="req">*</span></label>
+            <input type="text" id="fIc" placeholder="000000-00-0000">
+          </div>
+        </div>
+        <div class="frow">
+          <div class="field">
+            <label class="fl">Nama Pasangan</label>
+            <input type="text" id="fNamaPsng" placeholder="Jika berkahwin">
+          </div>
+          <div class="field">
+            <label class="fl">No. KP Pasangan</label>
+            <input type="text" id="fIcPsng" placeholder="000000-00-0000">
+          </div>
+        </div>
+        <div class="frow">
+          <div class="field">
+            <label class="fl">No. Telefon <span class="req">*</span></label>
+            <input type="text" id="fTel" placeholder="01X-XXXXXXXX">
+          </div>
+          <div class="field">
+            <label class="fl">Emel <span class="req">*</span></label>
+            <input type="text" id="fEmel" placeholder="nama@gmail.com">
+          </div>
+        </div>
+      </div>
+
+      <!-- B: Harga -->
+      <div class="fsec">
+        <div class="fsec-ttl" id="ttlB">B. Maklumat Harta</div>
+        <div class="frow frow1">
+          <div class="field">
+            <label class="fl" id="hargaLbl">Harga Rumah (RM) <span class="req">*</span></label>
+            <input type="number" id="fHarga" placeholder="cth: 250000">
+          </div>
+        </div>
+      </div>
+
+      <!-- Lokasi -->
+      <div class="fsec">
+        <div class="fsec-ttl">Lokasi <span style="font-weight:400; text-transform:none; letter-spacing:0">(pilihan)</span></div>
+        <div class="frow">
+          <div class="field">
+            <label class="fl">Daerah</label>
+            <select id="fDaerah" onchange="loadMukim()">
+              <option value="">-- Pilih Daerah --</option>
+              <option>Johor Bahru</option><option>Kluang</option><option>Kota Tinggi</option>
+              <option>Mersing</option><option>Muar</option><option>Pontian</option>
+              <option>Segamat</option><option>Batu Pahat</option><option>Kulai</option>
+              <option>Tangkak</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="fl">Mukim</label>
+            <select id="fMukim"><option value="">-- Pilih Mukim --</option></select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Catatan -->
+      <div class="fsec">
+        <div class="fsec-ttl">Catatan</div>
+        <div class="frow frow1">
+          <div class="field">
+            <label class="fl">Catatan <span class="req">*</span></label>
+            <textarea id="fCatatan" placeholder="Masukkan catatan berkaitan permohonan..."></textarea>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div style="height:68px"></div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SCREEN 4 — SUCCESS
+  ══════════════════════════════════════ -->
+  <div class="screen" id="s4">
+    <div class="card">
+      <div class="succ">
+        <div class="succ-ico" id="succIco">✅</div>
+        <h2 style="font-size:18px; font-weight:600; margin-bottom:6px" id="succTtl">Berjaya Dihantar</h2>
+        <p style="color:var(--text2); font-size:13px; margin-bottom:22px" id="succMsg"></p>
+        <button class="btn btn-g btn-full" onclick="resetAll()">＋ Rekod Pemohon Baharu</button>
+        <div style="margin-top:9px">
+          <button class="btn btn-o btn-full" onclick="goS1()">⚙ Tukar Deployment ID</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ACTION BAR -->
+<div class="abar" id="abar" style="display:none">
+  <button class="btn btn-r" onclick="doSubmit(true)"  style="flex:0.8">✕ Tidak Layak</button>
+  <button class="btn btn-g" onclick="doSubmit(false)" id="btnHantar" style="flex:1.2">Hantar ke Sheet ✓</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Tesseract.js from CDN -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+<script>
+/* ====================================================
+   DATA
+==================================================== */
+const MUKIM = {
+  "Johor Bahru": ["Johor Bahru","Pulai","Sungai Tiram","Tebrau","Plentong","Senai","Jelutong","Skudai","Kempas","Permas Jaya","Ulu Tiram"],
+  "Kluang":      ["Kluang","Yong Peng","Simpang Renggam","Kahang","Paloh","Rengam","Chamek","Bekok","Mengkibol"],
+  "Kota Tinggi": ["Kota Tinggi","Kota Tinggi Bandar","Ulu Sungai Johor","Johor Lama","Sungai Karang","Tanjung Surat","Sedili Besar","Pengerang","Penawar","Sedili Kecil"],
+  "Mersing":     ["Mersing","Endau","Jemaluang","Tenggaroh","Peta","Air Papan","Batu Bemban"],
+  "Muar":        ["Muar","Bukit Bakri","Parit Jawa","Sungai Balang","Lenga","Bukit Pasir","Sungai Raya","Serom","Maharani","Sungai Abong"],
+  "Pontian":     ["Pontian","Ayer Baloi","Kukup","Pekan Nenas","Sri Gading","Benut","Rimba Terjun","Sungai Karang"],
+  "Segamat":     ["Segamat","Labis","Gemas","Sungai Mati","Tenang","Jementah","Chaah","Paya Lebar","Genuang"],
+  "Batu Pahat":  ["Batu Pahat","Senggarang","Parit Raja","Ayer Hitam","Penggaram","Mak Ungu","Sri Gading","Simpang Kanan","Parit Sulong","Semerah"],
+  "Kulai":       ["Kulai","Senai","Sedenak","Saleng","Bukit Batu","Sungai Tiram","Pandan","Jelutong"],
+  "Tangkak":     ["Tangkak","Sagil","Bukit Gambir","Kesang","Sebrang","Nitar","Jalan Bakri","Ledang"]
+};
+
+/* ====================================================
+   STATE
+==================================================== */
+let ST = { depId:'', jenis:'', imgSrc:'', ocrRaw:'' };
+
+/* ====================================================
+   SCREEN NAV
+==================================================== */
+function showS(n) {
+  ['s1','s2','s3','s4'].forEach((id,i) => {
+    document.getElementById(id).classList.toggle('active', i+1===n);
+  });
+  [1,2,3,4].forEach(i => {
+    document.getElementById('d'+i).classList.toggle('active', i===n);
+    document.getElementById('d'+i).classList.toggle('done',   i<n);
+  });
+  document.getElementById('abar').style.display = n===3 ? 'flex' : 'none';
+  window.scrollTo(0,0);
+}
+
+/* ====================================================
+   SETUP / CONFIG
+==================================================== */
+function saveConfig() {
+  const id = document.getElementById('depId').value.trim();
+  if(!id) { toast('Sila masukkan Deployment ID'); return; }
+  ST.depId = id;
+  localStorage.setItem('pkj_depid', id);
+  showS(2);
+}
+function goS1() { showS(1); }
+
+/* ====================================================
+   JENIS BORANG
+==================================================== */
+function pickJenis(j, el) {
+  document.querySelectorAll('.jenis-card').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  ST.jenis = j;
+  document.getElementById('scanCard').style.display = 'block';
+  const hints = {
+    BBR:'Imbas Bahagian A (Butiran Pemohon) dan Bahagian B (Maklumat Harta) borang BBR.',
+    BMR:'Imbas Bahagian A (Butiran Pemohon) dan Bahagian B (Maklumat Harta) borang BMR.',
+    BSR:'Imbas Bahagian A (Maklumat Pemohon) sahaja untuk borang BSR.'
+  };
+  document.getElementById('scanHintTxt').textContent = hints[j];
+  resetDrop();
+}
+
+/* ====================================================
+   CAMERA
+==================================================== */
+let camStream = null;
+async function openCam() {
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});
+    const v = document.getElementById('cam');
+    v.srcObject = camStream; v.style.display = 'block';
+    document.getElementById('camBar').classList.add('on');
+    document.getElementById('dropZone').style.display = 'none';
+  } catch(e) { toast('Kamera tidak dapat diakses — sila muat naik fail'); }
+}
+function killCam() {
+  if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; }
+  document.getElementById('cam').style.display = 'none';
+  document.getElementById('camBar').classList.remove('on');
+  document.getElementById('dropZone').style.display = 'block';
+}
+function snapPhoto() {
+  const v = document.getElementById('cam');
+  const c = document.createElement('canvas');
+  c.width=v.videoWidth; c.height=v.videoHeight;
+  c.getContext('2d').drawImage(v,0,0);
+  const src = c.toDataURL('image/jpeg',0.92);
+  ST.imgSrc = src;
+  killCam();
+  showDropImg(src);
+  runOCR(src);
+}
+
+/* ====================================================
+   FILE UPLOAD
+==================================================== */
+function handleFile(e) {
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    ST.imgSrc = ev.target.result;
+    showDropImg(ST.imgSrc);
+    runOCR(ST.imgSrc);
+  };
+  r.readAsDataURL(f);
+}
+
+function showDropImg(src) {
+  const dz = document.getElementById('dropZone');
+  dz.classList.add('has-img');
+  dz.onclick = null;
+  dz.innerHTML = `<img src="${src}" alt="Borang">`;
+}
+function resetDrop() {
+  const dz = document.getElementById('dropZone');
+  dz.classList.remove('has-img');
+  dz.onclick = ()=>document.getElementById('fileInput').click();
+  dz.innerHTML = `<div class="scan-ico">📁</div>
+    <div class="scan-txt">Ketik untuk muat naik gambar</div>
+    <div class="scan-sub">JPG atau PNG</div>`;
+  document.getElementById('fileInput').value='';
+  document.getElementById('ocrBox').style.display='none';
+  document.getElementById('retryDiv').style.display='none';
+  ST.imgSrc=''; ST.ocrRaw='';
+}
+
+/* ====================================================
+   OCR — Tesseract.js
+==================================================== */
+async function runOCR(src) {
+  const ocrBox = document.getElementById('ocrBox');
+  const ocrLbl = document.getElementById('ocrLbl');
+  const ocrBar = document.getElementById('ocrBar');
+  const retDiv = document.getElementById('retryDiv');
+  ocrBox.style.display='block'; retDiv.style.display='none';
+
+  const steps = [
+    'Memuatkan enjin OCR...',
+    'Menganalisis gambar...',
+    'Membaca teks borang...',
+    'Memproses data...'
+  ];
+
+  try {
+    const worker = await Tesseract.createWorker('eng+msa', 1, {
+      logger: m => {
+        if(m.status === 'recognizing text') {
+          const pct = Math.round(m.progress * 100);
+          ocrBar.style.width = pct + '%';
+          ocrLbl.textContent = steps[Math.min(2, Math.floor(m.progress*3))] + ' ' + pct + '%';
+        } else if(m.status === 'loading tesseract core') {
+          ocrLbl.textContent = steps[0];
+          ocrBar.style.width = '10%';
+        } else if(m.status === 'initializing tesseract') {
+          ocrLbl.textContent = steps[1];
+          ocrBar.style.width = '25%';
+        } else if(m.status === 'loading language traineddata') {
+          ocrLbl.textContent = 'Memuatkan bahasa...';
+          ocrBar.style.width = '40%';
+        }
+      }
+    });
+
+    ocrLbl.textContent = steps[3];
+    const { data } = await worker.recognize(src);
+    await worker.terminate();
+
+    ST.ocrRaw = data.text;
+    ocrBar.style.width = '100%';
+
+    const parsed = parseBorang(data.text, ST.jenis);
+    ocrBox.style.display='none';
+    fillPreview(parsed);
+    retDiv.style.display='block';
+
+  } catch(err) {
+    ocrBox.style.display='none';
+    toast('Ralat OCR. Sila cuba semula.');
+    console.error(err);
+  }
+}
+
+/* ====================================================
+   PARSE — extract fields from raw OCR text
+==================================================== */
+function parseBorang(raw, jenis) {
+  const out = {nama:'',ic:'',namaPsng:'',icPsng:'',tel:'',emel:'',harga:''};
+  const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
+  const txt = raw.replace(/\n/g,' ');
+
+  // IC pattern: 6 digit - 2 digit - 4 digit (various separators)
+  const icRe = /\b(\d{6})[\s\-—–](\d{2})[\s\-—–](\d{4})\b/g;
+  const ics = [];
+  let m;
+  while((m=icRe.exec(txt))!==null) ics.push(m[1]+'-'+m[2]+'-'+m[3]);
+  if(ics[0]) out.ic    = ics[0];
+  if(ics[1]) out.icPsng = ics[1];
+
+  // Email
+  const emailM = txt.match(/[\w.\-+]+@[\w.\-]+\.[a-z]{2,}/i);
+  if(emailM) out.emel = emailM[0];
+
+  // Phone: start with 01
+  const telM = txt.match(/0\d[\s\-]?\d{7,8}/);
+  if(telM) out.tel = telM[0].replace(/\s/g,'');
+
+  // Harga: look for RM or price-like numbers near relevant keywords
+  const hargaM = txt.match(/(?:Harga\s*Rumah|Bayaran\s*Sewa|Harga)[^0-9]*([0-9]{2,}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})?)/i);
+  if(hargaM) out.harga = hargaM[1].replace(/[,\s]/g,'');
+
+  // Nama: look for line after "Nama Pertama" / "Nama Penuh"
+  for(let i=0; i<lines.length; i++){
+    const l = lines[i];
+    if(/Nama\s*(Pertama|Penuh)/i.test(l)){
+      // value might be on same line after colon
+      const part = l.split(/[:：]/);
+      if(part[1] && part[1].trim().length > 2) { out.nama = part[1].trim(); break; }
+      // or next non-empty line
+      if(lines[i+1] && lines[i+1].length > 2 && !/^[.:…]+$/.test(lines[i+1])) {
+        out.nama = lines[i+1]; break;
+      }
+    }
+  }
+
+  // Nama Pasangan
+  for(let i=0; i<lines.length; i++){
+    const l = lines[i];
+    if(/Nama\s*Pasangan/i.test(l)){
+      const part = l.split(/[:：]/);
+      if(part[1] && part[1].trim().length > 2) { out.namaPsng = part[1].trim(); break; }
+      if(lines[i+1] && lines[i+1].length > 2)  { out.namaPsng = lines[i+1]; break; }
+    }
+  }
+
+  // Clean up dots/underscores from OCR artifacts
+  ['nama','namaPsng','ic','icPsng','tel','emel','harga'].forEach(k=>{
+    if(out[k]) out[k] = out[k].replace(/^[.\s…_]+|[.\s…_]+$/g,'').trim();
+  });
+
+  return out;
+}
+
+/* ====================================================
+   FILL PREVIEW
+==================================================== */
+function fillPreview(d) {
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    el.value = val || '';
+    el.classList.toggle('good', !!(val && val.length > 1));
+    el.classList.toggle('low',  !(val && val.length > 1));
+  };
+  set('fNama',    d.nama);
+  set('fIc',      d.ic);
+  set('fNamaPsng',d.namaPsng);
+  set('fIcPsng',  d.icPsng);
+  set('fTel',     d.tel);
+  set('fEmel',    d.emel);
+  set('fHarga',   d.harga);
+  document.getElementById('fCatatan').value = '';
+  document.getElementById('fDaerah').value  = '';
+  document.getElementById('fMukim').innerHTML = '<option value="">-- Pilih Mukim --</option>';
+
+  const badge = document.getElementById('prevBadge');
+  badge.textContent = ST.jenis;
+  badge.className   = 'prev-badge ' + ST.jenis.toLowerCase();
+
+  const isBSR = ST.jenis==='BSR';
+  document.getElementById('ttlA').textContent = isBSR ? 'A. Maklumat Pemohon' : 'A. Butiran Pemohon';
+  document.getElementById('ttlB').textContent = isBSR ? 'Maklumat Sewa' : 'B. Maklumat Harta (Rumah)';
+  document.getElementById('hargaLbl').innerHTML = (isBSR
+    ? 'Bayaran Sewa Sebulan (RM)'
+    : 'Harga Rumah (RM)') + ' <span class="req">*</span>';
+  document.getElementById('fHarga').placeholder = isBSR ? 'cth: 500' : 'cth: 250000';
+
+  const c = {BBR:'#185FA5',BMR:'#1B4B3A',BSR:'#854F0B'};
+  document.getElementById('btnHantar').style.background = c[ST.jenis];
+}
+
+function goPreview() { showS(3); }
+function goScan()    { showS(2); }
+
+/* ====================================================
+   MUKIM DROPDOWN
+==================================================== */
+function loadMukim() {
+  const d   = document.getElementById('fDaerah').value;
+  const sel = document.getElementById('fMukim');
+  sel.innerHTML = '<option value="">-- Pilih Mukim --</option>';
+  if(!d||!MUKIM[d]) return;
+  MUKIM[d].forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m; sel.appendChild(o); });
+}
+
+/* ====================================================
+   VALIDATE & SUBMIT
+==================================================== */
+function getForm() {
+  return {
+    jenis:      ST.jenis,
+    sheet:      '', // set on submit
+    nama:       v('fNama'),
+    ic:         v('fIc'),
+    namaPsng:   v('fNamaPsng'),
+    icPsng:     v('fIcPsng'),
+    tel:        v('fTel'),
+    emel:       v('fEmel'),
+    harga:      v('fHarga'),
+    daerah:     v('fDaerah'),
+    mukim:      v('fMukim'),
+    catatan:    v('fCatatan')
+  };
+}
+function v(id){ return document.getElementById(id).value.trim(); }
+
+async function doSubmit(tidakLayak) {
+  const d = getForm();
+  if(tidakLayak){
+    if(!d.catatan)          { toast('Sila isi Catatan (sebab tidak layak)'); return; }
+    if(!d.nama && !d.ic)    { toast('Sila isi sekurang-kurangnya Nama atau No. KP'); return; }
+  } else {
+    if(!d.nama)    { toast('Nama penerima wajib diisi'); return; }
+    if(!d.ic)      { toast('No. Kad Pengenalan wajib diisi'); return; }
+    if(!d.tel)     { toast('No. Telefon wajib diisi'); return; }
+    if(!d.emel)    { toast('Emel wajib diisi'); return; }
+    if(!d.harga)   { toast('Harga Rumah/Sewa wajib diisi'); return; }
+    if(!d.catatan) { toast('Catatan wajib diisi'); return; }
+  }
+
+  d.sheet = tidakLayak ? 'Tidak Layak' : ST.jenis;
+  document.getElementById('abar').style.display='none';
+  toast('Menghantar data...');
+
+  const url = `https://script.google.com/macros/s/${ST.depId}/exec`;
+  const params = new URLSearchParams(d);
+
+  try {
+    await fetch(url + '?' + params.toString(), { method:'GET', mode:'no-cors' });
+
+    document.getElementById('succIco').textContent = tidakLayak ? '⛔' : '✅';
+    document.getElementById('succIco').className   = 'succ-ico' + (tidakLayak?' tl':'');
+    document.getElementById('succTtl').textContent = tidakLayak ? 'Direkod: Tidak Layak' : 'Berjaya Dihantar';
+    document.getElementById('succMsg').textContent = tidakLayak
+      ? `Data ${d.nama||'pemohon'} direkod dalam sheet Tidak Layak.`
+      : `Data ${d.nama} direkod dalam sheet ${ST.jenis}.`;
+    showS(4);
+  } catch(err) {
+    document.getElementById('abar').style.display='flex';
+    toast('Ralat pengiriman. Semak sambungan internet.');
+  }
+}
+
+/* ====================================================
+   RESET
+==================================================== */
+function resetAll() {
+  ST.jenis=''; ST.imgSrc=''; ST.ocrRaw='';
+  document.querySelectorAll('.jenis-card').forEach(c=>c.classList.remove('sel'));
+  document.getElementById('scanCard').style.display='none';
+  resetDrop();
+  showS(2);
+}
+
+/* ====================================================
+   TOAST
+==================================================== */
+let _tt;
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('on');
+  clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('on'),3200);
+}
+
+/* ====================================================
+   INIT
+==================================================== */
+(function init(){
+  const id = localStorage.getItem('pkj_depid');
+  if(id){ document.getElementById('depId').value=id; ST.depId=id; showS(2); }
+})();
+</script>
+</body>
+</html>
