@@ -2,33 +2,33 @@
 <html lang="ms">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Sistem OCR PKJ</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap');
 
   :root {
-    --bg:           #F5F4F0;
-    --surface:      #FFFFFF;
-    --surface2:     #EFEDE6;
-    --border:       #E0DED6;
-    --text:         #1A1A18;
-    --text2:        #6B6960;
-    --text3:        #9E9C94;
-    --accent:       #1B4B3A;
-    --accent-lt:    #E8F2EE;
-    --danger:       #C0392B;
-    --danger-lt:    #FDECEA;
-    --warn:         #92600A;
-    --warn-lt:      #FFF8E7;
-    --bbr:          #185FA5;
-    --bbr-lt:       #E6F1FB;
-    --bmr:          #1B4B3A;
-    --bmr-lt:       #E8F2EE;
-    --bsr:          #854F0B;
-    --bsr-lt:       #FAEEDA;
-    --r:            10px;
-    --rl:           16px;
+    --bg:        #F5F4F0;
+    --surface:   #FFFFFF;
+    --surface2:  #EFEDE6;
+    --border:    #E0DED6;
+    --text:      #1A1A18;
+    --text2:     #6B6960;
+    --text3:     #9E9C94;
+    --accent:    #1B4B3A;
+    --accent-lt: #E8F2EE;
+    --danger:    #C0392B;
+    --danger-lt: #FDECEA;
+    --warn:      #92600A;
+    --warn-lt:   #FFF8E7;
+    --bbr:       #185FA5;
+    --bbr-lt:    #E6F1FB;
+    --bmr:       #1B4B3A;
+    --bmr-lt:    #E8F2EE;
+    --bsr:       #854F0B;
+    --bsr-lt:    #FAEEDA;
+    --r:         10px;
+    --rl:        16px;
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -40,6 +40,7 @@
     min-height: 100vh;
     font-size: 14px;
     line-height: 1.6;
+    -webkit-tap-highlight-color: transparent;
   }
 
   /* HEADER */
@@ -55,7 +56,7 @@
     background: rgba(255,255,255,0.15);
     border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 13px; letter-spacing: 0.03em;
+    font-weight: 700; font-size: 13px;
     font-family: 'DM Mono', monospace;
   }
   .hdr-title { font-size: 14px; font-weight: 600; }
@@ -68,10 +69,8 @@
   .dot.active { background: #fff; width: 18px; border-radius: 4px; }
   .dot.done   { background: rgba(255,255,255,0.55); }
 
-  /* MAIN */
-  .main { max-width: 660px; margin: 0 auto; padding: 20px 14px 90px; }
+  .main { max-width: 660px; margin: 0 auto; padding: 20px 14px 100px; }
 
-  /* CARD */
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -86,7 +85,6 @@
     display: flex; align-items: center; gap: 7px;
   }
 
-  /* SCREENS */
   .screen { display: none; }
   .screen.active { display: block; }
 
@@ -106,7 +104,7 @@
     appearance: none;
   }
   input:focus, select:focus, textarea:focus { border-color: var(--accent); }
-  .mono-input { font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.02em; }
+  .mono-input { font-family: 'DM Mono', monospace; font-size: 12px; }
   textarea { resize: vertical; min-height: 68px; }
   select {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%236B6960' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
@@ -120,40 +118,38 @@
   /* BUTTONS */
   .btn {
     display: inline-flex; align-items: center; justify-content: center;
-    gap: 6px; padding: 10px 18px;
+    gap: 7px; padding: 12px 18px;
     border-radius: var(--r);
     font-family: 'DM Sans', sans-serif;
-    font-size: 13px; font-weight: 500;
+    font-size: 14px; font-weight: 500;
     cursor: pointer; border: none;
     transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
   }
-  .btn:active { transform: scale(0.975); }
-  .btn-g   { background: var(--accent); color: #fff; }
+  .btn:active { transform: scale(0.96); opacity: 0.9; }
+  .btn-g  { background: var(--accent); color: #fff; }
   .btn-g:hover { background: #143d2f; }
-  .btn-r   { background: var(--danger); color: #fff; }
+  .btn-r  { background: var(--danger); color: #fff; }
   .btn-r:hover { background: #a32822; }
-  .btn-o   { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-o  { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
   .btn-o:hover { background: var(--surface2); }
   .btn-full { width: 100%; }
-  .btn-sm   { padding: 6px 12px; font-size: 12px; }
+  .btn-sm   { padding: 7px 12px; font-size: 12px; }
 
-  /* SETUP HERO */
+  /* SETUP */
   .hero { text-align: center; padding: 26px 0 18px; }
   .hero-icon {
-    width: 58px; height: 58px; background: var(--accent-lt);
+    width: 60px; height: 60px; background: var(--accent-lt);
     border-radius: 14px; display: flex; align-items: center;
-    justify-content: center; margin: 0 auto 14px; font-size: 24px;
+    justify-content: center; margin: 0 auto 14px; font-size: 26px;
   }
   .hero h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 5px; }
   .hero p  { font-size: 13px; color: var(--text2); }
 
-  /* DEPLOYMENT ID BOX */
   .dep-wrap {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--r);
-    padding: 14px;
-    margin-bottom: 14px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 14px; margin-bottom: 14px;
   }
   .dep-label { font-size: 11px; font-weight: 600; color: var(--text2); margin-bottom: 7px; display: flex; align-items: center; gap: 6px; }
   .dep-hint  { font-size: 11px; color: var(--text3); margin-top: 6px; font-family: 'DM Mono', monospace; }
@@ -162,11 +158,11 @@
   .jenis-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 9px; }
   .jenis-card {
     border: 2px solid var(--border); border-radius: var(--r);
-    padding: 13px 8px; text-align: center; cursor: pointer;
+    padding: 14px 8px; text-align: center; cursor: pointer;
     transition: all 0.2s; background: var(--surface);
     user-select: none;
   }
-  .jenis-card:hover { border-color: #aaa; }
+  .jenis-card:active { transform: scale(0.97); }
   .jenis-card.sel.bbr { border-color: var(--bbr); background: var(--bbr-lt); }
   .jenis-card.sel.bmr { border-color: var(--bmr); background: var(--bmr-lt); }
   .jenis-card.sel.bsr { border-color: var(--bsr); background: var(--bsr-lt); }
@@ -180,53 +176,121 @@
   .jenis-card.sel.bmr .jenis-amount { color: var(--bmr); }
   .jenis-card.sel.bsr .jenis-amount { color: var(--bsr); }
 
-  /* SCAN */
-  .scan-drop {
-    border: 2px dashed var(--border); border-radius: var(--rl);
-    padding: 32px 18px; text-align: center; cursor: pointer;
-    transition: all 0.2s; background: var(--surface2);
+  /* ═══════════════════════════════════════
+     SCAN SECTION — redesign
+  ═══════════════════════════════════════ */
+
+  /* Preview image area */
+  .img-preview {
+    width: 100%; border-radius: var(--rl);
+    overflow: hidden; background: #111;
+    margin-bottom: 12px; display: none;
     position: relative;
   }
-  .scan-drop:hover { border-color: var(--accent); background: var(--accent-lt); }
-  .scan-drop.has-img { border-style: solid; padding: 0; overflow: hidden; cursor: default; border-color: var(--border); }
-  .scan-drop img { width: 100%; display: block; max-height: 360px; object-fit: contain; background: #111; border-radius: 13px; }
-  .scan-ico  { font-size: 32px; margin-bottom: 9px; }
-  .scan-txt  { font-size: 14px; font-weight: 500; color: var(--text2); }
-  .scan-sub  { font-size: 12px; color: var(--text3); margin-top: 3px; }
-  #fileInput { display: none; }
-  .scan-btns { display: flex; gap: 8px; margin-top: 9px; }
-
-  video#cam {
-    width: 100%; border-radius: 13px; display: none;
-    max-height: 360px; object-fit: cover; background: #000;
+  .img-preview img {
+    width: 100%; display: block;
+    max-height: 340px; object-fit: contain;
+    background: #111;
   }
-  .cam-bar { display: none; gap: 8px; margin-top: 9px; }
-  .cam-bar.on { display: flex; }
+  .img-preview-badge {
+    position: absolute; top: 10px; right: 10px;
+    background: rgba(0,0,0,0.55); color: #fff;
+    font-size: 11px; padding: 3px 9px;
+    border-radius: 20px; backdrop-filter: blur(4px);
+    font-family: 'DM Mono', monospace;
+  }
+  .img-retake {
+    position: absolute; bottom: 10px; right: 10px;
+    background: rgba(0,0,0,0.6); color: #fff;
+    border: none; border-radius: 20px;
+    font-size: 12px; font-weight: 500;
+    padding: 6px 14px; cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    backdrop-filter: blur(4px);
+  }
+  .img-retake:active { opacity: 0.7; }
 
-  /* OCR PROGRESS */
-  .ocr-box { display: none; text-align: center; padding: 30px 16px; }
+  /* Scan action buttons — 3 big tappable buttons */
+  .scan-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 9px;
+    margin-bottom: 12px;
+  }
+  .scan-btn {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 8px;
+    padding: 18px 8px;
+    border-radius: var(--rl);
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    cursor: pointer;
+    transition: all 0.18s;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .scan-btn:active { transform: scale(0.95); background: var(--surface2); }
+  .scan-btn.primary {
+    border-color: var(--accent);
+    background: var(--accent-lt);
+  }
+  .scan-btn.primary:active { background: #d0e8e0; }
+  .scan-btn-ico  { font-size: 28px; line-height: 1; }
+  .scan-btn-lbl  { font-size: 12px; font-weight: 500; color: var(--text2); text-align: center; line-height: 1.3; }
+  .scan-btn.primary .scan-btn-lbl { color: var(--accent); }
+  .scan-btn-sub  { font-size: 10px; color: var(--text3); text-align: center; }
+
+  /* Hidden file inputs */
+  #inputKamera  { display: none; }
+  #inputGaleri  { display: none; }
+
+  /* Scan hint */
+  .scan-hint {
+    background: var(--accent-lt);
+    border: 1px solid #b0d8cc;
+    border-radius: var(--r);
+    padding: 10px 13px;
+    font-size: 12px; color: #0E4030;
+    display: flex; gap: 8px; align-items: flex-start;
+    margin-bottom: 13px; line-height: 1.5;
+  }
+
+  /* OCR progress */
+  .ocr-box {
+    display: none;
+    background: var(--surface2);
+    border-radius: var(--rl);
+    padding: 28px 20px;
+    text-align: center;
+    margin-bottom: 12px;
+  }
   .spin {
-    width: 36px; height: 36px; border: 3px solid var(--border);
-    border-top-color: var(--accent); border-radius: 50%;
-    animation: spin 0.75s linear infinite; margin: 0 auto 12px;
+    width: 40px; height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.75s linear infinite;
+    margin: 0 auto 14px;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .ocr-lbl  { font-size: 13px; color: var(--text2); margin-bottom: 4px; }
-  .ocr-prog { height: 4px; background: var(--border); border-radius: 2px; margin: 10px 0 0; overflow: hidden; }
-  .ocr-bar  { height: 100%; background: var(--accent); width: 0%; transition: width 0.4s ease; border-radius: 2px; }
+  .ocr-lbl  { font-size: 13px; color: var(--text2); margin-bottom: 10px; font-weight: 500; }
+  .ocr-prog { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .ocr-bar  { height: 100%; background: var(--accent); width: 0%; transition: width 0.35s ease; border-radius: 3px; }
+  .ocr-sub  { font-size: 11px; color: var(--text3); margin-top: 8px; }
 
-  /* ALERT */
+  /* OCR done alert */
   .alert {
-    padding: 9px 12px; border-radius: var(--r);
+    padding: 10px 13px; border-radius: var(--r);
     font-size: 12px; line-height: 1.5;
     display: flex; gap: 8px; align-items: flex-start;
     margin-bottom: 11px;
   }
   .al-g { background: var(--accent-lt); color: #0E4030; border: 1px solid #b0d8cc; }
-  .al-y { background: var(--warn-lt);   color: var(--warn);  border: 1px solid #e8c96a; }
+  .al-y { background: var(--warn-lt);   color: var(--warn); border: 1px solid #e8c96a; }
   .al-r { background: var(--danger-lt); color: var(--danger); border: 1px solid #f0b8b4; }
 
-  /* PREVIEW FORM */
+  /* PREVIEW */
   .prev-hdr {
     display: flex; align-items: center; gap: 9px;
     margin-bottom: 16px; padding-bottom: 13px;
@@ -250,45 +314,31 @@
   .frow  { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-bottom: 9px; }
   .frow1 { grid-template-columns: 1fr; }
 
+  /* INPUT CONFIDENCE */
+  input.ocr-good { border-color: #7FC49A; background: #F2FAF5; }
+  input.ocr-low  { border-color: #E8C96A; background: #FFFBF0; }
+
   /* ACTION BAR */
   .abar {
     position: fixed; bottom: 0; left: 0; right: 0;
     background: var(--surface); border-top: 1px solid var(--border);
-    padding: 10px 14px; display: flex; gap: 9px; z-index: 99;
+    padding: 10px 14px 14px; display: flex; gap: 9px; z-index: 99;
   }
-  .abar .btn { flex: 1; }
+  .abar .btn { flex: 1; padding: 13px 18px; font-size: 14px; }
 
   /* SUCCESS */
   .succ { text-align: center; padding: 42px 16px; }
   .succ-ico {
-    width: 66px; height: 66px; border-radius: 50%;
+    width: 70px; height: 70px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    margin: 0 auto 16px; font-size: 28px;
+    margin: 0 auto 16px; font-size: 30px;
     background: var(--accent-lt);
   }
   .succ-ico.tl { background: var(--danger-lt); }
 
-  /* TOAST */
-  .toast {
-    position: fixed; bottom: 74px; left: 50%; transform: translateX(-50%);
-    background: #1A1A18; color: #fff;
-    padding: 8px 16px; border-radius: 18px;
-    font-size: 13px; font-weight: 500;
-    opacity: 0; transition: opacity 0.25s;
-    z-index: 200; white-space: nowrap; pointer-events: none;
-  }
-  .toast.on { opacity: 1; }
-
   .divider { height: 1px; background: var(--border); margin: 13px 0; }
 
-  /* OCR confidence */
-  input.low  { border-color: #E8C96A !important; background: #FFFBF0 !important; }
-  input.good { border-color: #8FC89A !important; }
-
-  .steps-guide {
-    counter-reset: step;
-    list-style: none; padding: 0;
-  }
+  .steps-guide { list-style: none; padding: 0; }
   .steps-guide li {
     display: flex; gap: 10px; align-items: flex-start;
     padding: 7px 0; border-bottom: 1px solid var(--border);
@@ -303,9 +353,22 @@
     flex-shrink: 0; margin-top: 1px;
   }
 
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+    background: #1A1A18; color: #fff;
+    padding: 9px 18px; border-radius: 20px;
+    font-size: 13px; font-weight: 500;
+    opacity: 0; transition: opacity 0.25s;
+    z-index: 200; white-space: nowrap; pointer-events: none;
+    max-width: 90vw; text-align: center;
+  }
+  .toast.on { opacity: 1; }
+
   @media (max-width: 420px) {
     .jenis-grid { grid-template-columns: 1fr; }
     .frow       { grid-template-columns: 1fr; }
+    .scan-btn-ico { font-size: 24px; }
   }
 </style>
 </head>
@@ -327,11 +390,8 @@
 
 <div class="main">
 
-  <!-- ══════════════════════════════════════
-       SCREEN 1 — SETUP
-  ══════════════════════════════════════ -->
+  <!-- ══════════════════ SCREEN 1 — SETUP ══════════════════ -->
   <div class="screen active" id="s1">
-
     <div class="hero">
       <div class="hero-icon">📋</div>
       <h1>Sistem OCR PKJ</h1>
@@ -340,38 +400,30 @@
 
     <div class="card">
       <div class="card-ttl">⚙️ Konfigurasi</div>
-
       <div class="dep-wrap">
-        <div class="dep-label">
-          <span>🔑</span> Deployment ID
-        </div>
-        <input type="text" id="depId" class="mono-input"
-          placeholder="AKfycby...xxxx">
+        <div class="dep-label">🔑 Deployment ID</div>
+        <input type="text" id="depId" class="mono-input" placeholder="AKfycby...xxxx">
         <div class="dep-hint">Contoh: AKfycbxxxxxxxxxxxxxxxxxxxxxxxxxxx</div>
       </div>
-
       <div class="alert al-g" style="margin-bottom:13px">
         <span>ℹ️</span>
-        <div>Deployment ID disimpan dalam peranti ini sahaja dan tidak dikongsikan. Cara mendapatkannya ditunjukkan di bawah.</div>
+        <div>Deployment ID disimpan dalam peranti ini sahaja dan tidak dikongsikan.</div>
       </div>
-
       <button class="btn btn-g btn-full" onclick="saveConfig()">Simpan & Mula →</button>
-
       <div class="divider"></div>
       <div class="card-ttl">📖 Cara Dapatkan Deployment ID</div>
       <ul class="steps-guide">
-        <li><div class="step-num">1</div><div>Buka Google Sheet Syafiq → klik <strong>Extensions</strong> → <strong>Apps Script</strong></div></li>
-        <li><div class="step-num">2</div><div>Dalam Apps Script, tampal kod yang telah diberi → klik <strong>Deploy</strong> → <strong>New deployment</strong></div></li>
-        <li><div class="step-num">3</div><div>Pilih type: <strong>Web app</strong> → Execute as: <strong>Me</strong> → Who has access: <strong>Anyone</strong></div></li>
-        <li><div class="step-num">4</div><div>Klik <strong>Deploy</strong> → salin <strong>Deployment ID</strong> (bukan URL) → tampal di atas</div></li>
+        <li><div class="step-num">1</div><div>Buka Google Sheet → klik <strong>Extensions</strong> → <strong>Apps Script</strong></div></li>
+        <li><div class="step-num">2</div><div>Tampal kod Apps Script yang diberi → klik <strong>Save</strong></div></li>
+        <li><div class="step-num">3</div><div>Jalankan fungsi <strong>setupAllHeaders</strong> sekali sahaja</div></li>
+        <li><div class="step-num">4</div><div>Klik <strong>Deploy → New deployment</strong> → Type: <strong>Web app</strong></div></li>
+        <li><div class="step-num">5</div><div>Execute as: <strong>Me</strong> → Who has access: <strong>Anyone</strong> → Deploy</div></li>
+        <li><div class="step-num">6</div><div>Salin <strong>Deployment ID</strong> → tampal di atas</div></li>
       </ul>
     </div>
-
   </div>
 
-  <!-- ══════════════════════════════════════
-       SCREEN 2 — JENIS + SCAN
-  ══════════════════════════════════════ -->
+  <!-- ══════════════════ SCREEN 2 — JENIS + SCAN ══════════════════ -->
   <div class="screen" id="s2">
 
     <div class="card">
@@ -398,62 +450,79 @@
     <div class="card" id="scanCard" style="display:none">
       <div class="card-ttl">📸 Imbas Borang</div>
 
-      <div class="alert al-g" id="scanHint" style="margin-bottom:11px">
+      <!-- Scan hint -->
+      <div class="scan-hint">
         <span>📌</span><span id="scanHintTxt"></span>
       </div>
 
-      <!-- Drop zone -->
-      <div class="scan-drop" id="dropZone" onclick="document.getElementById('fileInput').click()">
-        <div class="scan-ico">📁</div>
-        <div class="scan-txt">Ketik untuk muat naik gambar</div>
-        <div class="scan-sub">JPG atau PNG</div>
-      </div>
-      <input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)">
-
-      <!-- Camera -->
-      <video id="cam" autoplay playsinline></video>
-      <div class="cam-bar" id="camBar">
-        <button class="btn btn-g" style="flex:1" onclick="snapPhoto()">📷 Ambil Gambar</button>
-        <button class="btn btn-o" onclick="killCam()">✕ Tutup</button>
+      <!-- Image preview (shown after capture) -->
+      <div class="img-preview" id="imgPreview">
+        <img id="imgPreviewEl" src="" alt="Borang">
+        <div class="img-preview-badge" id="imgBadge"></div>
+        <button class="img-retake" onclick="resetScan()">↺ Ambil Semula</button>
       </div>
 
-      <div class="scan-btns">
-        <button class="btn btn-o" style="flex:1" onclick="openCam()">📷 Kamera</button>
-        <button class="btn btn-o" style="flex:1" onclick="document.getElementById('fileInput').click()">📁 Muat Naik</button>
+      <!-- 3 scan action buttons -->
+      <div class="scan-actions" id="scanActions">
+        <div class="scan-btn primary" onclick="document.getElementById('inputKamera').click()">
+          <div class="scan-btn-ico">📷</div>
+          <div class="scan-btn-lbl">Kamera</div>
+          <div class="scan-btn-sub">Buka kamera telefon</div>
+        </div>
+        <div class="scan-btn" onclick="document.getElementById('inputGaleri').click()">
+          <div class="scan-btn-ico">🖼️</div>
+          <div class="scan-btn-lbl">Galeri</div>
+          <div class="scan-btn-sub">Pilih dari galeri</div>
+        </div>
+        <div class="scan-btn" onclick="document.getElementById('inputFail').click()">
+          <div class="scan-btn-ico">📁</div>
+          <div class="scan-btn-lbl">Fail</div>
+          <div class="scan-btn-sub">PDF / imej fail</div>
+        </div>
       </div>
+
+      <!-- Hidden inputs -->
+      <!-- Kamera native Android -->
+      <input type="file" id="inputKamera" accept="image/*" capture="environment" onchange="handleImg(event,'kamera')">
+      <!-- Galeri foto -->
+      <input type="file" id="inputGaleri" accept="image/*" onchange="handleImg(event,'galeri')">
+      <!-- Fail umum -->
+      <input type="file" id="inputFail"   accept="image/*,.pdf" onchange="handleImg(event,'fail')">
 
       <!-- OCR progress -->
       <div class="ocr-box" id="ocrBox">
         <div class="spin"></div>
         <div class="ocr-lbl" id="ocrLbl">Memuatkan enjin OCR...</div>
         <div class="ocr-prog"><div class="ocr-bar" id="ocrBar"></div></div>
+        <div class="ocr-sub" id="ocrSub">Proses ini mengambil masa 10–20 saat</div>
       </div>
 
-      <div id="retryDiv" style="display:none; margin-top:10px">
-        <div class="alert al-y"><span>⚠️</span><span>OCR selesai tetapi ada data yang mungkin tidak tepat. Sila semak dan edit dalam preview.</span></div>
-        <button class="btn btn-g btn-full" id="retryBtn" onclick="goPreview()">Teruskan ke Preview →</button>
+      <!-- After OCR -->
+      <div id="ocrDone" style="display:none">
+        <div class="alert al-y">
+          <span>✏️</span>
+          <span>OCR selesai. Data yang berjaya dibaca ditanda <span style="color:#3B8A5A; font-weight:600">hijau</span>, yang tidak pasti ditanda <span style="color:#C08A10; font-weight:600">kuning</span>. Sila semak sebelum hantar.</span>
+        </div>
+        <button class="btn btn-g btn-full" onclick="showS(3)">Semak & Edit Data →</button>
       </div>
+
     </div>
-
   </div>
 
-  <!-- ══════════════════════════════════════
-       SCREEN 3 — PREVIEW & EDIT
-  ══════════════════════════════════════ -->
+  <!-- ══════════════════ SCREEN 3 — PREVIEW ══════════════════ -->
   <div class="screen" id="s3">
     <div class="card">
       <div class="prev-hdr">
         <span id="prevBadge" class="prev-badge"></span>
         <span style="font-size:13px; font-weight:500">Semak &amp; Edit Data</span>
-        <button class="btn btn-sm btn-o" style="margin-left:auto" onclick="goScan()">← Imbas Semula</button>
+        <button class="btn btn-sm btn-o" style="margin-left:auto" onclick="showS(2)">← Semula</button>
       </div>
 
       <div class="alert al-y">
         <span>⚠️</span>
-        <span>OCR mungkin tidak sempurna. Sila semak setiap field sebelum menghantar. Field bertanda <span class="req">*</span> wajib diisi.</span>
+        <span>Sila semak semua maklumat. Field bertanda <span class="req">*</span> adalah wajib diisi.</span>
       </div>
 
-      <!-- A: Butiran Pemohon -->
       <div class="fsec">
         <div class="fsec-ttl" id="ttlA">A. Butiran Pemohon</div>
         <div class="frow">
@@ -488,7 +557,6 @@
         </div>
       </div>
 
-      <!-- B: Harga -->
       <div class="fsec">
         <div class="fsec-ttl" id="ttlB">B. Maklumat Harta</div>
         <div class="frow frow1">
@@ -499,9 +567,8 @@
         </div>
       </div>
 
-      <!-- Lokasi -->
       <div class="fsec">
-        <div class="fsec-ttl">Lokasi <span style="font-weight:400; text-transform:none; letter-spacing:0">(pilihan)</span></div>
+        <div class="fsec-ttl">Lokasi <span style="font-weight:400;text-transform:none;letter-spacing:0">(pilihan)</span></div>
         <div class="frow">
           <div class="field">
             <label class="fl">Daerah</label>
@@ -520,7 +587,6 @@
         </div>
       </div>
 
-      <!-- Catatan -->
       <div class="fsec">
         <div class="fsec-ttl">Catatan</div>
         <div class="frow frow1">
@@ -530,29 +596,26 @@
           </div>
         </div>
       </div>
-
     </div>
-    <div style="height:68px"></div>
+    <div style="height:72px"></div>
   </div>
 
-  <!-- ══════════════════════════════════════
-       SCREEN 4 — SUCCESS
-  ══════════════════════════════════════ -->
+  <!-- ══════════════════ SCREEN 4 — SUCCESS ══════════════════ -->
   <div class="screen" id="s4">
     <div class="card">
       <div class="succ">
         <div class="succ-ico" id="succIco">✅</div>
-        <h2 style="font-size:18px; font-weight:600; margin-bottom:6px" id="succTtl">Berjaya Dihantar</h2>
-        <p style="color:var(--text2); font-size:13px; margin-bottom:22px" id="succMsg"></p>
+        <h2 style="font-size:18px;font-weight:600;margin-bottom:6px" id="succTtl">Berjaya Dihantar</h2>
+        <p style="color:var(--text2);font-size:13px;margin-bottom:22px" id="succMsg"></p>
         <button class="btn btn-g btn-full" onclick="resetAll()">＋ Rekod Pemohon Baharu</button>
         <div style="margin-top:9px">
-          <button class="btn btn-o btn-full" onclick="goS1()">⚙ Tukar Deployment ID</button>
+          <button class="btn btn-o btn-full" onclick="showS(1)">⚙ Tukar Deployment ID</button>
         </div>
       </div>
     </div>
   </div>
 
-</div><!-- /main -->
+</div>
 
 <!-- ACTION BAR -->
 <div class="abar" id="abar" style="display:none">
@@ -562,13 +625,12 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- Tesseract.js from CDN -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <script>
-/* ====================================================
-   DATA
-==================================================== */
+/* ============================================================
+   DATA — MUKIM
+============================================================ */
 const MUKIM = {
   "Johor Bahru": ["Johor Bahru","Pulai","Sungai Tiram","Tebrau","Plentong","Senai","Jelutong","Skudai","Kempas","Permas Jaya","Ulu Tiram"],
   "Kluang":      ["Kluang","Yong Peng","Simpang Renggam","Kahang","Paloh","Rengam","Chamek","Bekok","Mengkibol"],
@@ -582,18 +644,17 @@ const MUKIM = {
   "Tangkak":     ["Tangkak","Sagil","Bukit Gambir","Kesang","Sebrang","Nitar","Jalan Bakri","Ledang"]
 };
 
-/* ====================================================
+/* ============================================================
    STATE
-==================================================== */
-let ST = { depId:'', jenis:'', imgSrc:'', ocrRaw:'' };
+============================================================ */
+let ST = { depId:'', jenis:'', imgSrc:'' };
 
-/* ====================================================
+/* ============================================================
    SCREEN NAV
-==================================================== */
+============================================================ */
 function showS(n) {
-  ['s1','s2','s3','s4'].forEach((id,i) => {
-    document.getElementById(id).classList.toggle('active', i+1===n);
-  });
+  ['s1','s2','s3','s4'].forEach((id,i) =>
+    document.getElementById(id).classList.toggle('active', i+1===n));
   [1,2,3,4].forEach(i => {
     document.getElementById('d'+i).classList.toggle('active', i===n);
     document.getElementById('d'+i).classList.toggle('done',   i<n);
@@ -602,9 +663,9 @@ function showS(n) {
   window.scrollTo(0,0);
 }
 
-/* ====================================================
-   SETUP / CONFIG
-==================================================== */
+/* ============================================================
+   SETUP
+============================================================ */
 function saveConfig() {
   const id = document.getElementById('depId').value.trim();
   if(!id) { toast('Sila masukkan Deployment ID'); return; }
@@ -612,222 +673,203 @@ function saveConfig() {
   localStorage.setItem('pkj_depid', id);
   showS(2);
 }
-function goS1() { showS(1); }
 
-/* ====================================================
+/* ============================================================
    JENIS BORANG
-==================================================== */
+============================================================ */
 function pickJenis(j, el) {
-  document.querySelectorAll('.jenis-card').forEach(c=>c.classList.remove('sel'));
+  document.querySelectorAll('.jenis-card').forEach(c => c.classList.remove('sel'));
   el.classList.add('sel');
   ST.jenis = j;
   document.getElementById('scanCard').style.display = 'block';
   const hints = {
-    BBR:'Imbas Bahagian A (Butiran Pemohon) dan Bahagian B (Maklumat Harta) borang BBR.',
-    BMR:'Imbas Bahagian A (Butiran Pemohon) dan Bahagian B (Maklumat Harta) borang BMR.',
-    BSR:'Imbas Bahagian A (Maklumat Pemohon) sahaja untuk borang BSR.'
+    BBR: 'Imbas Bahagian A (Butiran Pemohon) dan Bahagian B (Maklumat Harta) borang BBR.',
+    BMR: 'Imbas Bahagian A (Butiran Pemohon) dan Bahagian B (Maklumat Harta) borang BMR.',
+    BSR: 'Imbas Bahagian A (Maklumat Pemohon) sahaja untuk borang BSR.'
   };
   document.getElementById('scanHintTxt').textContent = hints[j];
-  resetDrop();
+  resetScan();
 }
 
-/* ====================================================
-   CAMERA
-==================================================== */
-let camStream = null;
-async function openCam() {
-  try {
-    camStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});
-    const v = document.getElementById('cam');
-    v.srcObject = camStream; v.style.display = 'block';
-    document.getElementById('camBar').classList.add('on');
-    document.getElementById('dropZone').style.display = 'none';
-  } catch(e) { toast('Kamera tidak dapat diakses — sila muat naik fail'); }
-}
-function killCam() {
-  if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; }
-  document.getElementById('cam').style.display = 'none';
-  document.getElementById('camBar').classList.remove('on');
-  document.getElementById('dropZone').style.display = 'block';
-}
-function snapPhoto() {
-  const v = document.getElementById('cam');
-  const c = document.createElement('canvas');
-  c.width=v.videoWidth; c.height=v.videoHeight;
-  c.getContext('2d').drawImage(v,0,0);
-  const src = c.toDataURL('image/jpeg',0.92);
-  ST.imgSrc = src;
-  killCam();
-  showDropImg(src);
-  runOCR(src);
-}
+/* ============================================================
+   HANDLE IMAGE INPUT (kamera / galeri / fail)
+============================================================ */
+function handleImg(e, src) {
+  const f = e.target.files[0];
+  if(!f) return;
+  e.target.value = ''; // reset supaya boleh pilih fail sama lagi
 
-/* ====================================================
-   FILE UPLOAD
-==================================================== */
-function handleFile(e) {
-  const f = e.target.files[0]; if(!f) return;
-  const r = new FileReader();
-  r.onload = ev => {
+  const reader = new FileReader();
+  reader.onload = ev => {
     ST.imgSrc = ev.target.result;
-    showDropImg(ST.imgSrc);
+    showImgPreview(ST.imgSrc, src);
     runOCR(ST.imgSrc);
   };
-  r.readAsDataURL(f);
+  reader.readAsDataURL(f);
 }
 
-function showDropImg(src) {
-  const dz = document.getElementById('dropZone');
-  dz.classList.add('has-img');
-  dz.onclick = null;
-  dz.innerHTML = `<img src="${src}" alt="Borang">`;
-}
-function resetDrop() {
-  const dz = document.getElementById('dropZone');
-  dz.classList.remove('has-img');
-  dz.onclick = ()=>document.getElementById('fileInput').click();
-  dz.innerHTML = `<div class="scan-ico">📁</div>
-    <div class="scan-txt">Ketik untuk muat naik gambar</div>
-    <div class="scan-sub">JPG atau PNG</div>`;
-  document.getElementById('fileInput').value='';
-  document.getElementById('ocrBox').style.display='none';
-  document.getElementById('retryDiv').style.display='none';
-  ST.imgSrc=''; ST.ocrRaw='';
+function showImgPreview(src, sourceLabel) {
+  const labels = { kamera:'📷 Kamera', galeri:'🖼️ Galeri', fail:'📁 Fail' };
+  document.getElementById('imgPreviewEl').src = src;
+  document.getElementById('imgBadge').textContent = labels[sourceLabel] || sourceLabel;
+  document.getElementById('imgPreview').style.display = 'block';
+  document.getElementById('scanActions').style.display = 'none';
+  document.getElementById('ocrDone').style.display = 'none';
 }
 
-/* ====================================================
+function resetScan() {
+  document.getElementById('imgPreview').style.display  = 'none';
+  document.getElementById('imgPreviewEl').src          = '';
+  document.getElementById('scanActions').style.display = 'grid';
+  document.getElementById('ocrBox').style.display      = 'none';
+  document.getElementById('ocrDone').style.display     = 'none';
+  document.getElementById('ocrBar').style.width        = '0%';
+  // reset all inputs
+  ['inputKamera','inputGaleri','inputFail'].forEach(id =>
+    document.getElementById(id).value = '');
+  ST.imgSrc = '';
+}
+
+/* ============================================================
    OCR — Tesseract.js
-==================================================== */
+============================================================ */
 async function runOCR(src) {
   const ocrBox = document.getElementById('ocrBox');
   const ocrLbl = document.getElementById('ocrLbl');
   const ocrBar = document.getElementById('ocrBar');
-  const retDiv = document.getElementById('retryDiv');
-  ocrBox.style.display='block'; retDiv.style.display='none';
+  const ocrSub = document.getElementById('ocrSub');
+  const ocrDone = document.getElementById('ocrDone');
 
-  const steps = [
-    'Memuatkan enjin OCR...',
-    'Menganalisis gambar...',
-    'Membaca teks borang...',
-    'Memproses data...'
-  ];
+  ocrBox.style.display = 'block';
+  ocrDone.style.display = 'none';
+
+  const phases = {
+    'loading tesseract core':      { lbl:'Memuatkan enjin OCR...', pct:10 },
+    'initializing tesseract':      { lbl:'Memulakan Tesseract...', pct:20 },
+    'loading language traineddata':{ lbl:'Memuatkan bahasa...', pct:35 },
+    'initializing api':            { lbl:'Menyediakan pengecaman...', pct:45 },
+    'recognizing text':            { lbl:'Membaca teks borang...', pct:null }
+  };
 
   try {
     const worker = await Tesseract.createWorker('eng+msa', 1, {
       logger: m => {
-        if(m.status === 'recognizing text') {
-          const pct = Math.round(m.progress * 100);
+        const ph = phases[m.status];
+        if(!ph) return;
+        if(ph.pct !== null) {
+          ocrBar.style.width = ph.pct + '%';
+          ocrLbl.textContent = ph.lbl;
+        } else {
+          const pct = Math.round(45 + m.progress * 55);
           ocrBar.style.width = pct + '%';
-          ocrLbl.textContent = steps[Math.min(2, Math.floor(m.progress*3))] + ' ' + pct + '%';
-        } else if(m.status === 'loading tesseract core') {
-          ocrLbl.textContent = steps[0];
-          ocrBar.style.width = '10%';
-        } else if(m.status === 'initializing tesseract') {
-          ocrLbl.textContent = steps[1];
-          ocrBar.style.width = '25%';
-        } else if(m.status === 'loading language traineddata') {
-          ocrLbl.textContent = 'Memuatkan bahasa...';
-          ocrBar.style.width = '40%';
+          ocrLbl.textContent = 'Membaca teks borang... ' + pct + '%';
         }
       }
     });
 
-    ocrLbl.textContent = steps[3];
     const { data } = await worker.recognize(src);
     await worker.terminate();
 
-    ST.ocrRaw = data.text;
     ocrBar.style.width = '100%';
+    ocrLbl.textContent = 'Selesai! ✓';
+    ocrSub.textContent = '';
 
-    const parsed = parseBorang(data.text, ST.jenis);
-    ocrBox.style.display='none';
-    fillPreview(parsed);
-    retDiv.style.display='block';
+    setTimeout(() => {
+      ocrBox.style.display = 'none';
+      const parsed = parseBorang(data.text, ST.jenis);
+      fillPreview(parsed);
+      ocrDone.style.display = 'block';
+    }, 500);
 
   } catch(err) {
-    ocrBox.style.display='none';
+    ocrBox.style.display = 'none';
     toast('Ralat OCR. Sila cuba semula.');
+    resetScan();
     console.error(err);
   }
 }
 
-/* ====================================================
-   PARSE — extract fields from raw OCR text
-==================================================== */
+/* ============================================================
+   PARSE OCR TEXT → structured data
+============================================================ */
 function parseBorang(raw, jenis) {
-  const out = {nama:'',ic:'',namaPsng:'',icPsng:'',tel:'',emel:'',harga:''};
-  const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
-  const txt = raw.replace(/\n/g,' ');
+  const out = { nama:'', ic:'', namaPsng:'', icPsng:'', tel:'', emel:'', harga:'' };
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  const flat  = raw.replace(/\n/g,' ');
 
-  // IC pattern: 6 digit - 2 digit - 4 digit (various separators)
-  const icRe = /\b(\d{6})[\s\-—–](\d{2})[\s\-—–](\d{4})\b/g;
+  // ── IC: XXXXXX-XX-XXXX ──
+  const icRe = /\b(\d{6})\s*[-—–]\s*(\d{2})\s*[-—–]\s*(\d{4})\b/g;
   const ics = [];
   let m;
-  while((m=icRe.exec(txt))!==null) ics.push(m[1]+'-'+m[2]+'-'+m[3]);
-  if(ics[0]) out.ic    = ics[0];
+  while((m = icRe.exec(flat)) !== null)
+    ics.push(m[1]+'-'+m[2]+'-'+m[3]);
+  if(ics[0]) out.ic     = ics[0];
   if(ics[1]) out.icPsng = ics[1];
 
-  // Email
-  const emailM = txt.match(/[\w.\-+]+@[\w.\-]+\.[a-z]{2,}/i);
+  // ── EMAIL ──
+  const emailM = flat.match(/[\w.+\-]+@[\w.\-]+\.[a-z]{2,}/i);
   if(emailM) out.emel = emailM[0];
 
-  // Phone: start with 01
-  const telM = txt.match(/0\d[\s\-]?\d{7,8}/);
-  if(telM) out.tel = telM[0].replace(/\s/g,'');
+  // ── PHONE: starts 01 ──
+  const telM = flat.match(/01\d[\s\-]?\d{3,4}[\s\-]?\d{4}/);
+  if(telM) out.tel = telM[0].replace(/[\s\-]/g,'');
 
-  // Harga: look for RM or price-like numbers near relevant keywords
-  const hargaM = txt.match(/(?:Harga\s*Rumah|Bayaran\s*Sewa|Harga)[^0-9]*([0-9]{2,}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})?)/i);
+  // ── HARGA: digits near keyword ──
+  const hargaM = flat.match(/(?:Harga\s*Rumah|Bayaran\s*Sewa|Harga)[^\d]*([1-9]\d{1,6}(?:[,\s]\d{3})*(?:\.\d{2})?)/i);
   if(hargaM) out.harga = hargaM[1].replace(/[,\s]/g,'');
 
-  // Nama: look for line after "Nama Pertama" / "Nama Penuh"
-  for(let i=0; i<lines.length; i++){
+  // ── NAMA PERTAMA / NAMA PENUH ──
+  for(let i=0; i<lines.length; i++) {
     const l = lines[i];
-    if(/Nama\s*(Pertama|Penuh)/i.test(l)){
-      // value might be on same line after colon
-      const part = l.split(/[:：]/);
-      if(part[1] && part[1].trim().length > 2) { out.nama = part[1].trim(); break; }
-      // or next non-empty line
-      if(lines[i+1] && lines[i+1].length > 2 && !/^[.:…]+$/.test(lines[i+1])) {
-        out.nama = lines[i+1]; break;
+    if(/Nama\s*(Pertama|Penuh)/i.test(l)) {
+      const after = l.split(/[:：]/).slice(1).join(':').trim();
+      if(after.length > 2 && !/^[.…_\s]+$/.test(after)) { out.nama = after; break; }
+      const next = lines[i+1];
+      if(next && next.length > 2 && !/^[.…_\s]+$/.test(next) && !/^[A-Z]\.|Nama|No\.|Alam/i.test(next)) {
+        out.nama = next; break;
       }
     }
   }
 
-  // Nama Pasangan
-  for(let i=0; i<lines.length; i++){
+  // ── NAMA PASANGAN ──
+  for(let i=0; i<lines.length; i++) {
     const l = lines[i];
-    if(/Nama\s*Pasangan/i.test(l)){
-      const part = l.split(/[:：]/);
-      if(part[1] && part[1].trim().length > 2) { out.namaPsng = part[1].trim(); break; }
-      if(lines[i+1] && lines[i+1].length > 2)  { out.namaPsng = lines[i+1]; break; }
+    if(/Nama\s*Pasangan/i.test(l)) {
+      const after = l.split(/[:：]/).slice(1).join(':').trim();
+      if(after.length > 2 && !/^[.…_\s]+$/.test(after)) { out.namaPsng = after; break; }
+      const next = lines[i+1];
+      if(next && next.length > 2 && !/^[.…_\s]+$/.test(next)) { out.namaPsng = next; break; }
     }
   }
 
-  // Clean up dots/underscores from OCR artifacts
-  ['nama','namaPsng','ic','icPsng','tel','emel','harga'].forEach(k=>{
+  // Clean artefacts
+  Object.keys(out).forEach(k => {
     if(out[k]) out[k] = out[k].replace(/^[.\s…_]+|[.\s…_]+$/g,'').trim();
   });
 
   return out;
 }
 
-/* ====================================================
-   FILL PREVIEW
-==================================================== */
+/* ============================================================
+   FILL PREVIEW FORM
+============================================================ */
 function fillPreview(d) {
-  const set = (id, val) => {
+  const setField = (id, val) => {
     const el = document.getElementById(id);
     el.value = val || '';
-    el.classList.toggle('good', !!(val && val.length > 1));
-    el.classList.toggle('low',  !(val && val.length > 1));
+    el.classList.remove('ocr-good','ocr-low');
+    if(val && val.length > 1) el.classList.add('ocr-good');
+    else                       el.classList.add('ocr-low');
   };
-  set('fNama',    d.nama);
-  set('fIc',      d.ic);
-  set('fNamaPsng',d.namaPsng);
-  set('fIcPsng',  d.icPsng);
-  set('fTel',     d.tel);
-  set('fEmel',    d.emel);
-  set('fHarga',   d.harga);
+
+  setField('fNama',    d.nama);
+  setField('fIc',      d.ic);
+  setField('fNamaPsng',d.namaPsng);
+  setField('fIcPsng',  d.icPsng);
+  setField('fTel',     d.tel);
+  setField('fEmel',    d.emel);
+  setField('fHarga',   d.harga);
+
   document.getElementById('fCatatan').value = '';
   document.getElementById('fDaerah').value  = '';
   document.getElementById('fMukim').innerHTML = '<option value="">-- Pilih Mukim --</option>';
@@ -836,58 +878,61 @@ function fillPreview(d) {
   badge.textContent = ST.jenis;
   badge.className   = 'prev-badge ' + ST.jenis.toLowerCase();
 
-  const isBSR = ST.jenis==='BSR';
+  const isBSR = ST.jenis === 'BSR';
   document.getElementById('ttlA').textContent = isBSR ? 'A. Maklumat Pemohon' : 'A. Butiran Pemohon';
   document.getElementById('ttlB').textContent = isBSR ? 'Maklumat Sewa' : 'B. Maklumat Harta (Rumah)';
-  document.getElementById('hargaLbl').innerHTML = (isBSR
-    ? 'Bayaran Sewa Sebulan (RM)'
-    : 'Harga Rumah (RM)') + ' <span class="req">*</span>';
-  document.getElementById('fHarga').placeholder = isBSR ? 'cth: 500' : 'cth: 250000';
+  document.getElementById('hargaLbl').innerHTML = (isBSR ? 'Bayaran Sewa Sebulan (RM)' : 'Harga Rumah (RM)') + ' <span class="req">*</span>';
+  document.getElementById('fHarga').placeholder  = isBSR ? 'cth: 500' : 'cth: 250000';
 
-  const c = {BBR:'#185FA5',BMR:'#1B4B3A',BSR:'#854F0B'};
-  document.getElementById('btnHantar').style.background = c[ST.jenis];
+  const colours = { BBR:'#185FA5', BMR:'#1B4B3A', BSR:'#854F0B' };
+  document.getElementById('btnHantar').style.background = colours[ST.jenis];
 }
 
-function goPreview() { showS(3); }
-function goScan()    { showS(2); }
-
-/* ====================================================
+/* ============================================================
    MUKIM DROPDOWN
-==================================================== */
+============================================================ */
 function loadMukim() {
   const d   = document.getElementById('fDaerah').value;
   const sel = document.getElementById('fMukim');
   sel.innerHTML = '<option value="">-- Pilih Mukim --</option>';
-  if(!d||!MUKIM[d]) return;
-  MUKIM[d].forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m; sel.appendChild(o); });
+  if(!d || !MUKIM[d]) return;
+  MUKIM[d].forEach(m => {
+    const o = document.createElement('option');
+    o.value = m; o.textContent = m;
+    sel.appendChild(o);
+  });
 }
 
-/* ====================================================
-   VALIDATE & SUBMIT
-==================================================== */
+/* ============================================================
+   GET FORM VALUES
+============================================================ */
+function v(id) { return document.getElementById(id).value.trim(); }
 function getForm() {
   return {
-    jenis:      ST.jenis,
-    sheet:      '', // set on submit
-    nama:       v('fNama'),
-    ic:         v('fIc'),
-    namaPsng:   v('fNamaPsng'),
-    icPsng:     v('fIcPsng'),
-    tel:        v('fTel'),
-    emel:       v('fEmel'),
-    harga:      v('fHarga'),
-    daerah:     v('fDaerah'),
-    mukim:      v('fMukim'),
-    catatan:    v('fCatatan')
+    jenis:    ST.jenis,
+    sheet:    '',
+    nama:     v('fNama'),
+    ic:       v('fIc'),
+    namaPsng: v('fNamaPsng'),
+    icPsng:   v('fIcPsng'),
+    tel:      v('fTel'),
+    emel:     v('fEmel'),
+    harga:    v('fHarga'),
+    daerah:   v('fDaerah'),
+    mukim:    v('fMukim'),
+    catatan:  v('fCatatan')
   };
 }
-function v(id){ return document.getElementById(id).value.trim(); }
 
+/* ============================================================
+   SUBMIT
+============================================================ */
 async function doSubmit(tidakLayak) {
   const d = getForm();
-  if(tidakLayak){
-    if(!d.catatan)          { toast('Sila isi Catatan (sebab tidak layak)'); return; }
-    if(!d.nama && !d.ic)    { toast('Sila isi sekurang-kurangnya Nama atau No. KP'); return; }
+
+  if(tidakLayak) {
+    if(!d.catatan)           { toast('Sila isi Catatan (sebab tidak layak)'); return; }
+    if(!d.nama && !d.ic)     { toast('Sila isi sekurang-kurangnya Nama atau No. KP'); return; }
   } else {
     if(!d.nama)    { toast('Nama penerima wajib diisi'); return; }
     if(!d.ic)      { toast('No. Kad Pengenalan wajib diisi'); return; }
@@ -898,55 +943,60 @@ async function doSubmit(tidakLayak) {
   }
 
   d.sheet = tidakLayak ? 'Tidak Layak' : ST.jenis;
-  document.getElementById('abar').style.display='none';
+  document.getElementById('abar').style.display = 'none';
   toast('Menghantar data...');
 
-  const url = `https://script.google.com/macros/s/${ST.depId}/exec`;
+  const url    = `https://script.google.com/macros/s/${ST.depId}/exec`;
   const params = new URLSearchParams(d);
 
   try {
     await fetch(url + '?' + params.toString(), { method:'GET', mode:'no-cors' });
 
     document.getElementById('succIco').textContent = tidakLayak ? '⛔' : '✅';
-    document.getElementById('succIco').className   = 'succ-ico' + (tidakLayak?' tl':'');
+    document.getElementById('succIco').className   = 'succ-ico' + (tidakLayak ? ' tl' : '');
     document.getElementById('succTtl').textContent = tidakLayak ? 'Direkod: Tidak Layak' : 'Berjaya Dihantar';
     document.getElementById('succMsg').textContent = tidakLayak
-      ? `Data ${d.nama||'pemohon'} direkod dalam sheet Tidak Layak.`
+      ? `Data ${d.nama || 'pemohon'} direkod dalam sheet Tidak Layak.`
       : `Data ${d.nama} direkod dalam sheet ${ST.jenis}.`;
     showS(4);
   } catch(err) {
-    document.getElementById('abar').style.display='flex';
+    document.getElementById('abar').style.display = 'flex';
     toast('Ralat pengiriman. Semak sambungan internet.');
   }
 }
 
-/* ====================================================
-   RESET
-==================================================== */
+/* ============================================================
+   RESET ALL
+============================================================ */
 function resetAll() {
-  ST.jenis=''; ST.imgSrc=''; ST.ocrRaw='';
-  document.querySelectorAll('.jenis-card').forEach(c=>c.classList.remove('sel'));
-  document.getElementById('scanCard').style.display='none';
-  resetDrop();
+  ST.jenis = ''; ST.imgSrc = '';
+  document.querySelectorAll('.jenis-card').forEach(c => c.classList.remove('sel'));
+  document.getElementById('scanCard').style.display = 'none';
+  resetScan();
   showS(2);
 }
 
-/* ====================================================
+/* ============================================================
    TOAST
-==================================================== */
+============================================================ */
 let _tt;
-function toast(msg){
-  const el=document.getElementById('toast');
-  el.textContent=msg; el.classList.add('on');
-  clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('on'),3200);
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('on');
+  clearTimeout(_tt);
+  _tt = setTimeout(() => el.classList.remove('on'), 3200);
 }
 
-/* ====================================================
+/* ============================================================
    INIT
-==================================================== */
-(function init(){
+============================================================ */
+(function init() {
   const id = localStorage.getItem('pkj_depid');
-  if(id){ document.getElementById('depId').value=id; ST.depId=id; showS(2); }
+  if(id) {
+    document.getElementById('depId').value = id;
+    ST.depId = id;
+    showS(2);
+  }
 })();
 </script>
 </body>
