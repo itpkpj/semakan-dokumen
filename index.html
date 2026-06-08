@@ -728,7 +728,25 @@ function setBar(pct) {
   document.getElementById('ocrBar').style.width = pct + '%';
 }
 
-/* ── OCR via Google Docs (Apps Script POST) ── */
+/* ── COMPRESS IMAGE before sending ── */
+async function compressImage(base64, mime, maxW=1200) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const scale  = Math.min(1, maxW / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width  = Math.round(img.width  * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      // always output jpeg for smaller size
+      const compressed = canvas.toDataURL('image/jpeg', 0.75).split(',')[1];
+      resolve(compressed);
+    };
+    img.src = `data:${mime};base64,${base64}`;
+  });
+}
+
+/* ── OCR via Google Docs (Apps Script) ── */
 async function runOCR() {
   const ocrBox  = document.getElementById('ocrBox');
   const ocrLbl  = document.getElementById('ocrLbl');
@@ -741,44 +759,71 @@ async function runOCR() {
   const url = `https://script.google.com/macros/s/${ST.depId}/exec`;
 
   try {
-    // Step 1
+    // Step 1 — compress
     setStep(1,'active'); setBar(10);
     ocrLbl.textContent = 'Menyediakan gambar...';
-    await delay(300);
+    const compressed = await compressImage(ST.imgBase64, ST.imgMime);
     setStep(1,'done');
 
-    // Step 2
+    // Step 2 — send via form POST (no-cors compatible)
     setStep(2,'active'); setBar(25);
     ocrLbl.textContent = 'Menghantar ke Google Drive...';
 
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'ocr',
-        image:  ST.imgBase64,
-        mime:   ST.imgMime
-      })
-    });
+    // Use XMLHttpRequest with JSONP-style callback via GET
+    // Split large base64 into chunks via multiple GETs is unreliable
+    // Best approach: form POST with no-cors, then poll for result via GET with token
+    const token    = 'pkj_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+    const formData = new FormData();
+    formData.append('action', 'ocr');
+    formData.append('token',  token);
+    formData.append('image',  compressed);
+    formData.append('mime',   'image/jpeg');
 
-    setStep(2,'done'); setStep(3,'active'); setBar(55);
+    // Fire-and-forget POST (no-cors — can't read response)
+    fetch(url, { method:'POST', mode:'no-cors', body: formData });
+
+    setStep(2,'done'); setStep(3,'active'); setBar(45);
     ocrLbl.textContent = 'Google sedang membaca teks...';
-    await delay(300);
 
-    const data = await resp.json();
+    // Poll GET with token until result ready (max 30s)
+    const pollUrl = url + '?action=poll&token=' + encodeURIComponent(token);
+    let result = null;
+    const maxTries = 20;  // 20 x 1.5s = 30s timeout
 
-    setStep(3,'done'); setStep(4,'active'); setBar(75);
+    for(let i=0; i<maxTries; i++) {
+      await delay(1500);
+      const pct = Math.round(45 + (i/maxTries)*35);
+      setBar(pct);
+
+      try {
+        const pollResp = await fetch(pollUrl);
+        const pollData = await pollResp.json();
+
+        if(pollData.status === 'ok') {
+          result = pollData;
+          break;
+        } else if(pollData.status === 'error') {
+          throw new Error(pollData.msg || 'OCR gagal di server');
+        }
+        // status === 'pending' → keep polling
+      } catch(pollErr) {
+        // network hiccup — retry
+        if(i === maxTries-1) throw pollErr;
+      }
+    }
+
+    if(!result) throw new Error('Tamat masa menunggu. Sila cuba semula.');
+
+    setStep(3,'done'); setStep(4,'active'); setBar(82);
     ocrLbl.textContent = 'Mengekstrak maklumat...';
     await delay(300);
 
-    if(data.status !== 'ok') throw new Error(data.msg || 'OCR gagal');
-
-    const parsed = parseBorang(data.text, ST.jenis);
+    const parsed = parseBorang(result.text, ST.jenis);
     fillPreview(parsed);
 
-    setStep(4,'done'); setStep(5,'active'); setBar(90);
+    setStep(4,'done'); setStep(5,'active'); setBar(93);
     ocrLbl.textContent = 'Memadam gambar sementara...';
-    await delay(400);
+    await delay(500);
 
     setStep(5,'done'); setBar(100);
     ocrLbl.textContent = 'Selesai! ✓';
@@ -789,12 +834,10 @@ async function runOCR() {
     }, 600);
 
   } catch(err) {
-    ocrBox.style.display = 'none';
+    ocrBox.style.display  = 'none';
     ocrDone.style.display = 'none';
     console.error(err);
     toast('Ralat OCR: ' + (err.message || 'Cuba semula'));
-
-    // Show retry option
     document.getElementById('imgPreview').style.display  = 'none';
     document.getElementById('scanActions').style.display = 'grid';
   }
