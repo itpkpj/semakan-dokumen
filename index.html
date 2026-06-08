@@ -60,7 +60,21 @@
   }
   .hdr-title { font-size: 14px; font-weight: 600; }
   .hdr-sub   { font-size: 11px; opacity: 0.55; font-family: 'DM Mono', monospace; }
-  .step-dots { margin-left: auto; display: flex; gap: 5px; align-items: center; }
+  .hdr-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .step-dots { display: flex; gap: 5px; align-items: center; }
+  .hdr-settings {
+    width: 32px; height: 32px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 15px;
+    transition: background 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+  .hdr-settings:hover  { background: rgba(255,255,255,0.22); }
+  .hdr-settings:active { background: rgba(255,255,255,0.3); transform: scale(0.93); }
   .dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.22); transition: all 0.3s; }
   .dot.active { background: #fff; width: 18px; border-radius: 4px; }
   .dot.done   { background: rgba(255,255,255,0.55); }
@@ -301,6 +315,41 @@
   }
   .toast.on { opacity: 1; }
 
+  /* SETTINGS MODAL */
+  .modal-backdrop {
+    display: none;
+    position: fixed; inset: 0; z-index: 300;
+    background: rgba(0,0,0,0.45);
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal-sheet {
+    background: var(--surface);
+    border-radius: 20px 20px 0 0;
+    padding: 20px 18px 36px;
+    width: 100%; max-width: 660px;
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-handle {
+    width: 36px; height: 4px; border-radius: 2px;
+    background: var(--border); margin: 0 auto 18px;
+  }
+  .modal-title { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+  .modal-depid-display {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 10px 13px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px; color: var(--text2);
+    margin-bottom: 12px;
+    word-break: break-all;
+    line-height: 1.6;
+  }
+  .modal-depid-display span { color: var(--text3); font-size: 10px; display: block; margin-bottom: 3px; }
+
   @media (max-width: 420px) {
     .jenis-grid { grid-template-columns: 1fr; }
     .frow       { grid-template-columns: 1fr; }
@@ -316,11 +365,14 @@
     <div class="hdr-title">Sistem OCR Borang</div>
     <div class="hdr-sub">Perbadanan Kemajuan Johor</div>
   </div>
-  <div class="step-dots">
-    <div class="dot active" id="d1"></div>
-    <div class="dot" id="d2"></div>
-    <div class="dot" id="d3"></div>
-    <div class="dot" id="d4"></div>
+  <div class="hdr-right">
+    <div class="step-dots">
+      <div class="dot active" id="d1"></div>
+      <div class="dot" id="d2"></div>
+      <div class="dot" id="d3"></div>
+      <div class="dot" id="d4"></div>
+    </div>
+    <div class="hdr-settings" onclick="openSettings()" title="Tukar Deployment ID">⚙️</div>
   </div>
 </div>
 
@@ -533,6 +585,34 @@
 <div class="abar" id="abar" style="display:none">
   <button class="btn btn-r" onclick="doSubmit(true)"  style="flex:0.8">✕ Tidak Layak</button>
   <button class="btn btn-g" onclick="doSubmit(false)" id="btnHantar" style="flex:1.2">Hantar ke Sheet ✓</button>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-backdrop" id="settingsModal" onclick="closeSettingsOutside(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⚙️ Deployment ID</div>
+
+    <div class="modal-depid-display" id="currentDepDisplay">
+      <span>ID semasa:</span>
+      <span id="currentDepId">—</span>
+    </div>
+
+    <div class="alert al-g" style="margin-bottom:12px">
+      <span>ℹ️</span>
+      <div>Deployment ID berubah setiap kali Syafiq buat <strong>New deployment</strong> dalam Apps Script. Masukkan ID baru di bawah.</div>
+    </div>
+
+    <div style="margin-bottom:12px">
+      <label class="fl" style="margin-bottom:6px">🔑 Deployment ID Baru</label>
+      <input type="text" id="newDepId" class="mono-input" placeholder="AKfycby...xxxx">
+    </div>
+
+    <div style="display:flex; gap:9px">
+      <button class="btn btn-o" style="flex:1" onclick="closeSettings()">Batal</button>
+      <button class="btn btn-g" style="flex:1.5" onclick="updateDepId()">Simpan ID Baru ✓</button>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -864,6 +944,39 @@ async function doSubmit(tidakLayak) {
     document.getElementById('abar').style.display = 'flex';
     toast('Ralat pengiriman. Semak sambungan internet.');
   }
+}
+
+/* ── SETTINGS MODAL ── */
+function openSettings() {
+  const modal = document.getElementById('settingsModal');
+  const display = document.getElementById('currentDepId');
+  const input   = document.getElementById('newDepId');
+  // Show current ID (masked for security — show first 8 + ...)
+  const id = ST.depId || '—';
+  display.textContent = id.length > 12 ? id.substring(0,12) + '...' + id.slice(-6) : id;
+  input.value = '';
+  modal.classList.add('open');
+  setTimeout(() => input.focus(), 300);
+}
+
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
+
+function closeSettingsOutside(e) {
+  if(e.target === document.getElementById('settingsModal')) closeSettings();
+}
+
+function updateDepId() {
+  const newId = document.getElementById('newDepId').value.trim();
+  if(!newId) { toast('Sila masukkan Deployment ID baru'); return; }
+  if(newId === ST.depId) { toast('ID ini sama dengan ID semasa'); return; }
+
+  ST.depId = newId;
+  localStorage.setItem('pkj_depid', newId);
+  document.getElementById('depId').value = newId; // sync dengan screen 1
+  closeSettings();
+  toast('✅ Deployment ID berjaya dikemaskini');
 }
 
 /* ── RESET ── */
