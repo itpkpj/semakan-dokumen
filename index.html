@@ -468,7 +468,21 @@ input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important;
 }
 .toast.on { opacity: 1; }
 
-/* ══════════════════ RESPONSIVE ══════════════════ */
+/* ENGINE TOGGLE */
+.engine-wrap { display:none; margin-bottom:12px; }
+.engine-toggle { display:flex; gap:8px; }
+.et-btn {
+  flex:1; padding:10px 8px; text-align:center;
+  font-size:13px; font-weight:500; font-family:'DM Sans',sans-serif;
+  border-radius:var(--r); cursor:pointer; border:1.5px solid var(--border);
+  background:var(--surface); color:var(--text2);
+  transition:all .15s; user-select:none;
+}
+.et-btn:active { transform:scale(.97); }
+.et-btn.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+.et-hint { font-size:11px; color:var(--text3); margin-top:6px; text-align:center; }
+
+/* RESPONSIVE */
 @media (max-width: 480px) {
   .jenis-grid { gap: 8px; }
   .jk { padding: 12px 6px; }
@@ -571,6 +585,15 @@ input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important;
 
     <div class="scan-hint">
       <span>📌</span><span id="scanHint"></span>
+    </div>
+
+    <!-- Engine toggle: Bercetak vs Tulisan Tangan -->
+    <div class="engine-wrap" id="engineWrap">
+      <div class="engine-toggle">
+        <button class="et-btn on" id="etPrint" onclick="setEngine(2)">🖨️ Bercetak / Taip</button>
+        <button class="et-btn"   id="etHand"  onclick="setEngine(1)">✍️ Tulisan Tangan</button>
+      </div>
+      <div class="et-hint" id="etHint">Mod semasa: Enjin 2 — optimum untuk teks bercetak &amp; digital</div>
     </div>
 
     <!-- Image preview (hidden until photo taken) -->
@@ -879,13 +902,28 @@ function saveNewDep() {
 }
 
 /* ════════════════════════════════════════
+   OCR ENGINE TOGGLE
+════════════════════════════════════════ */
+let ocrEngine = 2; // 2 = bercetak (default), 1 = tulisan tangan
+
+function setEngine(n) {
+  ocrEngine = n;
+  document.getElementById('etPrint').classList.toggle('on', n===2);
+  document.getElementById('etHand').classList.toggle('on', n===1);
+  document.getElementById('etHint').textContent = n===2
+    ? 'Mod semasa: Enjin 2 — optimum untuk teks bercetak & digital'
+    : 'Mod semasa: Enjin 1 — optimum untuk tulisan tangan';
+}
+
+/* ════════════════════════════════════════
    JENIS BORANG
 ════════════════════════════════════════ */
 function pickJenis(j, el) {
   document.querySelectorAll('.jk').forEach(c => c.classList.remove('sel'));
   el.classList.add('sel');
   ST.jenis = j;
-  document.getElementById('scanCard').style.display = 'block';
+  document.getElementById('scanCard').style.display   = 'block';
+  document.getElementById('engineWrap').style.display = 'block';
   document.getElementById('scanHint').textContent = {
     BBR: 'Imbas Bahagian A (Butiran Pemohon) dan Bahagian B (Maklumat Harta) borang BBR.',
     BMR: 'Imbas Bahagian A (Butiran Pemohon) dan Bahagian B (Maklumat Harta) borang BMR.',
@@ -893,7 +931,6 @@ function pickJenis(j, el) {
   }[j];
   resetScan();
   vibrate(10);
-  // Scroll ke bahagian scan
   setTimeout(() => {
     document.getElementById('scanCard').scrollIntoView({ behavior:'smooth', block:'start' });
   }, 100);
@@ -1029,7 +1066,7 @@ async function runOCR() {
     formData.append('isOverlayRequired',  'false');
     formData.append('detectOrientation',  'true');
     formData.append('scale',              'true');
-    formData.append('OCREngine',          '2'); // Engine 2 — lebih tepat untuk teks bercetak
+    formData.append('OCREngine', String(ocrEngine)); // 2=bercetak, 1=tulisan tangan
 
     const resp = await fetch('https://api.ocr.space/parse/image', {
       method:  'POST',
@@ -1111,70 +1148,78 @@ function setBar(pct) {
 }
 
 /* ════════════════════════════════════════
-   PARSE OCR TEXT
+   PARSE OCR TEXT — versi robust
+   Strategi: cari label → ekstrak nilai →
+   berhenti apabila jumpa label seterusnya
 ════════════════════════════════════════ */
 function parseBorang(raw, jenis) {
-  const out   = { nama:'', ic:'', namaPsng:'', icPsng:'', tel:'', emel:'', harga:'' };
-  const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-  const flat  = raw.replace(/\n/g,' ');
+  const out = { nama:'', ic:'', namaPsng:'', icPsng:'', tel:'', emel:'', harga:'' };
+  if (!raw || !raw.trim()) return out;
 
-  // ── IC: XXXXXX-XX-XXXX (pelbagai pemisah OCR) ──
-  const icRe = /\b(\d{6})\s*[-—–.]\s*(\d{2})\s*[-—–.]\s*(\d{4})\b/g;
-  const ics  = [];
-  let m;
-  while ((m = icRe.exec(flat)) !== null) ics.push(m[1]+'-'+m[2]+'-'+m[3]);
-  if (ics[0]) out.ic     = ics[0];
-  if (ics[1]) out.icPsng = ics[1];
+  // Normalize teks
+  const text = raw.replace(/\r/g, '').replace(/[^\S\n]+/g, ' ').trim();
+  // Versi rata (satu baris) untuk carian label
+  const flat = text.replace(/\n/g, ' ').replace(/\s{2,}/g, ' ');
 
-  // ── EMAIL ──
-  const eM = flat.match(/[\w.+\-]+@[\w.\-]+\.[a-z]{2,}/i);
-  if (eM) out.emel = eM[0];
+  // ══ 1. REGEX — sentiasa tepat ══
 
-  // ── TELEFON: bermula 01 ──
-  const tM = flat.match(/\b(01\d)\s*[-]?\s*(\d{3,4})\s*[-]?\s*(\d{4})\b/);
-  if (tM) out.tel = tM[1] + tM[2] + tM[3];
+  // IC: 6-2-4 digit dengan pelbagai pemisah
+  const icAll = [...flat.matchAll(/\b(\d{6})\s*[-—–.]\s*(\d{2})\s*[-—–.]\s*(\d{4})\b/g)]
+                .map(m => m[1]+'-'+m[2]+'-'+m[3]);
+  if (icAll[0]) out.ic     = icAll[0];
+  if (icAll[1]) out.icPsng = icAll[1];
 
-  // ── HARGA ──
-  const hM = flat.match(/(?:Harga\s*Rumah|Bayaran\s*Sewa|Harga)[^\d]{0,20}([1-9][\d,\s]{2,})/i);
-  if (hM) out.harga = hM[1].replace(/[,\s]/g,'');
+  // Email
+  const emM = flat.match(/[\w.+\-]+@[\w.\-]+\.[a-z]{2,}/i);
+  if (emM) out.emel = emM[0].toLowerCase().trim();
 
-  // ── NAMA PEMOHON ──
-  for (let i = 0; i < lines.length; i++) {
-    const l = lines[i];
-    if (/Nama\s*(Pertama|Penuh)/i.test(l)) {
-      const parts = l.split(/[:：]/);
-      if (parts.length > 1) {
-        const v = parts.slice(1).join(':').replace(/^[\s.…_]+/, '').trim();
-        if (v.length > 2 && !/^[.…_\s]+$/.test(v)) { out.nama = v; break; }
-      }
-      const nx = lines[i+1];
-      if (nx && nx.length > 2 && !/^[.…_:\s]+$/.test(nx)
-          && !/^(No\.|Alam|Nama\s*K|Ketu|Agama|Status)/i.test(nx)) {
-        out.nama = nx.replace(/^[\s.…_]+/,'').trim(); break;
-      }
-    }
+  // Telefon Malaysia (01x)
+  const phM = flat.match(/\b(01[0-9])[\s.\-]?(\d{3,4})[\s.\-]?(\d{4})\b/);
+  if (phM) out.tel = phM[1] + phM[2] + phM[3];
+
+  // ══ 2. LABEL-ANCHORED — nama & harga ══
+  // Senarai label yang menanda PERMULAAN field baharu
+  // (nilai berhenti apabila jumpa mana-mana label ini)
+  const STOP = /\b(Nama\s*(Kedua|Pasangan|Pertama|Penuh|dan\s*No|Pemi)|No\.?\s*(Kad|K\/|KP\b|Lot|PTD|Tel|Pass)|Keturunan|Agama|Status|Email|Emel|Harga|Bayaran|Warganegara|Alamat|Jenis\s*Rumah|Sektor|Majikan|Pendapatan|Tarikh|Nama\s*Pemaju)\b/i;
+
+  // grab(labelPattern) — cari label, ambil nilai, berhenti di label seterusnya
+  function grab(labelRe) {
+    // Bina regex: cari label + apa-apa + titik dua pilihan + ruang
+    const full = new RegExp(labelRe.source + '[^:\\n]{0,60}[:：]?\\s*', 'i');
+    const m    = full.exec(flat);
+    if (!m) return '';
+
+    let val = flat.slice(m.index + m[0].length).trim();
+    // Buang aksara pengisi hadapan
+    val = val.replace(/^[.…_\s\(\)【】]+/, '').trim();
+    // Berhenti di label seterusnya
+    const stopM = STOP.exec(val);
+    if (stopM && stopM.index < 120) val = val.slice(0, stopM.index).trim();
+    // Buang aksara pengisi ekor
+    val = val.replace(/[.…_\s]+$/, '').trim();
+    // Sanitasi: jangan terima jika nampak seperti IC atau terlalu pendek
+    if (val.length < 2)             return '';
+    if (/^\d{6}[-—–]/.test(val))    return ''; // bukan IC
+    if (/^\d+$/.test(val) && val.length !== 11) return ''; // bukan nombor berguna
+    return val;
   }
 
-  // ── NAMA PASANGAN ──
-  for (let i = 0; i < lines.length; i++) {
-    const l = lines[i];
-    if (/Nama\s*Pasangan/i.test(l)) {
-      const parts = l.split(/[:：]/);
-      if (parts.length > 1) {
-        const v = parts.slice(1).join(':').replace(/^[\s.…_]+/,'').trim();
-        if (v.length > 2 && !/^[.…_\s]+$/.test(v)) { out.namaPsng = v; break; }
-      }
-      const nx = lines[i+1];
-      if (nx && nx.length > 2 && !/^[.…_:\s]+$/.test(nx)) {
-        out.namaPsng = nx.replace(/^[\s.…_]+/,'').trim(); break;
-      }
-    }
+  // Nama pemohon — BBR/BMR: "Nama Pertama", BSR: "Nama Penuh"
+  out.nama     = grab(/Nama\s*(Pertama|Penuh\s*\(seperti|Penuh)/);
+  // Nama pasangan
+  out.namaPsng = grab(/Nama\s*Pasangan/);
+  // Harga rumah / bayaran sewa
+  const hRaw   = grab(/Harga\s*Rumah|Bayaran\s*Sewa(\s*Sebulan)?/);
+  if (hRaw) {
+    const numM = hRaw.match(/[1-9][\d,\s]*/);
+    if (numM) out.harga = numM[0].replace(/[,\s]/g, '');
   }
 
-  // Bersih artifak
+  // Bersihkan semua nilai akhir
   Object.keys(out).forEach(k => {
-    if (out[k]) out[k] = out[k].replace(/^[.\s…_]+|[.\s…_]+$/g,'').trim();
+    if (out[k]) out[k] = out[k].replace(/^[.\s…_()+]+|[.\s…_()]+$/g,'').trim();
   });
+
   return out;
 }
 
