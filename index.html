@@ -527,9 +527,15 @@ input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important;
     <div class="card-ttl">⚙️ Konfigurasi</div>
 
     <div class="dep-wrap">
-      <div class="dep-lbl">🔍 OCR API Key <span style="color:var(--danger)">*</span></div>
+      <div class="dep-lbl">🤖 Gemini API Key <span style="color:var(--bsr);font-size:10px;font-weight:400">(pilihan — tapi sangat disyorkan untuk tulisan tangan)</span></div>
+      <input type="text" id="geminiKey" class="mono" placeholder="AIzaSy..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <div class="dep-hint">Percuma 1,500 req/hari → <strong>aistudio.google.com</strong> → Get API key</div>
+    </div>
+
+    <div class="dep-wrap" style="margin-top:10px">
+      <div class="dep-lbl">🔍 OCR API Key <span style="color:var(--bsr);font-size:10px;font-weight:400">(fallback jika tiada Gemini key)</span></div>
       <input type="text" id="ocrKey" class="mono" placeholder="K8xxxxxxxxxxxx" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-      <div class="dep-hint">Daftar percuma → <strong>ocr.space/ocrapi/freekey</strong> • Test (25/hari): helloworld</div>
+      <div class="dep-hint">Percuma 25,000 req/bulan → <strong>ocr.space/ocrapi/freekey</strong></div>
     </div>
 
     <div class="dep-wrap" style="margin-top:10px">
@@ -540,7 +546,7 @@ input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important;
 
     <div class="alert al-g" style="margin-bottom:14px">
       <span>ℹ️</span>
-      <div>OCR menggunakan <strong>OCR.space API</strong> — percuma 25,000 request/bulan, CORS-friendly, ketepatan tinggi untuk teks bercetak borang.</div>
+      <div><strong>Gemini</strong> = terbaik untuk tulisan tangan (AI Google). <strong>OCR.space</strong> = fallback untuk teks bercetak. Kedua-duanya percuma.</div>
     </div>
     <button class="btn btn-g btn-full" onclick="saveConfig()">Simpan & Mula →</button>
     <div class="divider"></div>
@@ -788,21 +794,23 @@ input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important;
   <div class="modal-sheet">
     <div class="modal-handle"></div>
     <div class="modal-title">⚙️ Kemaskini Konfigurasi</div>
-    <div class="cur-dep"><span>Deployment ID semasa:</span><span id="curDepTxt">—</span></div>
-    <div class="cur-dep" style="margin-bottom:12px"><span>OCR API Key semasa:</span><span id="curOcrTxt">—</span></div>
+    <div class="cur-dep"><span>Deployment ID:</span><span id="curDepTxt">—</span></div>
+    <div class="cur-dep"><span>OCR API Key:</span><span id="curOcrTxt">—</span></div>
+    <div class="cur-dep" style="margin-bottom:12px"><span>Gemini API Key:</span><span id="curGemTxt">—</span></div>
     <div class="alert al-g" style="margin-bottom:13px">
-      <span>ℹ️</span>
-      <div>Kosongkan field yang tidak perlu diubah.</div>
+      <span>ℹ️</span><div>Kosongkan field yang tidak perlu diubah.</div>
     </div>
     <div style="margin-bottom:10px">
       <label class="fl" style="margin-bottom:6px">🔑 Deployment ID Baru</label>
-      <input type="text" id="newDepId" class="mono" placeholder="AKfycby...xxxx"
-             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <input type="text" id="newDepId" class="mono" placeholder="AKfycby...xxxx" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    </div>
+    <div style="margin-bottom:10px">
+      <label class="fl" style="margin-bottom:6px">🤖 Gemini API Key Baru</label>
+      <input type="text" id="newGemKey" class="mono" placeholder="AIzaSy..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
     </div>
     <div style="margin-bottom:13px">
       <label class="fl" style="margin-bottom:6px">🔍 OCR API Key Baru</label>
-      <input type="text" id="newOcrKey" class="mono" placeholder="K8xxxxxxxxxxxx"
-             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <input type="text" id="newOcrKey" class="mono" placeholder="K8xxxxxxxxxxxx" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
     </div>
     <div style="display:flex;gap:10px">
       <button class="btn btn-o" style="flex:1" onclick="closeModal()">Batal</button>
@@ -833,7 +841,7 @@ const MUKIM = {
 /* ════════════════════════════════════════
    STATE
 ════════════════════════════════════════ */
-const ST = { depId:'', ocrKey:'', jenis:'', imgBase64:'', imgMime:'' };
+const ST = { depId:'', ocrKey:'', geminiKey:'', jenis:'', imgBase64:'', imgMime:'' };
 
 /* ════════════════════════════════════════
    SCREEN NAVIGATION
@@ -853,14 +861,17 @@ function showS(n) {
    SETUP / CONFIG
 ════════════════════════════════════════ */
 function saveConfig() {
-  const depId  = document.getElementById('depId').value.trim();
-  const ocrKey = document.getElementById('ocrKey').value.trim();
-  if (!ocrKey) { toast('Sila masukkan OCR API Key'); return; }
-  if (!depId)  { toast('Sila masukkan Deployment ID'); return; }
-  ST.depId  = depId;
-  ST.ocrKey = ocrKey;
+  const depId     = document.getElementById('depId').value.trim();
+  const ocrKey    = document.getElementById('ocrKey').value.trim();
+  const geminiKey = document.getElementById('geminiKey').value.trim();
+  if (!depId)               { toast('Sila masukkan Deployment ID'); return; }
+  if (!ocrKey && !geminiKey){ toast('Sila masukkan sekurang-kurangnya satu OCR key'); return; }
+  ST.depId     = depId;
+  ST.ocrKey    = ocrKey;
+  ST.geminiKey = geminiKey;
   localStorage.setItem('pkj_dep', depId);
   localStorage.setItem('pkj_ocr', ocrKey);
+  localStorage.setItem('pkj_gem', geminiKey);
   vibrate(20);
   showS(2);
 }
@@ -869,33 +880,31 @@ function saveConfig() {
    SETTINGS MODAL
 ════════════════════════════════════════ */
 function openSettings() {
-  const id  = ST.depId  || '—';
-  const key = ST.ocrKey || '—';
+  const dep = ST.depId     || '—';
+  const ocr = ST.ocrKey    || '—';
+  const gem = ST.geminiKey || '—';
   document.getElementById('curDepTxt').textContent =
-    id.length > 16 ? id.slice(0,10) + '...' + id.slice(-8) : id;
+    dep.length > 16 ? dep.slice(0,10)+'...'+dep.slice(-8) : dep;
   document.getElementById('curOcrTxt').textContent =
-    key.length > 10 ? key.slice(0,6) + '...' : key;
+    ocr.length > 10 ? ocr.slice(0,6)+'...' : ocr;
+  document.getElementById('curGemTxt').textContent =
+    gem.length > 10 ? gem.slice(0,8)+'...' : gem;
   document.getElementById('newDepId').value  = '';
   document.getElementById('newOcrKey').value = '';
+  document.getElementById('newGemKey').value = '';
   document.getElementById('modal').classList.add('open');
   setTimeout(() => document.getElementById('newDepId').focus(), 350);
 }
 function closeModal()      { document.getElementById('modal').classList.remove('open'); }
 function closeModalOut(e)  { if (e.target===document.getElementById('modal')) closeModal(); }
 function saveNewDep() {
-  const depId  = document.getElementById('newDepId').value.trim();
-  const ocrKey = document.getElementById('newOcrKey').value.trim();
-  if (!depId && !ocrKey) { toast('Tiada perubahan untuk disimpan'); return; }
-  if (depId) {
-    ST.depId = depId;
-    localStorage.setItem('pkj_dep', depId);
-    document.getElementById('depId').value = depId;
-  }
-  if (ocrKey) {
-    ST.ocrKey = ocrKey;
-    localStorage.setItem('pkj_ocr', ocrKey);
-    document.getElementById('ocrKey').value = ocrKey;
-  }
+  const depId     = document.getElementById('newDepId').value.trim();
+  const ocrKey    = document.getElementById('newOcrKey').value.trim();
+  const geminiKey = document.getElementById('newGemKey').value.trim();
+  if (!depId && !ocrKey && !geminiKey) { toast('Tiada perubahan untuk disimpan'); return; }
+  if (depId)     { ST.depId = depId;         localStorage.setItem('pkj_dep', depId);     document.getElementById('depId').value = depId; }
+  if (ocrKey)    { ST.ocrKey = ocrKey;       localStorage.setItem('pkj_ocr', ocrKey);    document.getElementById('ocrKey').value = ocrKey; }
+  if (geminiKey) { ST.geminiKey = geminiKey; localStorage.setItem('pkj_gem', geminiKey); document.getElementById('geminiKey').value = geminiKey; }
   closeModal();
   vibrate([20,30,20]);
   toast('✅ Konfigurasi berjaya dikemaskini');
@@ -1033,10 +1042,82 @@ function toUrlSafe(b64) {
 }
 
 /* ════════════════════════════════════════
-   OCR — OCR.space API
+   OCR via GEMINI API
+   Terbaik untuk tulisan tangan & bercetak
+   Terus extract JSON — tiada regex parsing
+   Percuma: 1,500 req/hari dari AI Studio
+════════════════════════════════════════ */
+async function ocrGemini(compressed, jenis) {
+  const prompt = `Ini adalah borang permohonan ${jenis} PKJ (Perbadanan Kemajuan Johor) Malaysia.
+Baca semua teks dalam borang ini termasuk tulisan tangan.
+Kembalikan JSON sahaja (tiada penjelasan, tiada markdown):
+{
+  "nama": "nama penuh pemohon dari ruangan Nama Pertama",
+  "ic": "nombor kad pengenalan format XXXXXX-XX-XXXX",
+  "namaPsng": "nama pasangan jika ada, kosong jika tiada",
+  "icPsng": "no KP pasangan format XXXXXX-XX-XXXX, kosong jika tiada",
+  "tel": "nombor telefon bermula 01, tanpa tanda sempang",
+  "emel": "alamat emel, kosong jika tiada",
+  "harga": "harga rumah ATAU bayaran sewa dalam angka sahaja tanpa RM atau koma"
+}`;
+
+  const resp = await fetch(
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + ST.geminiKey,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [
+          { text: prompt },
+          { inline_data: { mime_type: 'image/jpeg', data: compressed } }
+        ]}],
+        generationConfig: { temperature: 0, maxOutputTokens: 512 }
+      })
+    }
+  );
+
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'Gemini HTTP ' + resp.status);
+  }
+
+  const data = await resp.json();
+  const raw  = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  const clean = raw.replace(/```json|```/g, '').trim();
+  return JSON.parse(clean);
+}
+
+/* ════════════════════════════════════════
+   OCR via OCR.SPACE API
+   Fallback untuk teks bercetak
    Percuma 25,000 req/bulan
-   CORS betul, works from any domain
-   Ketepatan tinggi untuk teks bercetak
+════════════════════════════════════════ */
+async function ocrSpace(compressed) {
+  const fd = new FormData();
+  fd.append('base64Image',       'data:image/jpeg;base64,' + compressed);
+  fd.append('language',          'eng');
+  fd.append('isOverlayRequired', 'false');
+  fd.append('detectOrientation', 'true');
+  fd.append('scale',             'true');
+  fd.append('OCREngine',         String(ocrEngine));
+
+  const resp = await fetch('https://api.ocr.space/parse/image', {
+    method: 'POST',
+    headers: { 'apikey': ST.ocrKey },
+    body: fd
+  });
+
+  if (!resp.ok) throw new Error('OCR.space HTTP ' + resp.status);
+  const data = await resp.json();
+  if (data.IsErroredOnProcessing) throw new Error(data.ErrorMessage?.[0] || 'OCR.space gagal');
+  if (!data.ParsedResults?.length)  throw new Error('Tiada teks dibaca');
+  return data.ParsedResults.map(r => r.ParsedText || '').join('\n');
+}
+
+/* ════════════════════════════════════════
+   RUN OCR — auto pilih enjin
+   Gemini (ada key) → terus extract JSON
+   OCR.space (fallback) → parse dengan regex
 ════════════════════════════════════════ */
 async function runOCR() {
   const ocrBox  = document.getElementById('ocrBox');
@@ -1048,59 +1129,65 @@ async function runOCR() {
   ocrDone.style.display = 'none';
   resetSteps(); setBar(0);
 
+  const useGemini = !!ST.geminiKey;
+
   try {
-    // Step 1 — compress & process
+    // Step 1 — compress
     setStep(1,'active'); setBar(8);
     ocrLbl.textContent = 'Memampatkan gambar...';
-    ocrSub.textContent = 'Meningkatkan kontras untuk OCR';
+    ocrSub.textContent = useGemini
+      ? 'Menyediakan untuk Google Gemini AI'
+      : 'Menyediakan untuk OCR.space';
     const compressed = await compressForOCR(ST.imgBase64, ST.imgMime);
     setStep(1,'done'); setStep(2,'active'); setBar(20);
 
-    // Step 2 — hantar ke OCR.space
-    ocrLbl.textContent = 'Menghantar ke OCR.space...';
-    ocrSub.textContent = 'Enjin OCR memproses gambar borang';
+    let parsed;
 
-    const formData = new FormData();
-    formData.append('base64Image', 'data:image/jpeg;base64,' + compressed);
-    formData.append('language',           'eng');
-    formData.append('isOverlayRequired',  'false');
-    formData.append('detectOrientation',  'true');
-    formData.append('scale',              'true');
-    formData.append('OCREngine', String(ocrEngine)); // 2=bercetak, 1=tulisan tangan
+    if (useGemini) {
+      // ── Laluan Gemini ──
+      ocrLbl.textContent = 'Menghantar ke Google Gemini AI...';
+      ocrSub.textContent = 'Gemini membaca & mengekstrak data secara langsung';
+      setBar(35);
 
-    const resp = await fetch('https://api.ocr.space/parse/image', {
-      method:  'POST',
-      headers: { 'apikey': ST.ocrKey },
-      body:    formData
-    });
+      const result = await ocrGemini(compressed, ST.jenis);
 
-    if (!resp.ok) throw new Error('HTTP ' + resp.status + ' dari OCR.space');
+      setStep(2,'done'); setStep(3,'active'); setBar(80);
+      ocrLbl.textContent = 'Gemini berjaya membaca borang ✓';
+      ocrSub.textContent = 'Memproses keputusan...';
 
-    const data = await resp.json();
-    setStep(2,'done'); setStep(3,'active'); setBar(70);
-    ocrLbl.textContent = 'Memproses keputusan OCR...';
-    ocrSub.textContent = '';
+      // Gemini terus bagi JSON — tak perlu parseBorang
+      parsed = {
+        nama:     (result.nama     || '').trim(),
+        ic:       (result.ic       || '').trim(),
+        namaPsng: (result.namaPsng || '').trim(),
+        icPsng:   (result.icPsng   || '').trim(),
+        tel:      (result.tel      || '').replace(/\D/g,'').replace(/^60/,'0'),
+        emel:     (result.emel     || '').toLowerCase().trim(),
+        harga:    (result.harga    || '').replace(/[^0-9]/g,'')
+      };
 
-    if (data.IsErroredOnProcessing) {
-      const msg = (data.ErrorMessage && data.ErrorMessage[0]) || 'OCR.space gagal memproses';
-      throw new Error(msg);
+    } else {
+      // ── Laluan OCR.space ──
+      ocrLbl.textContent = 'Menghantar ke OCR.space...';
+      ocrSub.textContent = 'Enjin OCR memproses gambar';
+      setBar(35);
+
+      const text = await ocrSpace(compressed);
+
+      setStep(2,'done'); setStep(3,'active'); setBar(75);
+      ocrLbl.textContent = 'Mengekstrak maklumat dari teks...';
+      ocrSub.textContent = '';
+
+      parsed = parseBorang(text, ST.jenis);
     }
 
-    if (!data.ParsedResults || data.ParsedResults.length === 0) {
-      throw new Error('Tiada teks dijumpai dalam gambar');
-    }
-
-    const text = data.ParsedResults.map(r => r.ParsedText || '').join('\n');
-
-    // Step 3 — parse
-    setStep(3,'done'); setStep(4,'active'); setBar(90);
-    ocrLbl.textContent = 'Mengekstrak maklumat pemohon...';
-
-    const parsed = parseBorang(text, ST.jenis);
+    // Step 4 — fill form
+    setStep(3,'done'); setStep(4,'active'); setBar(93);
+    ocrLbl.textContent = 'Mengisi borang preview...';
     fillPreview(parsed);
 
     setStep(4,'done'); setBar(100);
-    ocrLbl.textContent = 'Selesai! ✓';
+    ocrLbl.textContent = useGemini ? '✓ Gemini selesai' : '✓ OCR.space selesai';
     vibrate([20, 50, 20]);
 
     setTimeout(() => {
@@ -1114,12 +1201,10 @@ async function runOCR() {
     console.error('OCR Error:', err);
 
     let msg = err.message || 'Sila cuba semula';
-    if (msg.includes('401') || msg.toLowerCase().includes('unauthorized')) {
-      msg = 'API Key tidak sah. Semak OCR API Key anda.';
-    } else if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
-      msg = 'Tiada sambungan internet. Sila cuba semula.';
-    }
-    toast('Ralat OCR: ' + msg);
+    if (msg.includes('401') || msg.includes('API_KEY')) msg = 'API Key tidak sah. Semak konfigurasi.';
+    else if (msg.includes('QUOTA') || msg.includes('429'))  msg = 'Had percuma tercapai. Cuba lagi esok.';
+    else if (msg.includes('fetch') || msg.includes('Network')) msg = 'Tiada sambungan internet.';
+    toast('Ralat: ' + msg);
     document.getElementById('imgPreview').style.display = 'none';
     document.getElementById('scanBtns').style.display   = 'block';
   }
@@ -1367,11 +1452,12 @@ function toast(msg) {
 (function init() {
   const dep = localStorage.getItem('pkj_dep');
   const ocr = localStorage.getItem('pkj_ocr');
-  if (dep) { document.getElementById('depId').value  = dep; ST.depId  = dep; }
-  if (ocr) { document.getElementById('ocrKey').value = ocr; ST.ocrKey = ocr; }
-  if (dep && ocr) showS(2);
+  const gem = localStorage.getItem('pkj_gem');
+  if (dep) { document.getElementById('depId').value     = dep; ST.depId     = dep; }
+  if (ocr) { document.getElementById('ocrKey').value    = ocr; ST.ocrKey    = ocr; }
+  if (gem) { document.getElementById('geminiKey').value = gem; ST.geminiKey = gem; }
+  if (dep && (ocr || gem)) showS(2);
 
-  // Prevent double-tap zoom on iOS
   let lastTouch = 0;
   document.addEventListener('touchend', e => {
     const now = Date.now();
