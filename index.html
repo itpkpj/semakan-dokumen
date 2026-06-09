@@ -507,18 +507,26 @@ input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important;
   <div class="hero">
     <div class="hero-icon">📋</div>
     <h1>Sistem OCR PKJ</h1>
-    <p>Tetapkan Deployment ID Google Apps Script</p>
+    <p>Tetapkan konfigurasi sistem</p>
   </div>
   <div class="card">
     <div class="card-ttl">⚙️ Konfigurasi</div>
+
     <div class="dep-wrap">
-      <div class="dep-lbl">🔑 Deployment ID</div>
+      <div class="dep-lbl">🔍 OCR API Key <span style="color:var(--danger)">*</span></div>
+      <input type="text" id="ocrKey" class="mono" placeholder="K8xxxxxxxxxxxx" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <div class="dep-hint">Daftar percuma → <strong>ocr.space/ocrapi/freekey</strong> • Test (25/hari): helloworld</div>
+    </div>
+
+    <div class="dep-wrap" style="margin-top:10px">
+      <div class="dep-lbl">🔑 Deployment ID (Apps Script) <span style="color:var(--danger)">*</span></div>
       <input type="text" id="depId" class="mono" placeholder="AKfycby...xxxx" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
       <div class="dep-hint">Contoh: AKfycbxxxxxxxxxxxxxxxxxxxxxxxxxxx</div>
     </div>
+
     <div class="alert al-g" style="margin-bottom:14px">
       <span>ℹ️</span>
-      <div>ID disimpan dalam peranti ini sahaja. OCR menggunakan <strong>Google Docs OCR</strong> — enjin Google yang sama dengan Google Cloud Vision. Ketepatan tinggi untuk teks bercetak. Percuma selamanya.</div>
+      <div>OCR menggunakan <strong>OCR.space API</strong> — percuma 25,000 request/bulan, CORS-friendly, ketepatan tinggi untuk teks bercetak borang.</div>
     </div>
     <button class="btn btn-g btn-full" onclick="saveConfig()">Simpan & Mula →</button>
     <div class="divider"></div>
@@ -756,15 +764,21 @@ input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important;
 <div class="modal-bg" id="modal" onclick="closeModalOut(event)">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title">⚙️ Tukar Deployment ID</div>
-    <div class="cur-dep"><span>ID semasa:</span><span id="curDepTxt">—</span></div>
+    <div class="modal-title">⚙️ Kemaskini Konfigurasi</div>
+    <div class="cur-dep"><span>Deployment ID semasa:</span><span id="curDepTxt">—</span></div>
+    <div class="cur-dep" style="margin-bottom:12px"><span>OCR API Key semasa:</span><span id="curOcrTxt">—</span></div>
     <div class="alert al-g" style="margin-bottom:13px">
       <span>ℹ️</span>
-      <div>Masukkan Deployment ID baru setiap kali Syafiq buat <strong>New deployment</strong> dalam Apps Script.</div>
+      <div>Kosongkan field yang tidak perlu diubah.</div>
     </div>
-    <div style="margin-bottom:13px">
+    <div style="margin-bottom:10px">
       <label class="fl" style="margin-bottom:6px">🔑 Deployment ID Baru</label>
       <input type="text" id="newDepId" class="mono" placeholder="AKfycby...xxxx"
+             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    </div>
+    <div style="margin-bottom:13px">
+      <label class="fl" style="margin-bottom:6px">🔍 OCR API Key Baru</label>
+      <input type="text" id="newOcrKey" class="mono" placeholder="K8xxxxxxxxxxxx"
              autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
     </div>
     <div style="display:flex;gap:10px">
@@ -796,7 +810,7 @@ const MUKIM = {
 /* ════════════════════════════════════════
    STATE
 ════════════════════════════════════════ */
-const ST = { depId:'', jenis:'', imgBase64:'', imgMime:'' };
+const ST = { depId:'', ocrKey:'', jenis:'', imgBase64:'', imgMime:'' };
 
 /* ════════════════════════════════════════
    SCREEN NAVIGATION
@@ -816,10 +830,14 @@ function showS(n) {
    SETUP / CONFIG
 ════════════════════════════════════════ */
 function saveConfig() {
-  const id = document.getElementById('depId').value.trim();
-  if (!id) { toast('Sila masukkan Deployment ID'); return; }
-  ST.depId = id;
-  localStorage.setItem('pkj_dep', id);
+  const depId  = document.getElementById('depId').value.trim();
+  const ocrKey = document.getElementById('ocrKey').value.trim();
+  if (!ocrKey) { toast('Sila masukkan OCR API Key'); return; }
+  if (!depId)  { toast('Sila masukkan Deployment ID'); return; }
+  ST.depId  = depId;
+  ST.ocrKey = ocrKey;
+  localStorage.setItem('pkj_dep', depId);
+  localStorage.setItem('pkj_ocr', ocrKey);
   vibrate(20);
   showS(2);
 }
@@ -828,25 +846,36 @@ function saveConfig() {
    SETTINGS MODAL
 ════════════════════════════════════════ */
 function openSettings() {
-  const id = ST.depId || '—';
+  const id  = ST.depId  || '—';
+  const key = ST.ocrKey || '—';
   document.getElementById('curDepTxt').textContent =
     id.length > 16 ? id.slice(0,10) + '...' + id.slice(-8) : id;
-  document.getElementById('newDepId').value = '';
+  document.getElementById('curOcrTxt').textContent =
+    key.length > 10 ? key.slice(0,6) + '...' : key;
+  document.getElementById('newDepId').value  = '';
+  document.getElementById('newOcrKey').value = '';
   document.getElementById('modal').classList.add('open');
   setTimeout(() => document.getElementById('newDepId').focus(), 350);
 }
 function closeModal()      { document.getElementById('modal').classList.remove('open'); }
 function closeModalOut(e)  { if (e.target===document.getElementById('modal')) closeModal(); }
 function saveNewDep() {
-  const id = document.getElementById('newDepId').value.trim();
-  if (!id)           { toast('Sila masukkan Deployment ID baru'); return; }
-  if (id===ST.depId) { toast('ID ini sama dengan ID semasa'); return; }
-  ST.depId = id;
-  localStorage.setItem('pkj_dep', id);
-  document.getElementById('depId').value = id;
+  const depId  = document.getElementById('newDepId').value.trim();
+  const ocrKey = document.getElementById('newOcrKey').value.trim();
+  if (!depId && !ocrKey) { toast('Tiada perubahan untuk disimpan'); return; }
+  if (depId) {
+    ST.depId = depId;
+    localStorage.setItem('pkj_dep', depId);
+    document.getElementById('depId').value = depId;
+  }
+  if (ocrKey) {
+    ST.ocrKey = ocrKey;
+    localStorage.setItem('pkj_ocr', ocrKey);
+    document.getElementById('ocrKey').value = ocrKey;
+  }
   closeModal();
   vibrate([20,30,20]);
-  toast('✅ Deployment ID berjaya dikemaskini');
+  toast('✅ Konfigurasi berjaya dikemaskini');
 }
 
 /* ════════════════════════════════════════
@@ -967,44 +996,10 @@ function toUrlSafe(b64) {
 }
 
 /* ════════════════════════════════════════
-   callAPI — JSONP (guna <script> tag)
-   Tiada CORS issue langsung — script tag
-   boleh load dari mana-mana domain
-════════════════════════════════════════ */
-function callAPI(url) {
-  return new Promise((resolve, reject) => {
-    // Nama callback unik
-    const cb = '_pkj' + Date.now() + Math.random().toString(36).slice(2, 7);
-
-    let done = false;
-    const finish = (data, isErr) => {
-      if (done) return;
-      done = true;
-      clearTimeout(tid);
-      delete window[cb];
-      if (s.parentNode) s.parentNode.removeChild(s);
-      isErr ? reject(data) : resolve(data);
-    };
-
-    // Timeout 45 saat
-    const tid = setTimeout(
-      () => finish(new Error('Request timeout. Semak Deployment ID dan sambungan internet.'), true),
-      45000
-    );
-
-    // Daftar callback secara global sebelum script di-inject
-    window[cb] = data => finish(data, false);
-
-    const s    = document.createElement('script');
-    s.onerror  = () => finish(new Error('Gagal sambung ke Apps Script. Semak Deployment ID.'), true);
-    s.src      = url + (url.includes('?') ? '&' : '?') + 'callback=' + cb;
-    document.head.appendChild(s);
-  });
-}
-
-/* ════════════════════════════════════════
-   OCR — Google Docs OCR via Apps Script
-   Kaedah: JSONP + URL-safe base64 chunks
+   OCR — OCR.space API
+   Percuma 25,000 req/bulan
+   CORS betul, works from any domain
+   Ketepatan tinggi untuk teks bercetak
 ════════════════════════════════════════ */
 async function runOCR() {
   const ocrBox  = document.getElementById('ocrBox');
@@ -1016,58 +1011,55 @@ async function runOCR() {
   ocrDone.style.display = 'none';
   resetSteps(); setBar(0);
 
-  const BASE = 'https://script.google.com/macros/s/' + ST.depId + '/exec';
-
   try {
-    // ── STEP 1: Compress & process ──
-    setStep(1,'active'); setBar(5);
+    // Step 1 — compress & process
+    setStep(1,'active'); setBar(8);
     ocrLbl.textContent = 'Memampatkan gambar...';
-    ocrSub.textContent = 'Meningkatkan kontras untuk ketepatan OCR';
-
+    ocrSub.textContent = 'Meningkatkan kontras untuk OCR';
     const compressed = await compressForOCR(ST.imgBase64, ST.imgMime);
-    const urlSafe    = toUrlSafe(compressed);
+    setStep(1,'done'); setStep(2,'active'); setBar(20);
 
-    setStep(1,'done'); setStep(2,'active'); setBar(15);
+    // Step 2 — hantar ke OCR.space
+    ocrLbl.textContent = 'Menghantar ke OCR.space...';
+    ocrSub.textContent = 'Enjin OCR memproses gambar borang';
 
-    // ── STEP 2: Hantar dalam chunks via JSONP ──
-    const CHUNK_SIZE = 4000;
-    const chunks     = [];
-    for (let i = 0; i < urlSafe.length; i += CHUNK_SIZE) {
-      chunks.push(urlSafe.slice(i, i + CHUNK_SIZE));
-    }
-    const sid   = 'pkj' + Date.now();
-    const total = chunks.length;
+    const formData = new FormData();
+    formData.append('base64Image', 'data:image/jpeg;base64,' + compressed);
+    formData.append('language',           'eng');
+    formData.append('isOverlayRequired',  'false');
+    formData.append('detectOrientation',  'true');
+    formData.append('scale',              'true');
+    formData.append('OCREngine',          '2'); // Engine 2 — lebih tepat untuk teks bercetak
 
-    ocrSub.textContent  = total + ' bahagian perlu dihantar';
-    ocrLbl.textContent  = 'Menghantar gambar... (0/' + total + ')';
+    const resp = await fetch('https://api.ocr.space/parse/image', {
+      method:  'POST',
+      headers: { 'apikey': ST.ocrKey },
+      body:    formData
+    });
 
-    for (let i = 0; i < chunks.length; i++) {
-      const pct = Math.round(15 + (i / total) * 40);
-      setBar(pct);
-      ocrLbl.textContent = 'Menghantar gambar... (' + (i+1) + '/' + total + ')';
+    if (!resp.ok) throw new Error('HTTP ' + resp.status + ' dari OCR.space');
 
-      const url  = BASE + '?' + new URLSearchParams({
-        action: 'chunk', sid, idx: String(i), tot: String(total), d: chunks[i]
-      }).toString();
-
-      const res = await callAPI(url);
-      if (res.status !== 'ok') throw new Error('Bahagian ' + (i+1) + ' gagal: ' + (res.msg || ''));
-    }
-
-    setStep(2,'done'); setStep(3,'active'); setBar(58);
-    ocrLbl.textContent = 'Google sedang membaca teks borang...';
-    ocrSub.textContent = 'Enjin OCR Google memproses...';
-
-    // ── STEP 3: Trigger OCR ──
-    const ocrRes = await callAPI(BASE + '?' + new URLSearchParams({ action: 'ocr', sid }).toString());
-    if (ocrRes.status !== 'ok') throw new Error(ocrRes.msg || 'OCR Google gagal');
-
-    // ── STEP 4: Parse & extract ──
-    setStep(3,'done'); setStep(4,'active'); setBar(92);
-    ocrLbl.textContent = 'Mengekstrak maklumat pemohon...';
+    const data = await resp.json();
+    setStep(2,'done'); setStep(3,'active'); setBar(70);
+    ocrLbl.textContent = 'Memproses keputusan OCR...';
     ocrSub.textContent = '';
 
-    const parsed = parseBorang(ocrRes.text, ST.jenis);
+    if (data.IsErroredOnProcessing) {
+      const msg = (data.ErrorMessage && data.ErrorMessage[0]) || 'OCR.space gagal memproses';
+      throw new Error(msg);
+    }
+
+    if (!data.ParsedResults || data.ParsedResults.length === 0) {
+      throw new Error('Tiada teks dijumpai dalam gambar');
+    }
+
+    const text = data.ParsedResults.map(r => r.ParsedText || '').join('\n');
+
+    // Step 3 — parse
+    setStep(3,'done'); setStep(4,'active'); setBar(90);
+    ocrLbl.textContent = 'Mengekstrak maklumat pemohon...';
+
+    const parsed = parseBorang(text, ST.jenis);
     fillPreview(parsed);
 
     setStep(4,'done'); setBar(100);
@@ -1083,7 +1075,14 @@ async function runOCR() {
     ocrBox.style.display  = 'none';
     ocrDone.style.display = 'none';
     console.error('OCR Error:', err);
-    toast('Ralat: ' + (err.message || 'Sila cuba semula'));
+
+    let msg = err.message || 'Sila cuba semula';
+    if (msg.includes('401') || msg.toLowerCase().includes('unauthorized')) {
+      msg = 'API Key tidak sah. Semak OCR API Key anda.';
+    } else if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+      msg = 'Tiada sambungan internet. Sila cuba semula.';
+    }
+    toast('Ralat OCR: ' + msg);
     document.getElementById('imgPreview').style.display = 'none';
     document.getElementById('scanBtns').style.display   = 'block';
   }
@@ -1321,12 +1320,11 @@ function toast(msg) {
    INIT
 ════════════════════════════════════════ */
 (function init() {
-  const id = localStorage.getItem('pkj_dep');
-  if (id) {
-    document.getElementById('depId').value = id;
-    ST.depId = id;
-    showS(2);
-  }
+  const dep = localStorage.getItem('pkj_dep');
+  const ocr = localStorage.getItem('pkj_ocr');
+  if (dep) { document.getElementById('depId').value  = dep; ST.depId  = dep; }
+  if (ocr) { document.getElementById('ocrKey').value = ocr; ST.ocrKey = ocr; }
+  if (dep && ocr) showS(2);
 
   // Prevent double-tap zoom on iOS
   let lastTouch = 0;
