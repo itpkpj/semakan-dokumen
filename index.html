@@ -2,366 +2,490 @@
 <html lang="ms">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1B4B3A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="OCR PKJ">
 <title>Sistem OCR PKJ</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
 
-  :root {
-    --bg:        #F5F4F0;
-    --surface:   #FFFFFF;
-    --surface2:  #EFEDE6;
-    --border:    #E0DED6;
-    --text:      #1A1A18;
-    --text2:     #6B6960;
-    --text3:     #9E9C94;
-    --accent:    #1B4B3A;
-    --accent-lt: #E8F2EE;
-    --danger:    #C0392B;
-    --danger-lt: #FDECEA;
-    --warn:      #92600A;
-    --warn-lt:   #FFF8E7;
-    --bbr:       #185FA5;
-    --bbr-lt:    #E6F1FB;
-    --bmr:       #1B4B3A;
-    --bmr-lt:    #E8F2EE;
-    --bsr:       #854F0B;
-    --bsr-lt:    #FAEEDA;
-    --r:         10px;
-    --rl:        16px;
-  }
+:root {
+  --bg:#F5F4F0; --surface:#fff; --surface2:#EFEDE6; --border:#E0DED6;
+  --text:#1A1A18; --text2:#6B6960; --text3:#9E9C94;
+  --accent:#1B4B3A; --accent-lt:#E8F2EE; --accent-dk:#143d2f;
+  --danger:#C0392B; --danger-lt:#FDECEA;
+  --warn:#92600A; --warn-lt:#FFF8E7;
+  --bbr:#185FA5; --bbr-lt:#E6F1FB;
+  --bmr:#1B4B3A; --bmr-lt:#E8F2EE;
+  --bsr:#854F0B; --bsr-lt:#FAEEDA;
+  --r:12px; --rl:18px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
+  --safe-l:   env(safe-area-inset-left,  0px);
+  --safe-r:   env(safe-area-inset-right, 0px);
+}
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    font-size: 14px;
-    line-height: 1.6;
-    -webkit-tap-highlight-color: transparent;
-  }
+html { height: 100%; }
 
-  .hdr {
-    background: var(--accent); color: white;
-    padding: 13px 20px;
-    display: flex; align-items: center; gap: 10px;
-    position: sticky; top: 0; z-index: 100;
-    border-bottom: 1px solid rgba(0,0,0,0.15);
-  }
-  .hdr-logo {
-    width: 34px; height: 34px;
-    background: rgba(255,255,255,0.15);
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 13px;
-    font-family: 'DM Mono', monospace;
-  }
-  .hdr-title { font-size: 14px; font-weight: 600; }
-  .hdr-sub   { font-size: 11px; opacity: 0.55; font-family: 'DM Mono', monospace; }
-  .hdr-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-  .step-dots { display: flex; gap: 5px; align-items: center; }
-  .hdr-settings {
-    width: 32px; height: 32px;
-    background: rgba(255,255,255,0.12);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; font-size: 15px;
-    transition: background 0.15s;
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
-  }
-  .hdr-settings:hover  { background: rgba(255,255,255,0.22); }
-  .hdr-settings:active { background: rgba(255,255,255,0.3); transform: scale(0.93); }
-  .dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.22); transition: all 0.3s; }
-  .dot.active { background: #fff; width: 18px; border-radius: 4px; }
-  .dot.done   { background: rgba(255,255,255,0.55); }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100%;
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
 
-  .main { max-width: 660px; margin: 0 auto; padding: 20px 14px 100px; }
+/* ══════════════════ HEADER ══════════════════ */
+.hdr {
+  background: var(--accent);
+  color: #fff;
+  padding: 12px 18px;
+  padding-top: max(12px, calc(10px + var(--safe-top)));
+  padding-left:  max(18px, var(--safe-l));
+  padding-right: max(18px, var(--safe-r));
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 0 rgba(0,0,0,.15);
+}
+.hdr-logo {
+  width: 36px; height: 36px;
+  background: rgba(255,255,255,.15);
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 13px;
+  font-family: 'DM Mono', monospace;
+  flex-shrink: 0;
+}
+.hdr-info { min-width: 0; }
+.hdr-title { font-size: 15px; font-weight: 600; line-height: 1.2; }
+.hdr-sub   { font-size: 11px; opacity: .5; font-family: 'DM Mono', monospace; }
+.hdr-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.step-dots { display: flex; gap: 5px; align-items: center; }
+.dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: rgba(255,255,255,.22); transition: all .35s;
+}
+.dot.active { background: #fff; width: 20px; border-radius: 4px; }
+.dot.done   { background: rgba(255,255,255,.55); }
+.gear {
+  width: 36px; height: 36px;
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 17px;
+  transition: background .15s, transform .1s;
+  flex-shrink: 0;
+}
+.gear:active { background: rgba(255,255,255,.25); transform: scale(.9); }
 
-  .card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--rl); padding: 18px; margin-bottom: 14px;
-  }
-  .card-ttl {
-    font-size: 11px; font-weight: 600; text-transform: uppercase;
-    letter-spacing: 0.08em; color: var(--text3); margin-bottom: 13px;
-    display: flex; align-items: center; gap: 7px;
-  }
+/* ══════════════════ MAIN ══════════════════ */
+.main {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 18px 14px;
+  padding-left:  max(14px, var(--safe-l));
+  padding-right: max(14px, var(--safe-r));
+  padding-bottom: calc(110px + var(--safe-bot));
+}
 
-  .screen { display: none; }
-  .screen.active { display: block; }
+/* ══════════════════ CARD ══════════════════ */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--rl);
+  padding: 18px;
+  margin-bottom: 14px;
+}
+.card-ttl {
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .08em;
+  color: var(--text3); margin-bottom: 14px;
+  display: flex; align-items: center; gap: 7px;
+}
 
-  input[type=text], input[type=number], select, textarea {
-    width: 100%; border: 1px solid var(--border); border-radius: var(--r);
-    padding: 9px 11px; font-family: 'DM Sans', sans-serif;
-    font-size: 13px; background: var(--surface); color: var(--text);
-    outline: none; transition: border-color 0.18s;
-    -webkit-appearance: none; appearance: none;
-  }
-  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
-  .mono-input { font-family: 'DM Mono', monospace; font-size: 12px; }
-  textarea { resize: vertical; min-height: 68px; }
-  select {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%236B6960' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat; background-position: right 9px center; padding-right: 28px;
-  }
-  label.fl { font-size: 11px; font-weight: 500; color: var(--text2); display: block; margin-bottom: 4px; }
-  .req { color: var(--danger); }
-  .field { display: flex; flex-direction: column; gap: 3px; }
+.screen { display: none; }
+.screen.active { display: block; }
 
-  .btn {
-    display: inline-flex; align-items: center; justify-content: center;
-    gap: 7px; padding: 12px 18px; border-radius: var(--r);
-    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
-    cursor: pointer; border: none; transition: all 0.15s;
-    -webkit-tap-highlight-color: transparent; user-select: none;
-  }
-  .btn:active { transform: scale(0.96); opacity: 0.9; }
-  .btn-g  { background: var(--accent); color: #fff; }
-  .btn-g:hover { background: #143d2f; }
-  .btn-r  { background: var(--danger); color: #fff; }
-  .btn-r:hover { background: #a32822; }
-  .btn-o  { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
-  .btn-o:hover { background: var(--surface2); }
-  .btn-full { width: 100%; }
-  .btn-sm   { padding: 7px 12px; font-size: 12px; }
+/* ══════════════════ FORM ELEMENTS ══════════════════ */
+input[type=text],
+input[type=number],
+select,
+textarea {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r);
+  padding: 11px 13px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px; /* 16px wajib — cegah iOS zoom */
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(27,75,58,.1);
+}
+.mono { font-family: 'DM Mono', monospace; font-size: 13px !important; }
+textarea { resize: vertical; min-height: 72px; }
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24'%3E%3Cpath fill='%236B6960' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  padding-right: 32px;
+}
+label.fl { font-size: 12px; font-weight: 600; color: var(--text2); display: block; margin-bottom: 5px; }
+.req { color: var(--danger); }
+.field { display: flex; flex-direction: column; gap: 4px; }
 
-  /* SETUP */
-  .hero { text-align: center; padding: 26px 0 18px; }
-  .hero-icon {
-    width: 60px; height: 60px; background: var(--accent-lt);
-    border-radius: 14px; display: flex; align-items: center;
-    justify-content: center; margin: 0 auto 14px; font-size: 26px;
-  }
-  .hero h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 5px; }
-  .hero p  { font-size: 13px; color: var(--text2); }
+/* ══════════════════ BUTTONS ══════════════════ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 8px; padding: 14px 20px;
+  border-radius: var(--r);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px; font-weight: 500;
+  cursor: pointer; border: none;
+  transition: all .15s;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 50px; /* min touch target */
+}
+.btn:active { transform: scale(.96); opacity: .88; }
+.btn-g  { background: var(--accent); color: #fff; }
+.btn-g:hover { background: var(--accent-dk); }
+.btn-r  { background: var(--danger); color: #fff; }
+.btn-r:hover { background: #a32822; }
+.btn-o  { background: var(--surface); border: 1.5px solid var(--border); color: var(--text); }
+.btn-o:hover { background: var(--surface2); }
+.btn-full { width: 100%; }
+.btn-sm   { padding: 9px 14px; font-size: 13px; min-height: 40px; }
 
-  .dep-wrap {
-    background: var(--surface2); border: 1px solid var(--border);
-    border-radius: var(--r); padding: 14px; margin-bottom: 14px;
-  }
-  .dep-label { font-size: 11px; font-weight: 600; color: var(--text2); margin-bottom: 7px; display: flex; align-items: center; gap: 6px; }
-  .dep-hint  { font-size: 11px; color: var(--text3); margin-top: 6px; font-family: 'DM Mono', monospace; }
+/* ══════════════════ SETUP ══════════════════ */
+.hero { text-align: center; padding: 24px 0 18px; }
+.hero-icon {
+  width: 64px; height: 64px; background: var(--accent-lt);
+  border-radius: 16px; display: flex; align-items: center;
+  justify-content: center; margin: 0 auto 14px; font-size: 28px;
+}
+.hero h1 { font-size: 21px; font-weight: 600; letter-spacing: -.4px; margin-bottom: 5px; }
+.hero p  { font-size: 14px; color: var(--text2); }
+.dep-wrap {
+  background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: var(--r); padding: 14px; margin-bottom: 14px;
+}
+.dep-lbl  { font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 8px; }
+.dep-hint { font-size: 11px; color: var(--text3); margin-top: 6px; font-family: 'DM Mono', monospace; }
+.divider  { height: 1px; background: var(--border); margin: 14px 0; }
+.guide    { list-style: none; padding: 0; }
+.guide li {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 8px 0; border-bottom: 1px solid var(--border);
+  font-size: 13px; color: var(--text2); line-height: 1.5;
+}
+.guide li:last-child { border-bottom: none; }
+.step-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  font-size: 11px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px;
+}
 
-  .divider { height: 1px; background: var(--border); margin: 13px 0; }
+/* ══════════════════ JENIS BORANG ══════════════════ */
+.jenis-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+.jk {
+  border: 2px solid var(--border); border-radius: var(--r);
+  padding: 14px 8px; text-align: center; cursor: pointer;
+  transition: all .2s; background: var(--surface); user-select: none;
+  min-height: 90px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 3px;
+}
+.jk:active { transform: scale(.96); }
+.jk.sel.bbr { border-color: var(--bbr); background: var(--bbr-lt); }
+.jk.sel.bmr { border-color: var(--bmr); background: var(--bmr-lt); }
+.jk.sel.bsr { border-color: var(--bsr); background: var(--bsr-lt); }
+.jk-code {
+  font-family: 'DM Mono', monospace; font-size: 18px;
+  font-weight: 600; color: var(--text2);
+}
+.jk.sel.bbr .jk-code { color: var(--bbr); }
+.jk.sel.bmr .jk-code { color: var(--bmr); }
+.jk.sel.bsr .jk-code { color: var(--bsr); }
+.jk-name  { font-size: 10px; color: var(--text3); line-height: 1.3; }
+.jk-amt   { font-size: 11px; font-weight: 600; color: var(--text3); margin-top: 2px; }
+.jk.sel.bbr .jk-amt { color: var(--bbr); }
+.jk.sel.bmr .jk-amt { color: var(--bmr); }
+.jk.sel.bsr .jk-amt { color: var(--bsr); }
 
-  .steps-guide { list-style: none; padding: 0; }
-  .steps-guide li {
-    display: flex; gap: 10px; align-items: flex-start;
-    padding: 7px 0; border-bottom: 1px solid var(--border);
-    font-size: 12px; color: var(--text2);
-  }
-  .steps-guide li:last-child { border-bottom: none; }
-  .step-num {
-    width: 20px; height: 20px; border-radius: 50%;
-    background: var(--accent); color: #fff;
-    font-size: 10px; font-weight: 600;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; margin-top: 1px;
-  }
+/* ══════════════════ SCAN AREA ══════════════════ */
+.scan-hint {
+  background: var(--accent-lt); border: 1px solid #b0d8cc;
+  border-radius: var(--r); padding: 11px 13px;
+  font-size: 13px; color: #0E4030;
+  display: flex; gap: 9px; align-items: flex-start;
+  margin-bottom: 14px; line-height: 1.5;
+}
 
-  /* JENIS */
-  .jenis-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 9px; }
-  .jenis-card {
-    border: 2px solid var(--border); border-radius: var(--r);
-    padding: 14px 8px; text-align: center; cursor: pointer;
-    transition: all 0.2s; background: var(--surface); user-select: none;
-  }
-  .jenis-card:active { transform: scale(0.97); }
-  .jenis-card.sel.bbr { border-color: var(--bbr); background: var(--bbr-lt); }
-  .jenis-card.sel.bmr { border-color: var(--bmr); background: var(--bmr-lt); }
-  .jenis-card.sel.bsr { border-color: var(--bsr); background: var(--bsr-lt); }
-  .jenis-code { font-family: 'DM Mono', monospace; font-size: 17px; font-weight: 500; margin-bottom: 3px; color: var(--text2); }
-  .jenis-card.sel.bbr .jenis-code { color: var(--bbr); }
-  .jenis-card.sel.bmr .jenis-code { color: var(--bmr); }
-  .jenis-card.sel.bsr .jenis-code { color: var(--bsr); }
-  .jenis-name   { font-size: 10px; color: var(--text3); line-height: 1.3; }
-  .jenis-amount { font-size: 11px; font-weight: 600; margin-top: 5px; color: var(--text3); }
-  .jenis-card.sel.bbr .jenis-amount { color: var(--bbr); }
-  .jenis-card.sel.bmr .jenis-amount { color: var(--bmr); }
-  .jenis-card.sel.bsr .jenis-amount { color: var(--bsr); }
+/* Image preview */
+.img-preview {
+  width: 100%; border-radius: var(--rl); overflow: hidden;
+  background: #111; margin-bottom: 12px;
+  display: none; position: relative;
+}
+.img-preview img {
+  width: 100%; display: block;
+  max-height: 360px; object-fit: contain; background: #111;
+}
+.img-badge {
+  position: absolute; top: 10px; right: 10px;
+  background: rgba(0,0,0,.6); color: #fff;
+  font-size: 11px; padding: 4px 10px; border-radius: 20px;
+  font-family: 'DM Mono', monospace;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.img-retake {
+  position: absolute; bottom: 12px; right: 12px;
+  background: rgba(0,0,0,.65); color: #fff; border: none;
+  border-radius: 20px; font-size: 13px; font-weight: 500;
+  padding: 8px 16px; cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.img-retake:active { opacity: .75; }
 
-  /* SCAN */
-  .img-preview {
-    width: 100%; border-radius: var(--rl); overflow: hidden;
-    background: #111; margin-bottom: 12px; display: none; position: relative;
-  }
-  .img-preview img { width: 100%; display: block; max-height: 340px; object-fit: contain; background: #111; }
-  .img-badge {
-    position: absolute; top: 10px; right: 10px;
-    background: rgba(0,0,0,0.55); color: #fff;
-    font-size: 11px; padding: 3px 9px; border-radius: 20px;
-    font-family: 'DM Mono', monospace;
-  }
-  .img-retake {
-    position: absolute; bottom: 10px; right: 10px;
-    background: rgba(0,0,0,0.6); color: #fff;
-    border: none; border-radius: 20px;
-    font-size: 12px; font-weight: 500; padding: 6px 14px;
-    cursor: pointer; font-family: 'DM Sans', sans-serif;
-  }
-  .img-retake:active { opacity: 0.7; }
+/* Scan buttons — 2 large stacked on mobile */
+.scan-cam-btn {
+  width: 100%;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--rl);
+  padding: 22px 18px;
+  display: flex; align-items: center; gap: 16px;
+  cursor: pointer; margin-bottom: 10px;
+  transition: all .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.scan-cam-btn:active { transform: scale(.98); background: var(--accent-dk); }
+.scan-cam-ico { font-size: 34px; flex-shrink: 0; }
+.scan-cam-info { text-align: left; }
+.scan-cam-lbl  { font-size: 16px; font-weight: 600; color: #fff; line-height: 1.2; }
+.scan-cam-sub  { font-size: 12px; color: rgba(255,255,255,.7); margin-top: 2px; }
 
-  .scan-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 9px; margin-bottom: 12px; }
-  .scan-btn {
-    display: flex; flex-direction: column; align-items: center;
-    justify-content: center; gap: 8px; padding: 18px 8px;
-    border-radius: var(--rl); border: 1.5px solid var(--border);
-    background: var(--surface); cursor: pointer;
-    transition: all 0.18s; user-select: none;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .scan-btn:active { transform: scale(0.95); background: var(--surface2); }
-  .scan-btn.primary { border-color: var(--accent); background: var(--accent-lt); }
-  .scan-btn.primary:active { background: #d0e8e0; }
-  .scan-btn-ico { font-size: 28px; line-height: 1; }
-  .scan-btn-lbl { font-size: 12px; font-weight: 500; color: var(--text2); text-align: center; line-height: 1.3; }
-  .scan-btn.primary .scan-btn-lbl { color: var(--accent); }
-  .scan-btn-sub { font-size: 10px; color: var(--text3); text-align: center; }
+.scan-row { display: flex; gap: 10px; }
+.scan-sec {
+  flex: 1;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px 10px;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 7px;
+  cursor: pointer; transition: all .15s;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 70px; justify-content: center;
+}
+.scan-sec:active { transform: scale(.96); background: var(--surface2); }
+.scan-sec-ico { font-size: 24px; }
+.scan-sec-lbl { font-size: 13px; font-weight: 500; color: var(--text2); }
 
-  #inputKamera, #inputGaleri, #inputFail { display: none; }
+/* Tips box */
+.tips-box {
+  background: var(--warn-lt);
+  border: 1px solid #e8c96a;
+  border-radius: var(--r);
+  padding: 11px 13px;
+  font-size: 12px; color: var(--warn);
+  margin-top: 10px; line-height: 1.6;
+}
+.tips-box b { display: block; margin-bottom: 3px; font-size: 13px; }
 
-  .scan-hint {
-    background: var(--accent-lt); border: 1px solid #b0d8cc;
-    border-radius: var(--r); padding: 10px 13px;
-    font-size: 12px; color: #0E4030;
-    display: flex; gap: 8px; align-items: flex-start;
-    margin-bottom: 13px; line-height: 1.5;
-  }
+/* Hidden inputs */
+#iKamera, #iGaleri { display: none; }
 
-  /* OCR PROGRESS */
-  .ocr-box {
-    display: none; background: var(--surface2);
-    border-radius: var(--rl); padding: 28px 20px;
-    text-align: center; margin-bottom: 12px;
-  }
-  .spin {
-    width: 40px; height: 40px; border: 3px solid var(--border);
-    border-top-color: var(--accent); border-radius: 50%;
-    animation: spin 0.75s linear infinite; margin: 0 auto 14px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .ocr-lbl   { font-size: 13px; color: var(--text2); margin-bottom: 10px; font-weight: 500; }
-  .ocr-prog  { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
-  .ocr-bar   { height: 100%; background: var(--accent); width: 0%; transition: width 0.4s ease; border-radius: 3px; }
-  .ocr-sub   { font-size: 11px; color: var(--text3); margin-top: 8px; }
+/* OCR Progress */
+.ocr-box {
+  display: none;
+  background: var(--surface2);
+  border-radius: var(--rl);
+  padding: 28px 20px;
+  text-align: center;
+  margin-top: 12px;
+}
+.spin {
+  width: 44px; height: 44px;
+  border: 3.5px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+  margin: 0 auto 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.ocr-lbl  { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 12px; }
+.ocr-prog { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.ocr-bar  { height: 100%; background: var(--accent); width: 0%; transition: width .4s ease; border-radius: 3px; }
+.ocr-sub  { font-size: 12px; color: var(--text3); margin-top: 9px; }
+.ocr-steps { list-style: none; text-align: left; margin-top: 16px; }
+.ocr-step {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; color: var(--text3);
+  padding: 5px 0; transition: color .3s;
+}
+.ocr-step.done   { color: var(--accent); }
+.ocr-step.active { color: var(--text); font-weight: 500; }
+.ocr-step-ico { font-size: 15px; width: 20px; text-align: center; }
 
-  /* OCR STEPS — animated */
-  .ocr-steps { list-style: none; text-align: left; margin-top: 14px; }
-  .ocr-step  {
-    display: flex; align-items: center; gap: 9px;
-    font-size: 12px; color: var(--text3);
-    padding: 4px 0; transition: color 0.3s;
-  }
-  .ocr-step.done    { color: var(--accent); }
-  .ocr-step.active  { color: var(--text); font-weight: 500; }
-  .ocr-step-ico { font-size: 14px; width: 18px; text-align: center; }
+/* OCR Done */
+.ocr-done-card {
+  display: none;
+  margin-top: 12px;
+}
 
-  .alert {
-    padding: 10px 13px; border-radius: var(--r); font-size: 12px;
-    line-height: 1.5; display: flex; gap: 8px; align-items: flex-start; margin-bottom: 11px;
-  }
-  .al-g { background: var(--accent-lt); color: #0E4030; border: 1px solid #b0d8cc; }
-  .al-y { background: var(--warn-lt); color: var(--warn); border: 1px solid #e8c96a; }
-  .al-r { background: var(--danger-lt); color: var(--danger); border: 1px solid #f0b8b4; }
+/* Alerts */
+.alert {
+  padding: 11px 14px; border-radius: var(--r);
+  font-size: 13px; line-height: 1.55;
+  display: flex; gap: 9px; align-items: flex-start;
+  margin-bottom: 12px;
+}
+.al-g { background: var(--accent-lt); color: #0E4030; border: 1px solid #b0d8cc; }
+.al-y { background: var(--warn-lt);   color: var(--warn); border: 1px solid #e8c96a; }
 
-  /* PREVIEW */
-  .prev-hdr {
-    display: flex; align-items: center; gap: 9px;
-    margin-bottom: 16px; padding-bottom: 13px;
-    border-bottom: 1px solid var(--border);
-  }
-  .prev-badge { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 5px; font-family: 'DM Mono', monospace; }
-  .prev-badge.bbr { background: var(--bbr-lt); color: var(--bbr); }
-  .prev-badge.bmr { background: var(--bmr-lt); color: var(--bmr); }
-  .prev-badge.bsr { background: var(--bsr-lt); color: var(--bsr); }
+/* ══════════════════ PREVIEW ══════════════════ */
+.prev-hdr {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 18px; padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.prev-badge {
+  font-size: 12px; font-weight: 600; padding: 4px 10px;
+  border-radius: 6px; font-family: 'DM Mono', monospace;
+}
+.prev-badge.bbr { background: var(--bbr-lt); color: var(--bbr); }
+.prev-badge.bmr { background: var(--bmr-lt); color: var(--bmr); }
+.prev-badge.bsr { background: var(--bsr-lt); color: var(--bsr); }
 
-  .fsec { margin-bottom: 16px; }
-  .fsec-ttl {
-    font-size: 10px; font-weight: 600; text-transform: uppercase;
-    letter-spacing: 0.09em; color: var(--text3);
-    margin-bottom: 9px; padding-bottom: 5px; border-bottom: 1px solid var(--border);
-  }
-  .frow  { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-bottom: 9px; }
-  .frow1 { grid-template-columns: 1fr; }
+.fsec { margin-bottom: 18px; }
+.fsec-ttl {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .09em; color: var(--text3);
+  margin-bottom: 10px; padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.frow  { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.frow1 { grid-template-columns: 1fr; }
 
-  input.ocr-good { border-color: #7FC49A !important; background: #F2FAF5 !important; }
-  input.ocr-low  { border-color: #E8C96A !important; background: #FFFBF0 !important; }
+input.ocr-ok { border-color: #7FC49A !important; background: #F2FAF5 !important; }
+input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important; }
 
-  .abar {
-    position: fixed; bottom: 0; left: 0; right: 0;
-    background: var(--surface); border-top: 1px solid var(--border);
-    padding: 10px 14px 14px; display: flex; gap: 9px; z-index: 99;
-  }
-  .abar .btn { flex: 1; padding: 13px 18px; font-size: 14px; }
+/* ══════════════════ ACTION BAR ══════════════════ */
+.abar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 10px 16px;
+  padding-bottom: max(14px, calc(10px + var(--safe-bot)));
+  padding-left:  max(16px, var(--safe-l));
+  padding-right: max(16px, var(--safe-r));
+  display: flex; gap: 10px;
+  z-index: 99;
+  box-shadow: 0 -4px 20px rgba(0,0,0,.06);
+}
+.abar .btn { flex: 1; font-size: 15px; padding: 15px; }
 
-  .succ { text-align: center; padding: 42px 16px; }
-  .succ-ico {
-    width: 70px; height: 70px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    margin: 0 auto 16px; font-size: 30px; background: var(--accent-lt);
-  }
-  .succ-ico.tl { background: var(--danger-lt); }
+/* ══════════════════ SUCCESS ══════════════════ */
+.succ { text-align: center; padding: 44px 16px; }
+.succ-ico {
+  width: 76px; height: 76px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 18px; font-size: 34px;
+  background: var(--accent-lt);
+}
+.succ-ico.tl { background: var(--danger-lt); }
+.succ h2 { font-size: 20px; font-weight: 600; margin-bottom: 7px; }
+.succ p  { font-size: 14px; color: var(--text2); margin-bottom: 24px; }
 
-  .toast {
-    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
-    background: #1A1A18; color: #fff; padding: 9px 18px; border-radius: 20px;
-    font-size: 13px; font-weight: 500; opacity: 0; transition: opacity 0.25s;
-    z-index: 200; white-space: nowrap; pointer-events: none;
-    max-width: 90vw; text-align: center;
-  }
-  .toast.on { opacity: 1; }
+/* ══════════════════ SETTINGS MODAL ══════════════════ */
+.modal-bg {
+  display: none; position: fixed; inset: 0; z-index: 300;
+  background: rgba(0,0,0,.5);
+  align-items: flex-end; justify-content: center;
+}
+.modal-bg.open { display: flex; }
+.modal-sheet {
+  background: var(--surface);
+  border-radius: 22px 22px 0 0;
+  padding: 20px 18px;
+  padding-bottom: max(36px, calc(20px + var(--safe-bot)));
+  padding-left:  max(18px, var(--safe-l));
+  padding-right: max(18px, var(--safe-r));
+  width: 100%; max-width: 620px;
+  animation: slideUp .28s cubic-bezier(.25,.46,.45,.94);
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-handle {
+  width: 40px; height: 4px; border-radius: 2px;
+  background: var(--border); margin: 0 auto 20px;
+}
+.modal-title { font-size: 16px; font-weight: 600; margin-bottom: 14px; }
+.cur-dep {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 11px 13px;
+  font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text2);
+  margin-bottom: 12px; word-break: break-all; line-height: 1.7;
+}
+.cur-dep span { color: var(--text3); font-size: 10px; display: block; margin-bottom: 3px; }
 
-  /* SETTINGS MODAL */
-  .modal-backdrop {
-    display: none;
-    position: fixed; inset: 0; z-index: 300;
-    background: rgba(0,0,0,0.45);
-    align-items: flex-end;
-    justify-content: center;
-  }
-  .modal-backdrop.open { display: flex; }
-  .modal-sheet {
-    background: var(--surface);
-    border-radius: 20px 20px 0 0;
-    padding: 20px 18px 36px;
-    width: 100%; max-width: 660px;
-    animation: slideUp 0.25s ease;
-  }
-  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-  .modal-handle {
-    width: 36px; height: 4px; border-radius: 2px;
-    background: var(--border); margin: 0 auto 18px;
-  }
-  .modal-title { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
-  .modal-depid-display {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--r);
-    padding: 10px 13px;
-    font-family: 'DM Mono', monospace;
-    font-size: 11px; color: var(--text2);
-    margin-bottom: 12px;
-    word-break: break-all;
-    line-height: 1.6;
-  }
-  .modal-depid-display span { color: var(--text3); font-size: 10px; display: block; margin-bottom: 3px; }
+/* ══════════════════ TOAST ══════════════════ */
+.toast {
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+  background: rgba(26,26,24,.92); color: #fff;
+  padding: 10px 20px; border-radius: 22px;
+  font-size: 14px; font-weight: 500;
+  opacity: 0; transition: opacity .25s;
+  z-index: 400; white-space: nowrap; pointer-events: none;
+  max-width: calc(100vw - 40px); text-align: center;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.toast.on { opacity: 1; }
 
-  @media (max-width: 420px) {
-    .jenis-grid { grid-template-columns: 1fr; }
-    .frow       { grid-template-columns: 1fr; }
-    .scan-btn-ico { font-size: 24px; }
-  }
+/* ══════════════════ RESPONSIVE ══════════════════ */
+@media (max-width: 480px) {
+  .jenis-grid { gap: 8px; }
+  .jk { padding: 12px 6px; }
+  .jk-code { font-size: 16px; }
+  .frow { grid-template-columns: 1fr; }
+}
+@media (min-width: 481px) {
+  .jenis-grid { grid-template-columns: repeat(3,1fr); }
+}
 </style>
 </head>
 <body>
 
+<!-- HEADER -->
 <div class="hdr">
   <div class="hdr-logo">PKJ</div>
-  <div>
+  <div class="hdr-info">
     <div class="hdr-title">Sistem OCR Borang</div>
     <div class="hdr-sub">Perbadanan Kemajuan Johor</div>
   </div>
@@ -372,253 +496,293 @@
       <div class="dot" id="d3"></div>
       <div class="dot" id="d4"></div>
     </div>
-    <div class="hdr-settings" onclick="openSettings()" title="Tukar Deployment ID">⚙️</div>
+    <div class="gear" onclick="openSettings()">⚙️</div>
   </div>
 </div>
 
 <div class="main">
 
-  <!-- ══════ SCREEN 1 — SETUP ══════ -->
-  <div class="screen active" id="s1">
-    <div class="hero">
-      <div class="hero-icon">📋</div>
-      <h1>Sistem OCR PKJ</h1>
-      <p>Tetapkan Deployment ID Google Apps Script</p>
-    </div>
-    <div class="card">
-      <div class="card-ttl">⚙️ Konfigurasi</div>
-      <div class="dep-wrap">
-        <div class="dep-label">🔑 Deployment ID</div>
-        <input type="text" id="depId" class="mono-input" placeholder="AKfycby...xxxx">
-        <div class="dep-hint">Contoh: AKfycbxxxxxxxxxxxxxxxxxxxxxxxxxxx</div>
-      </div>
-      <div class="alert al-g" style="margin-bottom:13px">
-        <span>ℹ️</span>
-        <div>Deployment ID disimpan dalam peranti ini sahaja. OCR menggunakan Google Docs — gambar diproses dan <strong>dipadam automatik</strong> selepas OCR selesai.</div>
-      </div>
-      <button class="btn btn-g btn-full" onclick="saveConfig()">Simpan & Mula →</button>
-      <div class="divider"></div>
-      <div class="card-ttl">📖 Cara Dapatkan Deployment ID</div>
-      <ul class="steps-guide">
-        <li><div class="step-num">1</div><div>Buka Google Sheet → klik <strong>Extensions</strong> → <strong>Apps Script</strong></div></li>
-        <li><div class="step-num">2</div><div>Dalam Editor, klik <strong>Services (+)</strong> → tambah <strong>Drive API</strong> dan <strong>Google Docs API</strong></div></li>
-        <li><div class="step-num">3</div><div>Tampal kod <code>pkj-apps-script.js</code> yang diberi → klik <strong>Save</strong></div></li>
-        <li><div class="step-num">4</div><div>Jalankan fungsi <strong>setupAllHeaders</strong> sekali sahaja</div></li>
-        <li><div class="step-num">5</div><div>Klik <strong>Deploy → New deployment</strong> → Type: <strong>Web app</strong></div></li>
-        <li><div class="step-num">6</div><div>Execute as: <strong>Me</strong> → Who has access: <strong>Anyone</strong> → Deploy</div></li>
-        <li><div class="step-num">7</div><div>Salin <strong>Deployment ID</strong> → tampal di atas</div></li>
-      </ul>
-    </div>
+<!-- ══════ SCREEN 1: SETUP ══════ -->
+<div class="screen active" id="s1">
+  <div class="hero">
+    <div class="hero-icon">📋</div>
+    <h1>Sistem OCR PKJ</h1>
+    <p>Tetapkan Deployment ID Google Apps Script</p>
   </div>
-
-  <!-- ══════ SCREEN 2 — JENIS + SCAN ══════ -->
-  <div class="screen" id="s2">
-    <div class="card">
-      <div class="card-ttl">📄 Jenis Borang</div>
-      <div class="jenis-grid">
-        <div class="jenis-card bbr" onclick="pickJenis('BBR',this)">
-          <div class="jenis-code">BBR</div>
-          <div class="jenis-name">Bantuan Beli Rumah Pertama</div>
-          <div class="jenis-amount">RM 5,000</div>
-        </div>
-        <div class="jenis-card bmr" onclick="pickJenis('BMR',this)">
-          <div class="jenis-code">BMR</div>
-          <div class="jenis-name">Bantuan Masuk Rumah Pertama</div>
-          <div class="jenis-amount">RM 2,000</div>
-        </div>
-        <div class="jenis-card bsr" onclick="pickJenis('BSR',this)">
-          <div class="jenis-code">BSR</div>
-          <div class="jenis-name">Bantuan Sewa Rumah</div>
-          <div class="jenis-amount">RM 200/bln</div>
-        </div>
-      </div>
+  <div class="card">
+    <div class="card-ttl">⚙️ Konfigurasi</div>
+    <div class="dep-wrap">
+      <div class="dep-lbl">🔑 Deployment ID</div>
+      <input type="text" id="depId" class="mono" placeholder="AKfycby...xxxx" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <div class="dep-hint">Contoh: AKfycbxxxxxxxxxxxxxxxxxxxxxxxxxxx</div>
     </div>
-
-    <div class="card" id="scanCard" style="display:none">
-      <div class="card-ttl">📸 Imbas Borang</div>
-
-      <div class="scan-hint">
-        <span>📌</span><span id="scanHintTxt"></span>
-      </div>
-
-      <!-- Image preview -->
-      <div class="img-preview" id="imgPreview">
-        <img id="imgEl" src="" alt="Borang">
-        <div class="img-badge" id="imgBadge"></div>
-        <button class="img-retake" onclick="resetScan()">↺ Ambil Semula</button>
-      </div>
-
-      <!-- 3 scan buttons -->
-      <div class="scan-actions" id="scanActions">
-        <div class="scan-btn primary" onclick="document.getElementById('inputKamera').click()">
-          <div class="scan-btn-ico">📷</div>
-          <div class="scan-btn-lbl">Kamera</div>
-          <div class="scan-btn-sub">Kamera telefon</div>
-        </div>
-        <div class="scan-btn" onclick="document.getElementById('inputGaleri').click()">
-          <div class="scan-btn-ico">🖼️</div>
-          <div class="scan-btn-lbl">Galeri</div>
-          <div class="scan-btn-sub">Pilih dari galeri</div>
-        </div>
-        <div class="scan-btn" onclick="document.getElementById('inputFail').click()">
-          <div class="scan-btn-ico">📁</div>
-          <div class="scan-btn-lbl">Fail</div>
-          <div class="scan-btn-sub">Pilih fail imej</div>
-        </div>
-      </div>
-
-      <input type="file" id="inputKamera" accept="image/*" capture="environment" onchange="handleImg(event,'📷 Kamera')">
-      <input type="file" id="inputGaleri" accept="image/*" onchange="handleImg(event,'🖼️ Galeri')">
-      <input type="file" id="inputFail"   accept="image/*" onchange="handleImg(event,'📁 Fail')">
-
-      <!-- OCR progress -->
-      <div class="ocr-box" id="ocrBox">
-        <div class="spin"></div>
-        <div class="ocr-lbl" id="ocrLbl">Menghantar ke Google...</div>
-        <div class="ocr-prog"><div class="ocr-bar" id="ocrBar"></div></div>
-        <div class="ocr-sub" id="ocrSub">Proses ini mengambil masa 3–8 saat</div>
-        <ul class="ocr-steps">
-          <li class="ocr-step" id="step1"><span class="ocr-step-ico">⬜</span> Menyediakan gambar</li>
-          <li class="ocr-step" id="step2"><span class="ocr-step-ico">⬜</span> Menghantar ke Google Drive</li>
-          <li class="ocr-step" id="step3"><span class="ocr-step-ico">⬜</span> Google sedang membaca teks</li>
-          <li class="ocr-step" id="step4"><span class="ocr-step-ico">⬜</span> Mengekstrak maklumat</li>
-          <li class="ocr-step" id="step5"><span class="ocr-step-ico">⬜</span> Memadam gambar sementara</li>
-        </ul>
-      </div>
-
-      <!-- OCR done -->
-      <div id="ocrDone" style="display:none">
-        <div class="alert al-y">
-          <span>✏️</span>
-          <span>OCR selesai. Data yang berjaya dibaca ditanda <span style="color:#3B8A5A;font-weight:600">hijau</span>, yang tidak pasti ditanda <span style="color:#C08A10;font-weight:600">kuning</span>. Sila semak sebelum hantar.</span>
-        </div>
-        <button class="btn btn-g btn-full" onclick="showS(3)">Semak &amp; Edit Data →</button>
-      </div>
-
+    <div class="alert al-g" style="margin-bottom:14px">
+      <span>ℹ️</span>
+      <div>ID disimpan dalam peranti ini sahaja. OCR menggunakan <strong>Tesseract.js</strong> — berjalan dalam browser, tiada gambar dihantar ke mana-mana pelayan. Percuma selamanya.</div>
     </div>
+    <button class="btn btn-g btn-full" onclick="saveConfig()">Simpan & Mula →</button>
+    <div class="divider"></div>
+    <div class="card-ttl">📖 Cara Dapatkan Deployment ID</div>
+    <ul class="guide">
+      <li><div class="step-num">1</div><div>Buka Google Sheet → klik <strong>Extensions</strong> → <strong>Apps Script</strong></div></li>
+      <li><div class="step-num">2</div><div>Tampal kod <code>pkj-apps-script.js</code> yang diberi → klik <strong>Save (💾)</strong></div></li>
+      <li><div class="step-num">3</div><div>Pilih fungsi <strong>setupAllHeaders</strong> → klik <strong>Run ▶</strong> (sekali sahaja)</div></li>
+      <li><div class="step-num">4</div><div>Klik <strong>Deploy → New deployment</strong> → Type: <strong>Web app</strong></div></li>
+      <li><div class="step-num">5</div><div>Execute as: <strong>Me</strong> → Who has access: <strong>Anyone</strong> → klik <strong>Deploy</strong></div></li>
+      <li><div class="step-num">6</div><div>Salin <strong>Deployment ID</strong> (bukan URL) → tampal di atas</div></li>
+    </ul>
   </div>
-
-  <!-- ══════ SCREEN 3 — PREVIEW ══════ -->
-  <div class="screen" id="s3">
-    <div class="card">
-      <div class="prev-hdr">
-        <span id="prevBadge" class="prev-badge"></span>
-        <span style="font-size:13px;font-weight:500">Semak &amp; Edit Data</span>
-        <button class="btn btn-sm btn-o" style="margin-left:auto" onclick="showS(2)">← Semula</button>
-      </div>
-      <div class="alert al-y">
-        <span>⚠️</span>
-        <span>Sila semak semua maklumat. Field bertanda <span class="req">*</span> adalah wajib diisi.</span>
-      </div>
-
-      <div class="fsec">
-        <div class="fsec-ttl" id="ttlA">A. Butiran Pemohon</div>
-        <div class="frow">
-          <div class="field"><label class="fl">Nama Penerima <span class="req">*</span></label><input type="text" id="fNama" placeholder="Nama penuh pemohon"></div>
-          <div class="field"><label class="fl">No. Kad Pengenalan <span class="req">*</span></label><input type="text" id="fIc" placeholder="000000-00-0000"></div>
-        </div>
-        <div class="frow">
-          <div class="field"><label class="fl">Nama Pasangan</label><input type="text" id="fNamaPsng" placeholder="Jika berkahwin"></div>
-          <div class="field"><label class="fl">No. KP Pasangan</label><input type="text" id="fIcPsng" placeholder="000000-00-0000"></div>
-        </div>
-        <div class="frow">
-          <div class="field"><label class="fl">No. Telefon <span class="req">*</span></label><input type="text" id="fTel" placeholder="01X-XXXXXXXX"></div>
-          <div class="field"><label class="fl">Emel <span class="req">*</span></label><input type="text" id="fEmel" placeholder="nama@gmail.com"></div>
-        </div>
-      </div>
-
-      <div class="fsec">
-        <div class="fsec-ttl" id="ttlB">B. Maklumat Harta</div>
-        <div class="frow frow1">
-          <div class="field"><label class="fl" id="hargaLbl">Harga Rumah (RM) <span class="req">*</span></label><input type="number" id="fHarga" placeholder="cth: 250000"></div>
-        </div>
-      </div>
-
-      <div class="fsec">
-        <div class="fsec-ttl">Lokasi <span style="font-weight:400;text-transform:none;letter-spacing:0">(pilihan)</span></div>
-        <div class="frow">
-          <div class="field">
-            <label class="fl">Daerah</label>
-            <select id="fDaerah" onchange="loadMukim()">
-              <option value="">-- Pilih Daerah --</option>
-              <option>Johor Bahru</option><option>Kluang</option><option>Kota Tinggi</option>
-              <option>Mersing</option><option>Muar</option><option>Pontian</option>
-              <option>Segamat</option><option>Batu Pahat</option><option>Kulai</option>
-              <option>Tangkak</option>
-            </select>
-          </div>
-          <div class="field">
-            <label class="fl">Mukim</label>
-            <select id="fMukim"><option value="">-- Pilih Mukim --</option></select>
-          </div>
-        </div>
-      </div>
-
-      <div class="fsec">
-        <div class="fsec-ttl">Catatan</div>
-        <div class="frow frow1">
-          <div class="field"><label class="fl">Catatan <span class="req">*</span></label><textarea id="fCatatan" placeholder="Masukkan catatan berkaitan permohonan..."></textarea></div>
-        </div>
-      </div>
-    </div>
-    <div style="height:72px"></div>
-  </div>
-
-  <!-- ══════ SCREEN 4 — SUCCESS ══════ -->
-  <div class="screen" id="s4">
-    <div class="card">
-      <div class="succ">
-        <div class="succ-ico" id="succIco">✅</div>
-        <h2 style="font-size:18px;font-weight:600;margin-bottom:6px" id="succTtl">Berjaya Dihantar</h2>
-        <p style="color:var(--text2);font-size:13px;margin-bottom:22px" id="succMsg"></p>
-        <button class="btn btn-g btn-full" onclick="resetAll()">＋ Rekod Pemohon Baharu</button>
-        <div style="margin-top:9px">
-          <button class="btn btn-o btn-full" onclick="showS(1)">⚙ Tukar Deployment ID</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
 </div>
 
-<!-- ACTION BAR -->
+<!-- ══════ SCREEN 2: JENIS + SCAN ══════ -->
+<div class="screen" id="s2">
+
+  <div class="card">
+    <div class="card-ttl">📄 Jenis Borang</div>
+    <div class="jenis-grid">
+      <div class="jk bbr" onclick="pickJenis('BBR',this)">
+        <div class="jk-code">BBR</div>
+        <div class="jk-name">Bantuan Beli Rumah Pertama</div>
+        <div class="jk-amt">RM 5,000</div>
+      </div>
+      <div class="jk bmr" onclick="pickJenis('BMR',this)">
+        <div class="jk-code">BMR</div>
+        <div class="jk-name">Bantuan Masuk Rumah Pertama</div>
+        <div class="jk-amt">RM 2,000</div>
+      </div>
+      <div class="jk bsr" onclick="pickJenis('BSR',this)">
+        <div class="jk-code">BSR</div>
+        <div class="jk-name">Bantuan Sewa Rumah</div>
+        <div class="jk-amt">RM 200/bln</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="scanCard" style="display:none">
+    <div class="card-ttl">📸 Imbas Borang</div>
+
+    <div class="scan-hint">
+      <span>📌</span><span id="scanHint"></span>
+    </div>
+
+    <!-- Image preview (hidden until photo taken) -->
+    <div class="img-preview" id="imgPreview">
+      <img id="imgEl" src="" alt="Borang">
+      <div class="img-badge" id="imgBadge"></div>
+      <button class="img-retake" onclick="resetScan()">↺ Ambil Semula</button>
+    </div>
+
+    <!-- Scan buttons -->
+    <div id="scanBtns">
+      <!-- Camera — primary large button -->
+      <div class="scan-cam-btn" onclick="document.getElementById('iKamera').click()">
+        <div class="scan-cam-ico">📷</div>
+        <div class="scan-cam-info">
+          <div class="scan-cam-lbl">Ambil Gambar</div>
+          <div class="scan-cam-sub">Buka kamera telefon</div>
+        </div>
+      </div>
+      <!-- Gallery + File — secondary row -->
+      <div class="scan-row">
+        <div class="scan-sec" onclick="document.getElementById('iGaleri').click()">
+          <div class="scan-sec-ico">🖼️</div>
+          <div class="scan-sec-lbl">Galeri</div>
+        </div>
+        <div class="scan-sec" onclick="document.getElementById('iGaleri').click()">
+          <div class="scan-sec-ico">📁</div>
+          <div class="scan-sec-lbl">Fail</div>
+        </div>
+      </div>
+
+      <!-- Tips untuk foto yang baik -->
+      <div class="tips-box">
+        <b>💡 Tips foto yang baik untuk OCR:</b>
+        Pastikan borang <strong>rata & lurus</strong> •
+        Cahaya <strong>cukup & sekata</strong> •
+        Semua teks <strong>jelas kelihatan</strong> •
+        Tiada bayang atau pantulan
+      </div>
+    </div>
+
+    <!-- Hidden file inputs -->
+    <!-- capture="environment" → buka kamera belakang terus (iPhone & Android) -->
+    <input type="file" id="iKamera" accept="image/*" capture="environment" onchange="handleImg(event,'📷 Kamera')">
+    <!-- Tanpa capture → pilih dari galeri / fail -->
+    <input type="file" id="iGaleri" accept="image/*" onchange="handleImg(event,'🖼️ Galeri')">
+
+    <!-- OCR Progress -->
+    <div class="ocr-box" id="ocrBox">
+      <div class="spin"></div>
+      <div class="ocr-lbl" id="ocrLbl">Menyediakan...</div>
+      <div class="ocr-prog"><div class="ocr-bar" id="ocrBar"></div></div>
+      <div class="ocr-sub" id="ocrSub">Proses ini mengambil 15–30 saat</div>
+      <ul class="ocr-steps">
+        <li class="ocr-step" id="step1"><span class="ocr-step-ico">⬜</span> Memproses & meningkatkan kualiti gambar</li>
+        <li class="ocr-step" id="step2"><span class="ocr-step-ico">⬜</span> Memuatkan enjin OCR Tesseract</li>
+        <li class="ocr-step" id="step3"><span class="ocr-step-ico">⬜</span> Membaca teks dalam borang</li>
+        <li class="ocr-step" id="step4"><span class="ocr-step-ico">⬜</span> Mengekstrak maklumat pemohon</li>
+      </ul>
+    </div>
+
+    <!-- OCR Done -->
+    <div class="ocr-done-card" id="ocrDone">
+      <div class="alert al-y">
+        <span>✏️</span>
+        <span>OCR selesai! Field <strong style="color:#3B8A5A">hijau</strong> = berjaya dibaca. Field <strong style="color:#C08A10">kuning</strong> = perlu disemak. Sila periksa semua data sebelum hantar.</span>
+      </div>
+      <button class="btn btn-g btn-full" onclick="showS(3)">Semak &amp; Edit Data →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ SCREEN 3: PREVIEW & EDIT ══════ -->
+<div class="screen" id="s3">
+  <div class="card">
+    <div class="prev-hdr">
+      <span id="prevBadge" class="prev-badge"></span>
+      <span style="font-size:14px;font-weight:600">Semak &amp; Edit Data</span>
+      <button class="btn btn-sm btn-o" style="margin-left:auto" onclick="showS(2)">← Semula</button>
+    </div>
+    <div class="alert al-y">
+      <span>⚠️</span>
+      <span>Sila semak semua maklumat. Field bertanda <span class="req">*</span> adalah wajib diisi.</span>
+    </div>
+
+    <!-- A: Butiran Pemohon -->
+    <div class="fsec">
+      <div class="fsec-ttl" id="ttlA">A. Butiran Pemohon</div>
+      <div class="frow">
+        <div class="field">
+          <label class="fl">Nama Penerima <span class="req">*</span></label>
+          <input type="text" id="fNama" placeholder="Nama penuh pemohon" autocomplete="off">
+        </div>
+        <div class="field">
+          <label class="fl">No. Kad Pengenalan <span class="req">*</span></label>
+          <input type="text" id="fIc" placeholder="000000-00-0000" inputmode="numeric" autocomplete="off">
+        </div>
+      </div>
+      <div class="frow">
+        <div class="field">
+          <label class="fl">Nama Pasangan</label>
+          <input type="text" id="fNamaPsng" placeholder="Jika berkahwin" autocomplete="off">
+        </div>
+        <div class="field">
+          <label class="fl">No. KP Pasangan</label>
+          <input type="text" id="fIcPsng" placeholder="000000-00-0000" inputmode="numeric" autocomplete="off">
+        </div>
+      </div>
+      <div class="frow">
+        <div class="field">
+          <label class="fl">No. Telefon <span class="req">*</span></label>
+          <input type="text" id="fTel" placeholder="01X-XXXXXXXX" inputmode="tel" autocomplete="tel">
+        </div>
+        <div class="field">
+          <label class="fl">Emel <span class="req">*</span></label>
+          <input type="text" id="fEmel" placeholder="nama@gmail.com" inputmode="email" autocomplete="email">
+        </div>
+      </div>
+    </div>
+
+    <!-- B: Maklumat Harta -->
+    <div class="fsec">
+      <div class="fsec-ttl" id="ttlB">B. Maklumat Harta</div>
+      <div class="frow frow1">
+        <div class="field">
+          <label class="fl" id="hargaLbl">Harga Rumah (RM) <span class="req">*</span></label>
+          <input type="number" id="fHarga" placeholder="cth: 250000" inputmode="numeric">
+        </div>
+      </div>
+    </div>
+
+    <!-- Lokasi -->
+    <div class="fsec">
+      <div class="fsec-ttl">Lokasi <span style="font-weight:400;text-transform:none;letter-spacing:0">(pilihan)</span></div>
+      <div class="frow">
+        <div class="field">
+          <label class="fl">Daerah</label>
+          <select id="fDaerah" onchange="loadMukim()">
+            <option value="">-- Pilih Daerah --</option>
+            <option>Johor Bahru</option><option>Kluang</option><option>Kota Tinggi</option>
+            <option>Mersing</option><option>Muar</option><option>Pontian</option>
+            <option>Segamat</option><option>Batu Pahat</option><option>Kulai</option>
+            <option>Tangkak</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="fl">Mukim</label>
+          <select id="fMukim"><option value="">-- Pilih Mukim --</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Catatan -->
+    <div class="fsec">
+      <div class="fsec-ttl">Catatan</div>
+      <div class="frow frow1">
+        <div class="field">
+          <label class="fl">Catatan <span class="req">*</span></label>
+          <textarea id="fCatatan" placeholder="Masukkan catatan berkaitan permohonan ini..."></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="height:80px"></div>
+</div>
+
+<!-- ══════ SCREEN 4: SUCCESS ══════ -->
+<div class="screen" id="s4">
+  <div class="card">
+    <div class="succ">
+      <div class="succ-ico" id="succIco">✅</div>
+      <h2 id="succTtl">Berjaya Dihantar</h2>
+      <p id="succMsg"></p>
+      <button class="btn btn-g btn-full" onclick="resetAll()">＋ Rekod Pemohon Baharu</button>
+      <div style="margin-top:10px">
+        <button class="btn btn-o btn-full" onclick="openSettings()">⚙ Tukar Deployment ID</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- ACTION BAR (screen 3 only) -->
 <div class="abar" id="abar" style="display:none">
-  <button class="btn btn-r" onclick="doSubmit(true)"  style="flex:0.8">✕ Tidak Layak</button>
-  <button class="btn btn-g" onclick="doSubmit(false)" id="btnHantar" style="flex:1.2">Hantar ke Sheet ✓</button>
+  <button class="btn btn-r" onclick="doSubmit(true)"  style="flex:0.85">✕ Tidak Layak</button>
+  <button class="btn btn-g" onclick="doSubmit(false)" id="btnHantar" style="flex:1.15">Hantar ke Sheet ✓</button>
 </div>
 
 <!-- SETTINGS MODAL -->
-<div class="modal-backdrop" id="settingsModal" onclick="closeSettingsOutside(event)">
+<div class="modal-bg" id="modal" onclick="closeModalOut(event)">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title">⚙️ Deployment ID</div>
-
-    <div class="modal-depid-display" id="currentDepDisplay">
-      <span>ID semasa:</span>
-      <span id="currentDepId">—</span>
-    </div>
-
-    <div class="alert al-g" style="margin-bottom:12px">
+    <div class="modal-title">⚙️ Tukar Deployment ID</div>
+    <div class="cur-dep"><span>ID semasa:</span><span id="curDepTxt">—</span></div>
+    <div class="alert al-g" style="margin-bottom:13px">
       <span>ℹ️</span>
-      <div>Deployment ID berubah setiap kali Syafiq buat <strong>New deployment</strong> dalam Apps Script. Masukkan ID baru di bawah.</div>
+      <div>Masukkan Deployment ID baru setiap kali Syafiq buat <strong>New deployment</strong> dalam Apps Script.</div>
     </div>
-
-    <div style="margin-bottom:12px">
+    <div style="margin-bottom:13px">
       <label class="fl" style="margin-bottom:6px">🔑 Deployment ID Baru</label>
-      <input type="text" id="newDepId" class="mono-input" placeholder="AKfycby...xxxx">
+      <input type="text" id="newDepId" class="mono" placeholder="AKfycby...xxxx"
+             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
     </div>
-
-    <div style="display:flex; gap:9px">
-      <button class="btn btn-o" style="flex:1" onclick="closeSettings()">Batal</button>
-      <button class="btn btn-g" style="flex:1.5" onclick="updateDepId()">Simpan ID Baru ✓</button>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-o" style="flex:1" onclick="closeModal()">Batal</button>
+      <button class="btn btn-g" style="flex:1.5" onclick="saveNewDep()">Simpan ✓</button>
     </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
+<!-- Tesseract.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
 <script>
-/* ── DATA ── */
+/* ════════════════════════════════════════
+   MUKIM DATA
+════════════════════════════════════════ */
 const MUKIM = {
   "Johor Bahru": ["Johor Bahru","Pulai","Sungai Tiram","Tebrau","Plentong","Senai","Jelutong","Skudai","Kempas","Permas Jaya","Ulu Tiram"],
   "Kluang":      ["Kluang","Yong Peng","Simpang Renggam","Kahang","Paloh","Rengam","Chamek","Bekok","Mengkibol"],
@@ -632,10 +796,14 @@ const MUKIM = {
   "Tangkak":     ["Tangkak","Sagil","Bukit Gambir","Kesang","Sebrang","Nitar","Jalan Bakri","Ledang"]
 };
 
-/* ── STATE ── */
-let ST = { depId:'', jenis:'', imgBase64:'', imgMime:'' };
+/* ════════════════════════════════════════
+   STATE
+════════════════════════════════════════ */
+const ST = { depId:'', jenis:'', imgBase64:'', imgMime:'' };
 
-/* ── SCREEN NAV ── */
+/* ════════════════════════════════════════
+   SCREEN NAVIGATION
+════════════════════════════════════════ */
 function showS(n) {
   ['s1','s2','s3','s4'].forEach((id,i) =>
     document.getElementById(id).classList.toggle('active', i+1===n));
@@ -644,284 +812,355 @@ function showS(n) {
     document.getElementById('d'+i).classList.toggle('done',   i<n);
   });
   document.getElementById('abar').style.display = n===3 ? 'flex' : 'none';
-  window.scrollTo(0,0);
+  window.scrollTo({ top:0, behavior:'smooth' });
 }
 
-/* ── SETUP ── */
+/* ════════════════════════════════════════
+   SETUP / CONFIG
+════════════════════════════════════════ */
 function saveConfig() {
   const id = document.getElementById('depId').value.trim();
-  if(!id) { toast('Sila masukkan Deployment ID'); return; }
+  if (!id) { toast('Sila masukkan Deployment ID'); return; }
   ST.depId = id;
-  localStorage.setItem('pkj_depid', id);
+  localStorage.setItem('pkj_dep', id);
+  vibrate(20);
   showS(2);
 }
 
-/* ── JENIS ── */
+/* ════════════════════════════════════════
+   SETTINGS MODAL
+════════════════════════════════════════ */
+function openSettings() {
+  const id = ST.depId || '—';
+  document.getElementById('curDepTxt').textContent =
+    id.length > 16 ? id.slice(0,10) + '...' + id.slice(-8) : id;
+  document.getElementById('newDepId').value = '';
+  document.getElementById('modal').classList.add('open');
+  setTimeout(() => document.getElementById('newDepId').focus(), 350);
+}
+function closeModal()      { document.getElementById('modal').classList.remove('open'); }
+function closeModalOut(e)  { if (e.target===document.getElementById('modal')) closeModal(); }
+function saveNewDep() {
+  const id = document.getElementById('newDepId').value.trim();
+  if (!id)           { toast('Sila masukkan Deployment ID baru'); return; }
+  if (id===ST.depId) { toast('ID ini sama dengan ID semasa'); return; }
+  ST.depId = id;
+  localStorage.setItem('pkj_dep', id);
+  document.getElementById('depId').value = id;
+  closeModal();
+  vibrate([20,30,20]);
+  toast('✅ Deployment ID berjaya dikemaskini');
+}
+
+/* ════════════════════════════════════════
+   JENIS BORANG
+════════════════════════════════════════ */
 function pickJenis(j, el) {
-  document.querySelectorAll('.jenis-card').forEach(c => c.classList.remove('sel'));
+  document.querySelectorAll('.jk').forEach(c => c.classList.remove('sel'));
   el.classList.add('sel');
   ST.jenis = j;
   document.getElementById('scanCard').style.display = 'block';
-  const hints = {
-    BBR:'Imbas Bahagian A dan Bahagian B (Maklumat Harta) borang BBR.',
-    BMR:'Imbas Bahagian A dan Bahagian B (Maklumat Harta) borang BMR.',
-    BSR:'Imbas Bahagian A (Maklumat Pemohon) sahaja untuk borang BSR.'
-  };
-  document.getElementById('scanHintTxt').textContent = hints[j];
+  document.getElementById('scanHint').textContent = {
+    BBR: 'Imbas Bahagian A (Butiran Pemohon) dan Bahagian B (Maklumat Harta) borang BBR.',
+    BMR: 'Imbas Bahagian A (Butiran Pemohon) dan Bahagian B (Maklumat Harta) borang BMR.',
+    BSR: 'Imbas Bahagian A (Maklumat Pemohon) sahaja untuk borang BSR.'
+  }[j];
   resetScan();
+  vibrate(10);
+  // Scroll ke bahagian scan
+  setTimeout(() => {
+    document.getElementById('scanCard').scrollIntoView({ behavior:'smooth', block:'start' });
+  }, 100);
 }
 
-/* ── HANDLE IMAGE ── */
-function handleImg(e, sourceLabel) {
+/* ════════════════════════════════════════
+   IMAGE HANDLING
+════════════════════════════════════════ */
+function handleImg(e, label) {
   const f = e.target.files[0];
-  if(!f) return;
+  if (!f) return;
   e.target.value = '';
 
   const reader = new FileReader();
   reader.onload = ev => {
-    const dataUrl   = ev.target.result;
-    ST.imgBase64    = dataUrl.split(',')[1];
-    ST.imgMime      = f.type || 'image/jpeg';
+    const src    = ev.target.result;
+    ST.imgBase64 = src.split(',')[1];
+    ST.imgMime   = f.type || 'image/jpeg';
 
-    // show preview
-    document.getElementById('imgEl').src        = dataUrl;
-    document.getElementById('imgBadge').textContent = sourceLabel;
-    document.getElementById('imgPreview').style.display  = 'block';
-    document.getElementById('scanActions').style.display = 'none';
-    document.getElementById('ocrDone').style.display     = 'none';
+    document.getElementById('imgEl').src              = src;
+    document.getElementById('imgBadge').textContent   = label;
+    document.getElementById('imgPreview').style.display = 'block';
+    document.getElementById('scanBtns').style.display  = 'none';
+    document.getElementById('ocrDone').style.display   = 'none';
 
+    vibrate(15);
     runOCR();
   };
   reader.readAsDataURL(f);
 }
 
 function resetScan() {
-  document.getElementById('imgPreview').style.display  = 'none';
-  document.getElementById('imgEl').src                 = '';
-  document.getElementById('scanActions').style.display = 'grid';
-  document.getElementById('ocrBox').style.display      = 'none';
-  document.getElementById('ocrDone').style.display     = 'none';
-  document.getElementById('ocrBar').style.width        = '0%';
-  resetSteps();
-  ['inputKamera','inputGaleri','inputFail'].forEach(id =>
-    document.getElementById(id).value = '');
   ST.imgBase64 = ''; ST.imgMime = '';
+  document.getElementById('imgPreview').style.display = 'none';
+  document.getElementById('imgEl').src                = '';
+  document.getElementById('scanBtns').style.display   = 'block';
+  document.getElementById('ocrBox').style.display     = 'none';
+  document.getElementById('ocrDone').style.display    = 'none';
+  document.getElementById('ocrBar').style.width       = '0%';
+  resetSteps();
+  ['iKamera','iGaleri'].forEach(id => { document.getElementById(id).value = ''; });
 }
 
-/* ── OCR STEP INDICATORS ── */
+/* ════════════════════════════════════════
+   IMAGE PREPROCESSING
+   Tingkatkan kualiti gambar sebelum OCR:
+   grayscale + auto-contrast + S-curve boost
+════════════════════════════════════════ */
+function preprocessImage(base64, mime) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onerror = () => reject(new Error('Gambar tidak dapat dimuatkan'));
+    img.onload  = () => {
+      try {
+        // Saiz optimum — lebih kecil pada mobile untuk kelajuan
+        const isMobile = window.innerWidth <= 768;
+        const IDEAL    = isMobile ? 1100 : 1600;
+        const longest  = Math.max(img.naturalWidth, img.naturalHeight);
+        const scale    = longest < IDEAL
+          ? Math.min(2.0, IDEAL / longest)
+          : (longest > 2500 ? 2500 / longest : 1);
+
+        const w = Math.round(img.naturalWidth  * scale);
+        const h = Math.round(img.naturalHeight * scale);
+
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+
+        // Latar putih bersih
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+
+        const id = ctx.getImageData(0, 0, w, h);
+        const px = id.data;
+
+        // Pass 1: Grayscale + cari min/max untuk auto-levels
+        const g = new Uint8Array(w * h);
+        let lo = 255, hi = 0;
+        for (let i = 0, j = 0; i < px.length; i += 4, j++) {
+          const v = (0.299*px[i] + 0.587*px[i+1] + 0.114*px[i+2]) | 0;
+          g[j] = v;
+          if (v < lo) lo = v;
+          if (v > hi) hi = v;
+        }
+
+        // Pass 2: Auto-levels + S-curve kontras
+        const rng = (hi - lo) || 1;
+        for (let i = 0, j = 0; i < px.length; i += 4, j++) {
+          // Auto-stretch
+          let v = (((g[j] - lo) / rng) * 255) | 0;
+          // S-curve ringan: teks lebih hitam, latar lebih putih
+          v = v < 128
+            ? Math.max(0,   v - ((128 - v) * 0.22 | 0))
+            : Math.min(255, v + ((v - 128) * 0.22 | 0));
+          px[i] = px[i+1] = px[i+2] = v;
+          px[i+3] = 255;
+        }
+
+        ctx.putImageData(id, 0, 0);
+        resolve(canvas);
+      } catch(err) { reject(err); }
+    };
+    img.src = 'data:' + mime + ';base64,' + base64;
+  });
+}
+
+/* ════════════════════════════════════════
+   OCR — Tesseract.js
+   100% browser-side, zero network, zero CORS
+════════════════════════════════════════ */
+async function runOCR() {
+  const ocrBox  = document.getElementById('ocrBox');
+  const ocrLbl  = document.getElementById('ocrLbl');
+  const ocrSub  = document.getElementById('ocrSub');
+  const ocrDone = document.getElementById('ocrDone');
+
+  ocrBox.style.display  = 'block';
+  ocrDone.style.display = 'none';
+  resetSteps(); setBar(0);
+
+  try {
+    // STEP 1 — preprocess gambar
+    setStep(1,'active'); setBar(5);
+    ocrLbl.textContent = 'Memproses gambar...';
+    ocrSub.textContent = 'Meningkatkan kontras dan kualiti...';
+    const canvas = await preprocessImage(ST.imgBase64, ST.imgMime);
+    setStep(1,'done'); setStep(2,'active'); setBar(12);
+    ocrLbl.textContent = 'Memuatkan enjin OCR...';
+    ocrSub.textContent = 'Muat turun kali pertama (~10MB) — seterusnya lebih laju';
+
+    let step3done = false;
+
+    // STEP 2–3 — Tesseract recognize
+    const result = await Tesseract.recognize(canvas, 'eng', {
+      logger: m => {
+        const s = m.status, p = m.progress || 0;
+        if (s === 'loading tesseract core'    ||
+            s === 'initializing tesseract'    ||
+            s === 'loading language traineddata' ||
+            s === 'initializing api') {
+          const pct = Math.round(12 + p * 28);
+          setBar(pct);
+          ocrLbl.textContent = 'Memuatkan enjin OCR... ' + Math.round(p*100) + '%';
+          ocrSub.textContent = 'Proses ini hanya perlahan pada kali pertama';
+        } else if (s === 'recognizing text') {
+          if (!step3done) {
+            step3done = true;
+            setStep(2,'done'); setStep(3,'active');
+            ocrSub.textContent = 'Tesseract sedang mengimbas setiap baris teks...';
+          }
+          const pct = Math.round(42 + p * 48);
+          setBar(pct);
+          ocrLbl.textContent = 'Membaca teks borang... ' + Math.round(p*100) + '%';
+        }
+      }
+    });
+
+    // STEP 4 — parse & extract
+    setStep(3,'done'); setStep(4,'active'); setBar(93);
+    ocrLbl.textContent = 'Mengekstrak maklumat pemohon...';
+    ocrSub.textContent = '';
+
+    const parsed = parseBorang(result.data.text, ST.jenis);
+    fillPreview(parsed);
+
+    setStep(4,'done'); setBar(100);
+    ocrLbl.textContent = 'Selesai! ✓';
+    vibrate([20, 50, 20]);
+
+    setTimeout(() => {
+      ocrBox.style.display  = 'none';
+      ocrDone.style.display = 'block';
+    }, 800);
+
+  } catch(err) {
+    ocrBox.style.display  = 'none';
+    ocrDone.style.display = 'none';
+    console.error('OCR Error:', err);
+    toast('Ralat OCR. Sila cuba semula.');
+    document.getElementById('imgPreview').style.display = 'none';
+    document.getElementById('scanBtns').style.display   = 'block';
+  }
+}
+
+/* ════════════════════════════════════════
+   OCR STEP UI HELPERS
+════════════════════════════════════════ */
 function resetSteps() {
-  [1,2,3,4,5].forEach(i => {
+  [1,2,3,4].forEach(i => {
     const el = document.getElementById('step'+i);
+    if (!el) return;
     el.classList.remove('done','active');
     el.querySelector('.ocr-step-ico').textContent = '⬜';
   });
 }
 function setStep(n, status) {
-  // status: 'active' | 'done'
-  const el  = document.getElementById('step'+n);
-  const ico = el.querySelector('.ocr-step-ico');
+  const el = document.getElementById('step'+n);
+  if (!el) return;
   el.classList.remove('done','active');
   el.classList.add(status);
-  ico.textContent = status === 'done' ? '✅' : '⏳';
+  el.querySelector('.ocr-step-ico').textContent = status==='done' ? '✅' : '⏳';
 }
 function setBar(pct) {
   document.getElementById('ocrBar').style.width = pct + '%';
 }
 
-/* ── COMPRESS IMAGE ── */
-async function compressImage(base64, mime) {
-  return new Promise(resolve => {
-    const img = new Image();
-    img.onload = () => {
-      // Compress aggressively — target ~800px lebar, kualiti 0.6
-      const MAX = 800;
-      const scale  = Math.min(1, MAX / Math.max(img.width, img.height));
-      const canvas = document.createElement('canvas');
-      canvas.width  = Math.round(img.width  * scale);
-      canvas.height = Math.round(img.height * scale);
-      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-      resolve(canvas.toDataURL('image/jpeg', 0.6).split(',')[1]);
-    };
-    img.src = `data:${mime};base64,${base64}`;
-  });
-}
-
-/* ── OCR via Google Docs Apps Script ── */
-async function runOCR() {
-  const ocrBox  = document.getElementById('ocrBox');
-  const ocrLbl  = document.getElementById('ocrLbl');
-  const ocrDone = document.getElementById('ocrDone');
-
-  ocrBox.style.display  = 'block';
-  ocrDone.style.display = 'none';
-  resetSteps();
-
-  const baseUrl = `https://script.google.com/macros/s/${ST.depId}/exec`;
-
-  try {
-    // Step 1 — compress
-    setStep(1,'active'); setBar(10);
-    ocrLbl.textContent = 'Menyediakan & memampatkan gambar...';
-    const compressed = await compressImage(ST.imgBase64, ST.imgMime);
-    await delay(200);
-    setStep(1,'done');
-
-    // Step 2 — send via GET (Apps Script boleh baca e.parameter)
-    // Encode base64 supaya selamat dalam URL
-    setStep(2,'active'); setBar(25);
-    ocrLbl.textContent = 'Menghantar ke Google Drive...';
-
-    // Apps Script GET ada limit URL ~8KB
-    // Base64 800px jpeg ~50-150KB — terlalu besar untuk URL
-    // Penyelesaian: hantar chunk by chunk, Apps Script gabungkan semula
-    const CHUNK = 6000; // saiz setiap chunk (chars)
-    const chunks = [];
-    for(let i = 0; i < compressed.length; i += CHUNK) {
-      chunks.push(compressed.slice(i, i + CHUNK));
-    }
-
-    const sessionId = 'pkj_' + Date.now();
-    const totalChunks = chunks.length;
-
-    ocrLbl.textContent = `Menghantar data... (0/${totalChunks})`;
-
-    // Hantar setiap chunk
-    for(let i = 0; i < chunks.length; i++) {
-      const pct = Math.round(25 + (i / totalChunks) * 25);
-      setBar(pct);
-      ocrLbl.textContent = `Menghantar data... (${i+1}/${totalChunks})`;
-
-      const params = new URLSearchParams({
-        action:      'chunk',
-        sessionId:   sessionId,
-        chunkIndex:  i,
-        totalChunks: totalChunks,
-        data:        chunks[i]
-      });
-
-      const resp = await fetch(baseUrl + '?' + params.toString());
-      const json = await resp.json();
-      if(json.status === 'error') throw new Error(json.msg);
-    }
-
-    setStep(2,'done'); setStep(3,'active'); setBar(55);
-    ocrLbl.textContent = 'Google sedang membaca teks...';
-
-    // Trigger OCR selepas semua chunks diterima
-    const ocrParams = new URLSearchParams({
-      action:    'ocr',
-      sessionId: sessionId
-    });
-
-    const ocrResp = await fetch(baseUrl + '?' + ocrParams.toString());
-    const ocrData = await ocrResp.json();
-
-    if(ocrData.status !== 'ok') throw new Error(ocrData.msg || 'OCR gagal');
-
-    setStep(3,'done'); setStep(4,'active'); setBar(80);
-    ocrLbl.textContent = 'Mengekstrak maklumat...';
-    await delay(300);
-
-    const parsed = parseBorang(ocrData.text, ST.jenis);
-    fillPreview(parsed);
-
-    setStep(4,'done'); setStep(5,'active'); setBar(93);
-    ocrLbl.textContent = 'Memadam gambar sementara...';
-    await delay(400);
-
-    setStep(5,'done'); setBar(100);
-    ocrLbl.textContent = 'Selesai! ✓';
-
-    setTimeout(() => {
-      ocrBox.style.display  = 'none';
-      ocrDone.style.display = 'block';
-    }, 600);
-
-  } catch(err) {
-    ocrBox.style.display  = 'none';
-    ocrDone.style.display = 'none';
-    console.error(err);
-    toast('Ralat OCR: ' + (err.message || 'Cuba semula'));
-    document.getElementById('imgPreview').style.display  = 'none';
-    document.getElementById('scanActions').style.display = 'grid';
-  }
-}
-
-function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-/* ── PARSE OCR TEXT ── */
+/* ════════════════════════════════════════
+   PARSE OCR TEXT
+════════════════════════════════════════ */
 function parseBorang(raw, jenis) {
   const out   = { nama:'', ic:'', namaPsng:'', icPsng:'', tel:'', emel:'', harga:'' };
-  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
   const flat  = raw.replace(/\n/g,' ');
 
-  // IC
-  const icRe = /\b(\d{6})\s*[-—–]\s*(\d{2})\s*[-—–]\s*(\d{4})\b/g;
-  const ics = [];
+  // ── IC: XXXXXX-XX-XXXX (pelbagai pemisah OCR) ──
+  const icRe = /\b(\d{6})\s*[-—–.]\s*(\d{2})\s*[-—–.]\s*(\d{4})\b/g;
+  const ics  = [];
   let m;
-  while((m = icRe.exec(flat)) !== null) ics.push(m[1]+'-'+m[2]+'-'+m[3]);
-  if(ics[0]) out.ic     = ics[0];
-  if(ics[1]) out.icPsng = ics[1];
+  while ((m = icRe.exec(flat)) !== null) ics.push(m[1]+'-'+m[2]+'-'+m[3]);
+  if (ics[0]) out.ic     = ics[0];
+  if (ics[1]) out.icPsng = ics[1];
 
-  // Email
-  const emailM = flat.match(/[\w.+\-]+@[\w.\-]+\.[a-z]{2,}/i);
-  if(emailM) out.emel = emailM[0];
+  // ── EMAIL ──
+  const eM = flat.match(/[\w.+\-]+@[\w.\-]+\.[a-z]{2,}/i);
+  if (eM) out.emel = eM[0];
 
-  // Phone
-  const telM = flat.match(/01\d[\s\-]?\d{3,4}[\s\-]?\d{4}/);
-  if(telM) out.tel = telM[0].replace(/[\s\-]/g,'');
+  // ── TELEFON: bermula 01 ──
+  const tM = flat.match(/\b(01\d)\s*[-]?\s*(\d{3,4})\s*[-]?\s*(\d{4})\b/);
+  if (tM) out.tel = tM[1] + tM[2] + tM[3];
 
-  // Harga
-  const hargaM = flat.match(/(?:Harga\s*Rumah|Bayaran\s*Sewa|Harga)[^\d]*([1-9]\d{1,6}(?:[,\s]\d{3})*(?:\.\d{2})?)/i);
-  if(hargaM) out.harga = hargaM[1].replace(/[,\s]/g,'');
+  // ── HARGA ──
+  const hM = flat.match(/(?:Harga\s*Rumah|Bayaran\s*Sewa|Harga)[^\d]{0,20}([1-9][\d,\s]{2,})/i);
+  if (hM) out.harga = hM[1].replace(/[,\s]/g,'');
 
-  // Nama Pertama / Penuh
-  for(let i=0; i<lines.length; i++) {
+  // ── NAMA PEMOHON ──
+  for (let i = 0; i < lines.length; i++) {
     const l = lines[i];
-    if(/Nama\s*(Pertama|Penuh)/i.test(l)) {
-      const after = l.split(/[:：]/).slice(1).join(':').trim();
-      if(after.length > 2 && !/^[.…_\s]+$/.test(after)) { out.nama = after; break; }
-      const next = lines[i+1];
-      if(next && next.length > 2 && !/^[.…_\s:]+$/.test(next) && !/^(No\.|Alam|Nama\s*K)/i.test(next)) {
-        out.nama = next; break;
+    if (/Nama\s*(Pertama|Penuh)/i.test(l)) {
+      const parts = l.split(/[:：]/);
+      if (parts.length > 1) {
+        const v = parts.slice(1).join(':').replace(/^[\s.…_]+/, '').trim();
+        if (v.length > 2 && !/^[.…_\s]+$/.test(v)) { out.nama = v; break; }
+      }
+      const nx = lines[i+1];
+      if (nx && nx.length > 2 && !/^[.…_:\s]+$/.test(nx)
+          && !/^(No\.|Alam|Nama\s*K|Ketu|Agama|Status)/i.test(nx)) {
+        out.nama = nx.replace(/^[\s.…_]+/,'').trim(); break;
       }
     }
   }
 
-  // Nama Pasangan
-  for(let i=0; i<lines.length; i++) {
+  // ── NAMA PASANGAN ──
+  for (let i = 0; i < lines.length; i++) {
     const l = lines[i];
-    if(/Nama\s*Pasangan/i.test(l)) {
-      const after = l.split(/[:：]/).slice(1).join(':').trim();
-      if(after.length > 2 && !/^[.…_\s]+$/.test(after)) { out.namaPsng = after; break; }
-      const next = lines[i+1];
-      if(next && next.length > 2 && !/^[.…_\s:]+$/.test(next)) { out.namaPsng = next; break; }
+    if (/Nama\s*Pasangan/i.test(l)) {
+      const parts = l.split(/[:：]/);
+      if (parts.length > 1) {
+        const v = parts.slice(1).join(':').replace(/^[\s.…_]+/,'').trim();
+        if (v.length > 2 && !/^[.…_\s]+$/.test(v)) { out.namaPsng = v; break; }
+      }
+      const nx = lines[i+1];
+      if (nx && nx.length > 2 && !/^[.…_:\s]+$/.test(nx)) {
+        out.namaPsng = nx.replace(/^[\s.…_]+/,'').trim(); break;
+      }
     }
   }
 
-  // Clean
+  // Bersih artifak
   Object.keys(out).forEach(k => {
-    if(out[k]) out[k] = out[k].replace(/^[.\s…_]+|[.\s…_]+$/g,'').trim();
+    if (out[k]) out[k] = out[k].replace(/^[.\s…_]+|[.\s…_]+$/g,'').trim();
   });
-
   return out;
 }
 
-/* ── FILL PREVIEW ── */
+/* ════════════════════════════════════════
+   FILL PREVIEW FORM
+════════════════════════════════════════ */
 function fillPreview(d) {
-  const set = (id, val) => {
+  const setF = (id, val) => {
     const el = document.getElementById(id);
     el.value = val || '';
-    el.classList.remove('ocr-good','ocr-low');
-    el.classList.add(val && val.length > 1 ? 'ocr-good' : 'ocr-low');
+    el.classList.remove('ocr-ok','ocr-no');
+    el.classList.add(val && val.length > 1 ? 'ocr-ok' : 'ocr-no');
   };
-  set('fNama',    d.nama);
-  set('fIc',      d.ic);
-  set('fNamaPsng',d.namaPsng);
-  set('fIcPsng',  d.icPsng);
-  set('fTel',     d.tel);
-  set('fEmel',    d.emel);
-  set('fHarga',   d.harga);
+  setF('fNama',    d.nama);
+  setF('fIc',      d.ic);
+  setF('fNamaPsng',d.namaPsng);
+  setF('fIcPsng',  d.icPsng);
+  setF('fTel',     d.tel);
+  setF('fEmel',    d.emel);
+  setF('fHarga',   d.harga);
   document.getElementById('fCatatan').value = '';
   document.getElementById('fDaerah').value  = '';
   document.getElementById('fMukim').innerHTML = '<option value="">-- Pilih Mukim --</option>';
@@ -933,59 +1172,76 @@ function fillPreview(d) {
   const isBSR = ST.jenis === 'BSR';
   document.getElementById('ttlA').textContent = isBSR ? 'A. Maklumat Pemohon' : 'A. Butiran Pemohon';
   document.getElementById('ttlB').textContent = isBSR ? 'Maklumat Sewa' : 'B. Maklumat Harta (Rumah)';
-  document.getElementById('hargaLbl').innerHTML = (isBSR ? 'Bayaran Sewa Sebulan (RM)' : 'Harga Rumah (RM)') + ' <span class="req">*</span>';
-  document.getElementById('fHarga').placeholder  = isBSR ? 'cth: 500' : 'cth: 250000';
-  document.getElementById('btnHantar').style.background = {BBR:'#185FA5',BMR:'#1B4B3A',BSR:'#854F0B'}[ST.jenis];
+  document.getElementById('hargaLbl').innerHTML = (isBSR
+    ? 'Bayaran Sewa Sebulan (RM)' : 'Harga Rumah (RM)') + ' <span class="req">*</span>';
+  document.getElementById('fHarga').placeholder = isBSR ? 'cth: 500' : 'cth: 250000';
+  document.getElementById('btnHantar').style.background =
+    {BBR:'#185FA5', BMR:'#1B4B3A', BSR:'#854F0B'}[ST.jenis];
 }
 
-/* ── MUKIM ── */
+/* ════════════════════════════════════════
+   MUKIM DROPDOWN
+════════════════════════════════════════ */
 function loadMukim() {
   const d   = document.getElementById('fDaerah').value;
   const sel = document.getElementById('fMukim');
   sel.innerHTML = '<option value="">-- Pilih Mukim --</option>';
-  if(!d || !MUKIM[d]) return;
-  MUKIM[d].forEach(m => { const o=document.createElement('option'); o.value=m; o.textContent=m; sel.appendChild(o); });
+  if (!d || !MUKIM[d]) return;
+  MUKIM[d].forEach(m => {
+    const o = document.createElement('option');
+    o.value = m; o.textContent = m;
+    sel.appendChild(o);
+  });
 }
 
-/* ── FORM VALUES ── */
-function v(id) { return document.getElementById(id).value.trim(); }
+/* ════════════════════════════════════════
+   FORM & SUBMIT
+════════════════════════════════════════ */
+const v = id => document.getElementById(id).value.trim();
+
 function getForm() {
-  return { jenis:ST.jenis, sheet:'', nama:v('fNama'), ic:v('fIc'),
-    namaPsng:v('fNamaPsng'), icPsng:v('fIcPsng'), tel:v('fTel'),
-    emel:v('fEmel'), harga:v('fHarga'), daerah:v('fDaerah'),
-    mukim:v('fMukim'), catatan:v('fCatatan') };
+  return {
+    jenis: ST.jenis, sheet:'',
+    nama:     v('fNama'),    ic:      v('fIc'),
+    namaPsng: v('fNamaPsng'),icPsng:  v('fIcPsng'),
+    tel:      v('fTel'),     emel:    v('fEmel'),
+    harga:    v('fHarga'),   daerah:  v('fDaerah'),
+    mukim:    v('fMukim'),   catatan: v('fCatatan')
+  };
 }
 
-/* ── SUBMIT ── */
 async function doSubmit(tidakLayak) {
   const d = getForm();
-  if(tidakLayak) {
-    if(!d.catatan)        { toast('Sila isi Catatan (sebab tidak layak)'); return; }
-    if(!d.nama && !d.ic)  { toast('Sila isi sekurang-kurangnya Nama atau No. KP'); return; }
+
+  if (tidakLayak) {
+    if (!d.catatan)       { toast('Sila isi Catatan (sebab tidak layak)'); return; }
+    if (!d.nama && !d.ic) { toast('Sila isi sekurang-kurangnya Nama atau No. KP'); return; }
   } else {
-    if(!d.nama)    { toast('Nama penerima wajib diisi'); return; }
-    if(!d.ic)      { toast('No. Kad Pengenalan wajib diisi'); return; }
-    if(!d.tel)     { toast('No. Telefon wajib diisi'); return; }
-    if(!d.emel)    { toast('Emel wajib diisi'); return; }
-    if(!d.harga)   { toast('Harga Rumah/Sewa wajib diisi'); return; }
-    if(!d.catatan) { toast('Catatan wajib diisi'); return; }
+    if (!d.nama)    { toast('Nama penerima wajib diisi'); return; }
+    if (!d.ic)      { toast('No. Kad Pengenalan wajib diisi'); return; }
+    if (!d.tel)     { toast('No. Telefon wajib diisi'); return; }
+    if (!d.emel)    { toast('Emel wajib diisi'); return; }
+    if (!d.harga)   { toast('Harga Rumah/Sewa wajib diisi'); return; }
+    if (!d.catatan) { toast('Catatan wajib diisi'); return; }
   }
 
   d.sheet = tidakLayak ? 'Tidak Layak' : ST.jenis;
   document.getElementById('abar').style.display = 'none';
   toast('Menghantar data...');
 
-  const url    = `https://script.google.com/macros/s/${ST.depId}/exec`;
-  const params = new URLSearchParams(d);
-
   try {
-    await fetch(url + '?' + params.toString(), { method:'GET', mode:'no-cors' });
+    const url = 'https://script.google.com/macros/s/' + ST.depId + '/exec';
+    await fetch(url + '?' + new URLSearchParams(d).toString(),
+      { method:'GET', mode:'no-cors' });
+
+    vibrate([30, 60, 30]);
     document.getElementById('succIco').textContent = tidakLayak ? '⛔' : '✅';
     document.getElementById('succIco').className   = 'succ-ico' + (tidakLayak ? ' tl' : '');
-    document.getElementById('succTtl').textContent = tidakLayak ? 'Direkod: Tidak Layak' : 'Berjaya Dihantar';
+    document.getElementById('succTtl').textContent = tidakLayak
+      ? 'Direkod: Tidak Layak' : 'Berjaya Dihantar';
     document.getElementById('succMsg').textContent = tidakLayak
-      ? `Data ${d.nama||'pemohon'} direkod dalam sheet Tidak Layak.`
-      : `Data ${d.nama} direkod dalam sheet ${ST.jenis}.`;
+      ? 'Data ' + (d.nama||'pemohon') + ' direkod dalam sheet Tidak Layak.'
+      : 'Data ' + d.nama + ' direkod dalam sheet ' + ST.jenis + '.';
     showS(4);
   } catch(err) {
     document.getElementById('abar').style.display = 'flex';
@@ -993,49 +1249,27 @@ async function doSubmit(tidakLayak) {
   }
 }
 
-/* ── SETTINGS MODAL ── */
-function openSettings() {
-  const modal = document.getElementById('settingsModal');
-  const display = document.getElementById('currentDepId');
-  const input   = document.getElementById('newDepId');
-  // Show current ID (masked for security — show first 8 + ...)
-  const id = ST.depId || '—';
-  display.textContent = id.length > 12 ? id.substring(0,12) + '...' + id.slice(-6) : id;
-  input.value = '';
-  modal.classList.add('open');
-  setTimeout(() => input.focus(), 300);
-}
-
-function closeSettings() {
-  document.getElementById('settingsModal').classList.remove('open');
-}
-
-function closeSettingsOutside(e) {
-  if(e.target === document.getElementById('settingsModal')) closeSettings();
-}
-
-function updateDepId() {
-  const newId = document.getElementById('newDepId').value.trim();
-  if(!newId) { toast('Sila masukkan Deployment ID baru'); return; }
-  if(newId === ST.depId) { toast('ID ini sama dengan ID semasa'); return; }
-
-  ST.depId = newId;
-  localStorage.setItem('pkj_depid', newId);
-  document.getElementById('depId').value = newId; // sync dengan screen 1
-  closeSettings();
-  toast('✅ Deployment ID berjaya dikemaskini');
-}
-
-/* ── RESET ── */
+/* ════════════════════════════════════════
+   RESET
+════════════════════════════════════════ */
 function resetAll() {
-  ST.jenis=''; ST.imgBase64=''; ST.imgMime='';
-  document.querySelectorAll('.jenis-card').forEach(c => c.classList.remove('sel'));
+  ST.jenis = ''; ST.imgBase64 = ''; ST.imgMime = '';
+  document.querySelectorAll('.jk').forEach(c => c.classList.remove('sel'));
   document.getElementById('scanCard').style.display = 'none';
   resetScan();
   showS(2);
 }
 
-/* ── TOAST ── */
+/* ════════════════════════════════════════
+   HAPTIC (Android) / no-op on iOS
+════════════════════════════════════════ */
+function vibrate(pattern) {
+  try { navigator.vibrate && navigator.vibrate(pattern); } catch(e) {}
+}
+
+/* ════════════════════════════════════════
+   TOAST
+════════════════════════════════════════ */
 let _tt;
 function toast(msg) {
   const el = document.getElementById('toast');
@@ -1043,10 +1277,24 @@ function toast(msg) {
   clearTimeout(_tt); _tt = setTimeout(() => el.classList.remove('on'), 3200);
 }
 
-/* ── INIT ── */
-(function() {
-  const id = localStorage.getItem('pkj_depid');
-  if(id) { document.getElementById('depId').value=id; ST.depId=id; showS(2); }
+/* ════════════════════════════════════════
+   INIT
+════════════════════════════════════════ */
+(function init() {
+  const id = localStorage.getItem('pkj_dep');
+  if (id) {
+    document.getElementById('depId').value = id;
+    ST.depId = id;
+    showS(2);
+  }
+
+  // Prevent double-tap zoom on iOS
+  let lastTouch = 0;
+  document.addEventListener('touchend', e => {
+    const now = Date.now();
+    if (now - lastTouch < 300) e.preventDefault();
+    lastTouch = now;
+  }, { passive: false });
 })();
 </script>
 </body>
