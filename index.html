@@ -967,9 +967,44 @@ function toUrlSafe(b64) {
 }
 
 /* ════════════════════════════════════════
+   callAPI — JSONP (guna <script> tag)
+   Tiada CORS issue langsung — script tag
+   boleh load dari mana-mana domain
+════════════════════════════════════════ */
+function callAPI(url) {
+  return new Promise((resolve, reject) => {
+    // Nama callback unik
+    const cb = '_pkj' + Date.now() + Math.random().toString(36).slice(2, 7);
+
+    let done = false;
+    const finish = (data, isErr) => {
+      if (done) return;
+      done = true;
+      clearTimeout(tid);
+      delete window[cb];
+      if (s.parentNode) s.parentNode.removeChild(s);
+      isErr ? reject(data) : resolve(data);
+    };
+
+    // Timeout 45 saat
+    const tid = setTimeout(
+      () => finish(new Error('Request timeout. Semak Deployment ID dan sambungan internet.'), true),
+      45000
+    );
+
+    // Daftar callback secara global sebelum script di-inject
+    window[cb] = data => finish(data, false);
+
+    const s    = document.createElement('script');
+    s.onerror  = () => finish(new Error('Gagal sambung ke Apps Script. Semak Deployment ID.'), true);
+    s.src      = url + (url.includes('?') ? '&' : '?') + 'callback=' + cb;
+    document.head.appendChild(s);
+  });
+}
+
+/* ════════════════════════════════════════
    OCR — Google Docs OCR via Apps Script
-   Kaedah: URL-safe base64 chunks via GET
-   GET request = tiada CORS issue langsung
+   Kaedah: JSONP + URL-safe base64 chunks
 ════════════════════════════════════════ */
 async function runOCR() {
   const ocrBox  = document.getElementById('ocrBox');
@@ -994,8 +1029,8 @@ async function runOCR() {
 
     setStep(1,'done'); setStep(2,'active'); setBar(15);
 
-    // ── STEP 2: Hantar gambar dalam chunks via GET ──
-    const CHUNK_SIZE = 4000; // 4000 chars setiap GET — selamat untuk Apps Script
+    // ── STEP 2: Hantar dalam chunks via JSONP ──
+    const CHUNK_SIZE = 4000;
     const chunks     = [];
     for (let i = 0; i < urlSafe.length; i += CHUNK_SIZE) {
       chunks.push(urlSafe.slice(i, i + CHUNK_SIZE));
@@ -1003,49 +1038,36 @@ async function runOCR() {
     const sid   = 'pkj' + Date.now();
     const total = chunks.length;
 
-    ocrLbl.textContent = 'Menghantar gambar ke Google... (0/' + total + ')';
-    ocrSub.textContent = total + ' bahagian perlu dihantar';
+    ocrSub.textContent  = total + ' bahagian perlu dihantar';
+    ocrLbl.textContent  = 'Menghantar gambar... (0/' + total + ')';
 
     for (let i = 0; i < chunks.length; i++) {
       const pct = Math.round(15 + (i / total) * 40);
       setBar(pct);
-      ocrLbl.textContent = 'Menghantar gambar ke Google... (' + (i+1) + '/' + total + ')';
+      ocrLbl.textContent = 'Menghantar gambar... (' + (i+1) + '/' + total + ')';
 
-      const params = new URLSearchParams({
-        action: 'chunk',
-        sid:    sid,
-        idx:    String(i),
-        tot:    String(total),
-        d:      chunks[i]
-      });
+      const url  = BASE + '?' + new URLSearchParams({
+        action: 'chunk', sid, idx: String(i), tot: String(total), d: chunks[i]
+      }).toString();
 
-      const resp = await fetch(BASE + '?' + params.toString());
-      const json = await resp.json();
-
-      if (json.status !== 'ok') {
-        throw new Error('Gagal menghantar bahagian ' + (i+1) + ': ' + (json.msg || ''));
-      }
+      const res = await callAPI(url);
+      if (res.status !== 'ok') throw new Error('Bahagian ' + (i+1) + ' gagal: ' + (res.msg || ''));
     }
 
     setStep(2,'done'); setStep(3,'active'); setBar(58);
     ocrLbl.textContent = 'Google sedang membaca teks borang...';
-    ocrSub.textContent = 'Enjin OCR Google memproses gambar...';
+    ocrSub.textContent = 'Enjin OCR Google memproses...';
 
-    // ── STEP 3: Trigger OCR di Apps Script ──
-    const ocrParams = new URLSearchParams({ action: 'ocr', sid: sid });
-    const ocrResp   = await fetch(BASE + '?' + ocrParams.toString());
-    const ocrData   = await ocrResp.json();
-
-    if (ocrData.status !== 'ok') {
-      throw new Error(ocrData.msg || 'OCR Google gagal');
-    }
+    // ── STEP 3: Trigger OCR ──
+    const ocrRes = await callAPI(BASE + '?' + new URLSearchParams({ action: 'ocr', sid }).toString());
+    if (ocrRes.status !== 'ok') throw new Error(ocrRes.msg || 'OCR Google gagal');
 
     // ── STEP 4: Parse & extract ──
     setStep(3,'done'); setStep(4,'active'); setBar(92);
     ocrLbl.textContent = 'Mengekstrak maklumat pemohon...';
     ocrSub.textContent = '';
 
-    const parsed = parseBorang(ocrData.text, ST.jenis);
+    const parsed = parseBorang(ocrRes.text, ST.jenis);
     fillPreview(parsed);
 
     setStep(4,'done'); setBar(100);
