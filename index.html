@@ -192,7 +192,7 @@ label.fl { font-size: 12px; font-weight: 600; color: var(--text2); display: bloc
 .dep-lbl  { font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 8px; }
 .dep-hint { font-size: 11px; color: var(--text3); margin-top: 6px; font-family: 'DM Mono', monospace; }
 .divider  { height: 1px; background: var(--border); margin: 14px 0; }
-.guide    { list-style: none; padding: 0; }
+.guide    { list-style: none; padding: 0; display: none; }
 .guide li {
   display: flex; gap: 10px; align-items: flex-start;
   padding: 8px 0; border-bottom: 1px solid var(--border);
@@ -720,7 +720,7 @@ input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important;
       <div class="fsec-ttl">Catatan</div>
       <div class="frow frow1">
         <div class="field">
-          <label class="fl">Catatan <span class="req">*</span></label>
+          <label class="fl" id="catatanLbl">Catatan</label>
           <textarea id="fCatatan" placeholder="Masukkan catatan berkaitan permohonan ini..."></textarea>
         </div>
       </div>
@@ -1177,6 +1177,10 @@ function fillPreview(d) {
   document.getElementById('fHarga').placeholder = isBSR ? 'cth: 500' : 'cth: 250000';
   document.getElementById('btnHantar').style.background =
     {BBR:'#185FA5', BMR:'#1B4B3A', BSR:'#854F0B'}[ST.jenis];
+
+  // Catatan wajib untuk BSR sahaja
+  document.getElementById('catatanLbl').innerHTML =
+    ST.jenis === 'BSR' ? 'Catatan <span class="req">*</span>' : 'Catatan';
 }
 
 /* ════════════════════════════════════════
@@ -1222,7 +1226,8 @@ async function doSubmit(tidakLayak) {
     if (!d.tel)     { toast('No. Telefon wajib diisi'); return; }
     if (!d.emel)    { toast('Emel wajib diisi'); return; }
     if (!d.harga)   { toast('Harga Rumah/Sewa wajib diisi'); return; }
-    if (!d.catatan) { toast('Catatan wajib diisi'); return; }
+    // Catatan wajib untuk BSR sahaja
+    if (ST.jenis === 'BSR' && !d.catatan) { toast('Catatan wajib diisi untuk BSR'); return; }
   }
 
   d.sheet = tidakLayak ? 'Tidak Layak' : ST.jenis;
