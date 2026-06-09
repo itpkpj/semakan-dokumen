@@ -1043,10 +1043,16 @@ function toUrlSafe(b64) {
 
 /* ════════════════════════════════════════
    OCR via GEMINI API
-   Terbaik untuk tulisan tangan & bercetak
-   Terus extract JSON — tiada regex parsing
-   Percuma: 1,500 req/hari dari AI Studio
+   Auto-try model terbaru → fallback
 ════════════════════════════════════════ */
+
+// Senarai model — cuba dari atas ke bawah
+const GEMINI_MODELS = [
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-lite',
+  'gemini-1.5-flash-latest',
+];
+
 async function ocrGemini(compressed, jenis) {
   const prompt = `Ini adalah borang permohonan ${jenis} PKJ (Perbadanan Kemajuan Johor) Malaysia.
 Baca semua teks dalam borang ini termasuk tulisan tangan.
@@ -1061,30 +1067,43 @@ Kembalikan JSON sahaja (tiada penjelasan, tiada markdown):
   "harga": "harga rumah ATAU bayaran sewa dalam angka sahaja tanpa RM atau koma"
 }`;
 
-  const resp = await fetch(
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + ST.geminiKey,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [
-          { text: prompt },
-          { inline_data: { mime_type: 'image/jpeg', data: compressed } }
-        ]}],
-        generationConfig: { temperature: 0, maxOutputTokens: 512 }
-      })
+  let lastErr;
+  for (const model of GEMINI_MODELS) {
+    try {
+      const resp = await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + ST.geminiKey,
+        {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [
+              { text: prompt },
+              { inline_data: { mime_type: 'image/jpeg', data: compressed } }
+            ]}],
+            generationConfig: { temperature: 0, maxOutputTokens: 512 }
+          })
+        }
+      );
+
+      // Model not found → try next
+      if (resp.status === 404) { lastErr = new Error(model + ' tidak tersedia'); continue; }
+
+      if (!resp.ok) {
+        const e = await resp.json().catch(() => ({}));
+        throw new Error(e.error?.message || 'Gemini HTTP ' + resp.status);
+      }
+
+      const data  = await resp.json();
+      const raw   = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const clean = raw.replace(/```json|```/g, '').trim();
+      return JSON.parse(clean);
+
+    } catch (err) {
+      if (err.message.includes('tidak tersedia')) { lastErr = err; continue; }
+      throw err; // error lain — jangan retry
     }
-  );
-
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({}));
-    throw new Error(err.error?.message || 'Gemini HTTP ' + resp.status);
   }
-
-  const data = await resp.json();
-  const raw  = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  const clean = raw.replace(/```json|```/g, '').trim();
-  return JSON.parse(clean);
+  throw lastErr || new Error('Semua model Gemini tidak tersedia');
 }
 
 /* ════════════════════════════════════════
