@@ -6,8 +6,8 @@
 <meta name="theme-color" content="#1B4B3A">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="OCR PKJ">
-<title>Sistem OCR PKJ</title>
+<meta name="apple-mobile-web-app-title" content="Key-In PKJ">
+<title>Sistem Key-In PKJ</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
 
@@ -28,9 +28,7 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
 html { height: 100%; }
-
 body {
   font-family: 'DM Sans', sans-serif;
   background: var(--bg);
@@ -43,129 +41,79 @@ body {
   overscroll-behavior: none;
 }
 
-/* ══════════════════ HEADER ══════════════════ */
+/* HEADER */
 .hdr {
-  background: var(--accent);
-  color: #fff;
+  background: var(--accent); color: #fff;
   padding: 12px 18px;
   padding-top: max(12px, calc(10px + var(--safe-top)));
   padding-left:  max(18px, var(--safe-l));
   padding-right: max(18px, var(--safe-r));
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  display: flex; align-items: center; gap: 10px;
+  position: sticky; top: 0; z-index: 100;
   box-shadow: 0 1px 0 rgba(0,0,0,.15);
 }
 .hdr-logo {
   width: 36px; height: 36px;
-  background: rgba(255,255,255,.15);
-  border-radius: 9px;
+  background: rgba(255,255,255,.15); border-radius: 9px;
   display: flex; align-items: center; justify-content: center;
-  font-weight: 700; font-size: 13px;
-  font-family: 'DM Mono', monospace;
-  flex-shrink: 0;
+  font-weight: 700; font-size: 13px; font-family: 'DM Mono', monospace; flex-shrink: 0;
 }
 .hdr-info { min-width: 0; }
 .hdr-title { font-size: 15px; font-weight: 600; line-height: 1.2; }
 .hdr-sub   { font-size: 11px; opacity: .5; font-family: 'DM Mono', monospace; }
 .hdr-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 .step-dots { display: flex; gap: 5px; align-items: center; }
-.dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: rgba(255,255,255,.22); transition: all .35s;
-}
+.dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.22); transition: all .35s; }
 .dot.active { background: #fff; width: 20px; border-radius: 4px; }
 .dot.done   { background: rgba(255,255,255,.55); }
 .gear {
   width: 36px; height: 36px;
-  background: rgba(255,255,255,.1);
-  border: 1px solid rgba(255,255,255,.18);
-  border-radius: 9px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; font-size: 17px;
-  transition: background .15s, transform .1s;
-  flex-shrink: 0;
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18);
+  border-radius: 9px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 17px; transition: background .15s, transform .1s; flex-shrink: 0;
 }
 .gear:active { background: rgba(255,255,255,.25); transform: scale(.9); }
 
-/* ══════════════════ MAIN ══════════════════ */
+/* MAIN */
 .main {
-  max-width: 620px;
-  margin: 0 auto;
-  padding: 18px 14px;
+  max-width: 620px; margin: 0 auto; padding: 18px 14px;
   padding-left:  max(14px, var(--safe-l));
   padding-right: max(14px, var(--safe-r));
   padding-bottom: calc(110px + var(--safe-bot));
 }
 
-/* ══════════════════ CARD ══════════════════ */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--rl);
-  padding: 18px;
-  margin-bottom: 14px;
-}
-.card-ttl {
-  font-size: 11px; font-weight: 600;
-  text-transform: uppercase; letter-spacing: .08em;
-  color: var(--text3); margin-bottom: 14px;
-  display: flex; align-items: center; gap: 7px;
-}
+/* CARD */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--rl); padding: 18px; margin-bottom: 14px; }
+.card-ttl { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--text3); margin-bottom: 14px; display: flex; align-items: center; gap: 7px; }
 
 .screen { display: none; }
 .screen.active { display: block; }
 
-/* ══════════════════ FORM ELEMENTS ══════════════════ */
-input[type=text],
-input[type=number],
-input[type=date],
-select,
-textarea {
-  width: 100%;
-  border: 1.5px solid var(--border);
-  border-radius: var(--r);
-  padding: 11px 13px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 16px; /* 16px wajib — cegah iOS zoom */
-  background: var(--surface);
-  color: var(--text);
-  outline: none;
-  transition: border-color .2s, box-shadow .2s;
-  -webkit-appearance: none;
-  appearance: none;
+/* FORM */
+input[type=text], input[type=number], input[type=date], select, textarea {
+  width: 100%; border: 1.5px solid var(--border); border-radius: var(--r);
+  padding: 11px 13px; font-family: 'DM Sans', sans-serif; font-size: 16px;
+  background: var(--surface); color: var(--text); outline: none;
+  transition: border-color .2s, box-shadow .2s; -webkit-appearance: none; appearance: none;
 }
-input:focus, select:focus, textarea:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(27,75,58,.1);
-}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(27,75,58,.1); }
 .mono { font-family: 'DM Mono', monospace; font-size: 13px !important; }
 textarea { resize: vertical; min-height: 72px; }
 select {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24'%3E%3Cpath fill='%236B6960' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 11px center;
-  padding-right: 32px;
+  background-repeat: no-repeat; background-position: right 11px center; padding-right: 32px;
 }
 label.fl { font-size: 12px; font-weight: 600; color: var(--text2); display: block; margin-bottom: 5px; }
 .req { color: var(--danger); }
 .field { display: flex; flex-direction: column; gap: 4px; }
+input#fNama { text-transform: uppercase; }
 
-/* ══════════════════ BUTTONS ══════════════════ */
+/* BUTTONS */
 .btn {
-  display: inline-flex; align-items: center; justify-content: center;
-  gap: 8px; padding: 14px 20px;
-  border-radius: var(--r);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 15px; font-weight: 500;
-  cursor: pointer; border: none;
-  transition: all .15s;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  min-height: 50px; /* min touch target */
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 14px 20px; border-radius: var(--r); font-family: 'DM Sans', sans-serif;
+  font-size: 15px; font-weight: 500; cursor: pointer; border: none;
+  transition: all .15s; user-select: none; -webkit-tap-highlight-color: transparent; min-height: 50px;
 }
 .btn:active { transform: scale(.96); opacity: .88; }
 .btn-g  { background: var(--accent); color: #fff; }
@@ -177,54 +125,29 @@ label.fl { font-size: 12px; font-weight: 600; color: var(--text2); display: bloc
 .btn-full { width: 100%; }
 .btn-sm   { padding: 9px 14px; font-size: 13px; min-height: 40px; }
 
-/* ══════════════════ SETUP ══════════════════ */
+/* SETUP */
 .hero { text-align: center; padding: 24px 0 18px; }
-.hero-icon {
-  width: 64px; height: 64px; background: var(--accent-lt);
-  border-radius: 16px; display: flex; align-items: center;
-  justify-content: center; margin: 0 auto 14px; font-size: 28px;
-}
+.hero-icon { width: 64px; height: 64px; background: var(--accent-lt); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; font-size: 28px; }
 .hero h1 { font-size: 21px; font-weight: 600; letter-spacing: -.4px; margin-bottom: 5px; }
 .hero p  { font-size: 14px; color: var(--text2); }
-.dep-wrap {
-  background: var(--surface2); border: 1.5px solid var(--border);
-  border-radius: var(--r); padding: 14px; margin-bottom: 14px;
-}
+.dep-wrap { background: var(--surface2); border: 1.5px solid var(--border); border-radius: var(--r); padding: 14px; margin-bottom: 14px; }
 .dep-lbl  { font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 8px; }
 .dep-hint { font-size: 11px; color: var(--text3); margin-top: 6px; font-family: 'DM Mono', monospace; }
 .divider  { height: 1px; background: var(--border); margin: 14px 0; }
-.guide    { list-style: none; padding: 0; display: none; }
-.guide li {
-  display: flex; gap: 10px; align-items: flex-start;
-  padding: 8px 0; border-bottom: 1px solid var(--border);
-  font-size: 13px; color: var(--text2); line-height: 1.5;
-}
+.guide    { list-style: none; padding: 0; }
+.guide li { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text2); line-height: 1.5; }
 .guide li:last-child { border-bottom: none; }
-.step-num {
-  width: 22px; height: 22px; border-radius: 50%;
-  background: var(--accent); color: #fff;
-  font-size: 11px; font-weight: 600;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; margin-top: 1px;
-}
+.step-num { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+.guide code { background: var(--surface); border: 1px solid var(--border); border-radius: 5px; padding: 1px 5px; font-family: 'DM Mono', monospace; font-size: 11px; }
 
-/* ══════════════════ JENIS BORANG ══════════════════ */
+/* JENIS */
 .jenis-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
-.jk {
-  border: 2px solid var(--border); border-radius: var(--r);
-  padding: 14px 8px; text-align: center; cursor: pointer;
-  transition: all .2s; background: var(--surface); user-select: none;
-  min-height: 90px; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 3px;
-}
+.jk { border: 2px solid var(--border); border-radius: var(--r); padding: 14px 8px; text-align: center; cursor: pointer; transition: all .2s; background: var(--surface); user-select: none; min-height: 90px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
 .jk:active { transform: scale(.96); }
 .jk.sel.bbr { border-color: var(--bbr); background: var(--bbr-lt); }
 .jk.sel.bmr { border-color: var(--bmr); background: var(--bmr-lt); }
 .jk.sel.bsr { border-color: var(--bsr); background: var(--bsr-lt); }
-.jk-code {
-  font-family: 'DM Mono', monospace; font-size: 18px;
-  font-weight: 600; color: var(--text2);
-}
+.jk-code { font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 600; color: var(--text2); }
 .jk.sel.bbr .jk-code { color: var(--bbr); }
 .jk.sel.bmr .jk-code { color: var(--bmr); }
 .jk.sel.bsr .jk-code { color: var(--bsr); }
@@ -234,265 +157,62 @@ label.fl { font-size: 12px; font-weight: 600; color: var(--text2); display: bloc
 .jk.sel.bmr .jk-amt { color: var(--bmr); }
 .jk.sel.bsr .jk-amt { color: var(--bsr); }
 
-/* ══════════════════ SCAN AREA ══════════════════ */
-.scan-hint {
-  background: var(--accent-lt); border: 1px solid #b0d8cc;
-  border-radius: var(--r); padding: 11px 13px;
-  font-size: 13px; color: #0E4030;
-  display: flex; gap: 9px; align-items: flex-start;
-  margin-bottom: 14px; line-height: 1.5;
-}
-
-/* Image preview */
-.img-preview {
-  width: 100%; border-radius: var(--rl); overflow: hidden;
-  background: #111; margin-bottom: 12px;
-  display: none; position: relative;
-}
-.img-preview img {
-  width: 100%; display: block;
-  max-height: 360px; object-fit: contain; background: #111;
-}
-.img-badge {
-  position: absolute; top: 10px; right: 10px;
-  background: rgba(0,0,0,.6); color: #fff;
-  font-size: 11px; padding: 4px 10px; border-radius: 20px;
-  font-family: 'DM Mono', monospace;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-}
-.img-retake {
-  position: absolute; bottom: 12px; right: 12px;
-  background: rgba(0,0,0,.65); color: #fff; border: none;
-  border-radius: 20px; font-size: 13px; font-weight: 500;
-  padding: 8px 16px; cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-}
-.img-retake:active { opacity: .75; }
-
-/* Scan buttons — 2 large stacked on mobile */
-.scan-cam-btn {
-  width: 100%;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: var(--rl);
-  padding: 22px 18px;
-  display: flex; align-items: center; gap: 16px;
-  cursor: pointer; margin-bottom: 10px;
-  transition: all .15s;
-  -webkit-tap-highlight-color: transparent;
-}
-.scan-cam-btn:active { transform: scale(.98); background: var(--accent-dk); }
-.scan-cam-ico { font-size: 34px; flex-shrink: 0; }
-.scan-cam-info { text-align: left; }
-.scan-cam-lbl  { font-size: 16px; font-weight: 600; color: #fff; line-height: 1.2; }
-.scan-cam-sub  { font-size: 12px; color: rgba(255,255,255,.7); margin-top: 2px; }
-
-.scan-row { display: flex; gap: 10px; }
-.scan-sec {
-  flex: 1;
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: var(--r);
-  padding: 14px 10px;
-  display: flex; flex-direction: column;
-  align-items: center; gap: 7px;
-  cursor: pointer; transition: all .15s;
-  -webkit-tap-highlight-color: transparent;
-  min-height: 70px; justify-content: center;
-}
-.scan-sec:active { transform: scale(.96); background: var(--surface2); }
-.scan-sec-ico { font-size: 24px; }
-.scan-sec-lbl { font-size: 13px; font-weight: 500; color: var(--text2); }
-
-/* Tips box */
-.tips-box {
-  background: var(--warn-lt);
-  border: 1px solid #e8c96a;
-  border-radius: var(--r);
-  padding: 11px 13px;
-  font-size: 12px; color: var(--warn);
-  margin-top: 10px; line-height: 1.6;
-}
-.tips-box b { display: block; margin-bottom: 3px; font-size: 13px; }
-
-/* Hidden inputs */
-#iKamera, #iGaleri { display: none; }
-
-/* OCR Progress */
-.ocr-box {
-  display: none;
-  background: var(--surface2);
-  border-radius: var(--rl);
-  padding: 28px 20px;
-  text-align: center;
-  margin-top: 12px;
-}
-.spin {
-  width: 44px; height: 44px;
-  border: 3.5px solid var(--border);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin .8s linear infinite;
-  margin: 0 auto 16px;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-.ocr-lbl  { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 12px; }
-.ocr-prog { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
-.ocr-bar  { height: 100%; background: var(--accent); width: 0%; transition: width .4s ease; border-radius: 3px; }
-.ocr-sub  { font-size: 12px; color: var(--text3); margin-top: 9px; }
-.ocr-steps { list-style: none; text-align: left; margin-top: 16px; }
-.ocr-step {
-  display: flex; align-items: center; gap: 10px;
-  font-size: 13px; color: var(--text3);
-  padding: 5px 0; transition: color .3s;
-}
-.ocr-step.done   { color: var(--accent); }
-.ocr-step.active { color: var(--text); font-weight: 500; }
-.ocr-step-ico { font-size: 15px; width: 20px; text-align: center; }
-
-/* OCR Done */
-.ocr-done-card {
-  display: none;
-  margin-top: 12px;
-}
-
-/* Alerts */
-.alert {
-  padding: 11px 14px; border-radius: var(--r);
-  font-size: 13px; line-height: 1.55;
-  display: flex; gap: 9px; align-items: flex-start;
-  margin-bottom: 12px;
-}
+/* ALERTS */
+.alert { padding: 11px 14px; border-radius: var(--r); font-size: 13px; line-height: 1.55; display: flex; gap: 9px; align-items: flex-start; margin-bottom: 12px; }
 .al-g { background: var(--accent-lt); color: #0E4030; border: 1px solid #b0d8cc; }
 .al-y { background: var(--warn-lt);   color: var(--warn); border: 1px solid #e8c96a; }
 
-/* ══════════════════ PREVIEW ══════════════════ */
-.prev-hdr {
-  display: flex; align-items: center; gap: 10px;
-  margin-bottom: 18px; padding-bottom: 14px;
-  border-bottom: 1px solid var(--border);
-}
-.prev-badge {
-  font-size: 12px; font-weight: 600; padding: 4px 10px;
-  border-radius: 6px; font-family: 'DM Mono', monospace;
-}
+/* PREVIEW / FORM SECTIONS */
+.prev-hdr { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+.prev-badge { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 6px; font-family: 'DM Mono', monospace; }
 .prev-badge.bbr { background: var(--bbr-lt); color: var(--bbr); }
 .prev-badge.bmr { background: var(--bmr-lt); color: var(--bmr); }
 .prev-badge.bsr { background: var(--bsr-lt); color: var(--bsr); }
-
 .fsec { margin-bottom: 18px; }
-.fsec-ttl {
-  font-size: 11px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .09em; color: var(--text3);
-  margin-bottom: 10px; padding-bottom: 6px;
-  border-bottom: 1px solid var(--border);
-}
+.fsec-ttl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .09em; color: var(--text3); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
 .frow  { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
 .frow1 { grid-template-columns: 1fr; }
 
-input.ocr-ok { border-color: #7FC49A !important; background: #F2FAF5 !important; }
-input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important; }
-
-/* ══════════════════ ACTION BAR ══════════════════ */
+/* ACTION BAR */
 .abar {
   position: fixed; bottom: 0; left: 0; right: 0;
-  background: var(--surface);
-  border-top: 1px solid var(--border);
+  background: var(--surface); border-top: 1px solid var(--border);
   padding: 10px 16px;
   padding-bottom: max(14px, calc(10px + var(--safe-bot)));
   padding-left:  max(16px, var(--safe-l));
   padding-right: max(16px, var(--safe-r));
-  display: flex; gap: 10px;
-  z-index: 99;
-  box-shadow: 0 -4px 20px rgba(0,0,0,.06);
+  display: flex; gap: 10px; z-index: 99; box-shadow: 0 -4px 20px rgba(0,0,0,.06);
 }
 .abar .btn { flex: 1; font-size: 15px; padding: 15px; }
 
-/* ══════════════════ SUCCESS ══════════════════ */
+/* SUCCESS */
 .succ { text-align: center; padding: 44px 16px; }
-.succ-ico {
-  width: 76px; height: 76px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 18px; font-size: 34px;
-  background: var(--accent-lt);
-}
+.succ-ico { width: 76px; height: 76px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 18px; font-size: 34px; background: var(--accent-lt); }
 .succ-ico.tl { background: var(--danger-lt); }
 .succ h2 { font-size: 20px; font-weight: 600; margin-bottom: 7px; }
 .succ p  { font-size: 14px; color: var(--text2); margin-bottom: 24px; }
 
-/* ══════════════════ SETTINGS MODAL ══════════════════ */
-.modal-bg {
-  display: none; position: fixed; inset: 0; z-index: 300;
-  background: rgba(0,0,0,.5);
-  align-items: flex-end; justify-content: center;
-}
+/* MODAL */
+.modal-bg { display: none; position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,.5); align-items: flex-end; justify-content: center; }
 .modal-bg.open { display: flex; }
 .modal-sheet {
-  background: var(--surface);
-  border-radius: 22px 22px 0 0;
-  padding: 20px 18px;
+  background: var(--surface); border-radius: 22px 22px 0 0; padding: 20px 18px;
   padding-bottom: max(36px, calc(20px + var(--safe-bot)));
   padding-left:  max(18px, var(--safe-l));
   padding-right: max(18px, var(--safe-r));
-  width: 100%; max-width: 620px;
-  animation: slideUp .28s cubic-bezier(.25,.46,.45,.94);
+  width: 100%; max-width: 620px; animation: slideUp .28s cubic-bezier(.25,.46,.45,.94);
 }
 @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-.modal-handle {
-  width: 40px; height: 4px; border-radius: 2px;
-  background: var(--border); margin: 0 auto 20px;
-}
+.modal-handle { width: 40px; height: 4px; border-radius: 2px; background: var(--border); margin: 0 auto 20px; }
 .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 14px; }
-.cur-dep {
-  background: var(--surface2); border: 1px solid var(--border);
-  border-radius: var(--r); padding: 11px 13px;
-  font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text2);
-  margin-bottom: 12px; word-break: break-all; line-height: 1.7;
-}
+.cur-dep { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r); padding: 11px 13px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text2); margin-bottom: 12px; word-break: break-all; line-height: 1.7; }
 .cur-dep span { color: var(--text3); font-size: 10px; display: block; margin-bottom: 3px; }
 
-/* ══════════════════ TOAST ══════════════════ */
-.toast {
-  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
-  background: rgba(26,26,24,.92); color: #fff;
-  padding: 10px 20px; border-radius: 22px;
-  font-size: 14px; font-weight: 500;
-  opacity: 0; transition: opacity .25s;
-  z-index: 400; white-space: nowrap; pointer-events: none;
-  max-width: calc(100vw - 40px); text-align: center;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
+/* TOAST */
+.toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: rgba(26,26,24,.92); color: #fff; padding: 10px 20px; border-radius: 22px; font-size: 14px; font-weight: 500; opacity: 0; transition: opacity .25s; z-index: 400; white-space: nowrap; pointer-events: none; max-width: calc(100vw - 40px); text-align: center; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 .toast.on { opacity: 1; }
 
-/* ENGINE TOGGLE */
-.engine-wrap { display:none; margin-bottom:12px; }
-.engine-toggle { display:flex; gap:8px; }
-.et-btn {
-  flex:1; padding:10px 8px; text-align:center;
-  font-size:13px; font-weight:500; font-family:'DM Sans',sans-serif;
-  border-radius:var(--r); cursor:pointer; border:1.5px solid var(--border);
-  background:var(--surface); color:var(--text2);
-  transition:all .15s; user-select:none;
-}
-.et-btn:active { transform:scale(.97); }
-.et-btn.on { background:var(--accent); color:#fff; border-color:var(--accent); }
-.et-hint { font-size:11px; color:var(--text3); margin-top:6px; text-align:center; }
-
-/* RESPONSIVE */
-@media (max-width: 480px) {
-  .jenis-grid { gap: 8px; }
-  .jk { padding: 12px 6px; }
-  .jk-code { font-size: 16px; }
-  .frow { grid-template-columns: 1fr; }
-}
-@media (min-width: 481px) {
-  .jenis-grid { grid-template-columns: repeat(3,1fr); }
-}
+@media (max-width: 480px) { .jenis-grid { gap: 8px; } .jk { padding: 12px 6px; } .jk-code { font-size: 16px; } .frow { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -501,7 +221,7 @@ input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important;
 <div class="hdr">
   <div class="hdr-logo">PKJ</div>
   <div class="hdr-info">
-    <div class="hdr-title">Sistem OCR Borang</div>
+    <div class="hdr-title">Sistem Key-In Borang</div>
     <div class="hdr-sub">Perbadanan Kemajuan Johor</div>
   </div>
   <div class="hdr-right">
@@ -509,7 +229,6 @@ input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important;
       <div class="dot active" id="d1"></div>
       <div class="dot" id="d2"></div>
       <div class="dot" id="d3"></div>
-      <div class="dot" id="d4"></div>
     </div>
     <div class="gear" onclick="openSettings()">⚙️</div>
   </div>
@@ -517,52 +236,42 @@ input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important;
 
 <div class="main">
 
-<!-- ══════ SCREEN 1: SETUP ══════ -->
+<!-- SCREEN 1: SETUP -->
 <div class="screen active" id="s1">
   <div class="hero">
-    <div class="hero-icon">📋</div>
-    <h1>Sistem OCR PKJ</h1>
-    <p>Tetapkan konfigurasi sistem</p>
+    <div class="hero-icon">📝</div>
+    <h1>Sistem Key-In PKJ</h1>
+    <p>Masukkan Deployment ID untuk mula</p>
   </div>
   <div class="card">
     <div class="card-ttl">⚙️ Konfigurasi</div>
-
-    <div class="alert al-g" style="margin-bottom:12px">
-      <span>🧠</span>
-      <div><strong>OCR AI Tempatan (Transformers.js)</strong> kini digunakan — model AI berjalan terus dalam pelayar telefon. <strong>Tiada API key diperlukan</strong> &amp; data borang tidak keluar dari peranti. Model dimuat turun <strong>sekali sahaja (~250MB)</strong> pada imbasan pertama, kemudian disimpan dalam cache pelayar.</div>
-    </div>
-
     <div class="dep-wrap">
-      <div class="dep-lbl">🔍 OCR.space API Key <span style="color:var(--bsr);font-size:10px;font-weight:400">(pilihan — fallback jika AI tempatan gagal)</span></div>
-      <input type="text" id="ocrKey" class="mono" placeholder="K8xxxxxxxxxxxx" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-      <div class="dep-hint">Percuma 25,000 req/bulan → <strong>ocr.space/ocrapi/freekey</strong></div>
-    </div>
-
-    <div class="dep-wrap" style="margin-top:10px">
       <div class="dep-lbl">🔑 Deployment ID (Apps Script) <span style="color:var(--danger)">*</span></div>
       <input type="text" id="depId" class="mono" placeholder="AKfycby...xxxx" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-      <div class="dep-hint">Contoh: AKfycbxxxxxxxxxxxxxxxxxxxxxxxxxxx</div>
+      <div class="dep-hint">Masukkan ID sahaja — bukan URL penuh</div>
     </div>
-
-    <button class="btn btn-g btn-full" onclick="saveConfig()">Simpan &amp; Mula →</button>
+    <div class="alert al-g" style="margin-bottom:14px">
+      <span>ℹ️</span>
+      <div>Data akan dihantar terus ke Google Sheet melalui Apps Script. Sila pastikan sheet <strong>BBR</strong>, <strong>BMR</strong>, <strong>BSR</strong> dan <strong>TIDAK LAYAK</strong> sudah disediakan (jalankan <code>setupAllHeaders</code> sekali sahaja).</div>
+    </div>
+    <button class="btn btn-g btn-full" onclick="saveConfig()">Simpan & Mula →</button>
     <div class="divider"></div>
     <div class="card-ttl">📖 Cara Dapatkan Deployment ID</div>
     <ul class="guide">
-      <li><div class="step-num">1</div><div>Buka Google Sheet → klik <strong>Extensions</strong> → <strong>Apps Script</strong></div></li>
-      <li><div class="step-num">2</div><div>Tampal kod <code>pkj-apps-script.js</code> yang diberi → klik <strong>Save (💾)</strong></div></li>
-      <li><div class="step-num">3</div><div>Pilih fungsi <strong>setupAllHeaders</strong> → klik <strong>Run ▶</strong> (sekali sahaja)</div></li>
+      <li><div class="step-num">1</div><div>Buka Google Sheet → <strong>Extensions</strong> → <strong>Apps Script</strong></div></li>
+      <li><div class="step-num">2</div><div>Tampal kod <code>pkj-apps-script.gs</code> → klik <strong>Save (💾)</strong></div></li>
+      <li><div class="step-num">3</div><div>Pilih fungsi <strong>setupAllHeaders</strong> → klik <strong>Run ▶</strong> (sekali sahaja, untuk cipta header)</div></li>
       <li><div class="step-num">4</div><div>Klik <strong>Deploy → New deployment</strong> → Type: <strong>Web app</strong></div></li>
-      <li><div class="step-num">5</div><div>Execute as: <strong>Me</strong> → Who has access: <strong>Anyone</strong> → klik <strong>Deploy</strong></div></li>
-      <li><div class="step-num">6</div><div>Salin <strong>Deployment ID</strong> (bukan URL) → tampal di atas</div></li>
+      <li><div class="step-num">5</div><div>Execute as: <strong>Me</strong> → Who has access: <strong>Anyone</strong> → <strong>Deploy</strong></div></li>
+      <li><div class="step-num">6</div><div>Salin <strong>Deployment ID</strong> (kod AKfycb...) → tampal di atas</div></li>
     </ul>
   </div>
 </div>
 
-<!-- ══════ SCREEN 2: JENIS + SCAN ══════ -->
+<!-- SCREEN 2: JENIS + FORM -->
 <div class="screen" id="s2">
-
   <div class="card">
-    <div class="card-ttl">📄 Jenis Borang</div>
+    <div class="card-ttl">📄 Jenis Inisiatif</div>
     <div class="jenis-grid">
       <div class="jk bbr" onclick="pickJenis('BBR',this)">
         <div class="jk-code">BBR</div>
@@ -582,121 +291,33 @@ input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important;
     </div>
   </div>
 
-  <div class="card" id="scanCard" style="display:none">
-    <div class="card-ttl">📸 Imbas Borang</div>
-
-    <div class="scan-hint">
-      <span>📌</span><span id="scanHint"></span>
-    </div>
-
-    <!-- Engine toggle: hanya untuk fallback OCR.space -->
-    <div class="engine-wrap" id="engineWrap">
-      <div class="engine-toggle">
-        <button class="et-btn on" id="etPrint" onclick="setEngine(2)">🖨️ Bercetak / Taip</button>
-        <button class="et-btn"   id="etHand"  onclick="setEngine(1)">✍️ Tulisan Tangan</button>
-      </div>
-      <div class="et-hint" id="etHint">AI tempatan digunakan dahulu. Toggle ini hanya mempengaruhi fallback OCR.space.</div>
-    </div>
-
-    <!-- Image preview (hidden until photo taken) -->
-    <div class="img-preview" id="imgPreview">
-      <img id="imgEl" src="" alt="Borang">
-      <div class="img-badge" id="imgBadge"></div>
-      <button class="img-retake" onclick="resetScan()">↺ Ambil Semula</button>
-    </div>
-
-    <!-- Scan buttons -->
-    <div id="scanBtns">
-      <!-- Camera — primary large button -->
-      <div class="scan-cam-btn" onclick="document.getElementById('iKamera').click()">
-        <div class="scan-cam-ico">📷</div>
-        <div class="scan-cam-info">
-          <div class="scan-cam-lbl">Ambil Gambar</div>
-          <div class="scan-cam-sub">Buka kamera telefon</div>
-        </div>
-      </div>
-      <!-- Gallery + File — secondary row -->
-      <div class="scan-row">
-        <div class="scan-sec" onclick="document.getElementById('iGaleri').click()">
-          <div class="scan-sec-ico">🖼️</div>
-          <div class="scan-sec-lbl">Galeri</div>
-        </div>
-        <div class="scan-sec" onclick="document.getElementById('iGaleri').click()">
-          <div class="scan-sec-ico">📁</div>
-          <div class="scan-sec-lbl">Fail</div>
-        </div>
-      </div>
-
-      <!-- Tips untuk foto yang baik -->
-      <div class="tips-box">
-        <b>💡 Tips foto yang baik untuk OCR:</b>
-        Pastikan borang <strong>rata & lurus</strong> •
-        Cahaya <strong>cukup & sekata</strong> •
-        Semua teks <strong>jelas kelihatan</strong> •
-        Tiada bayang atau pantulan
-      </div>
-
-      <!-- Isi manual — langkau OCR sepenuhnya -->
-      <div class="divider"></div>
-      <button class="btn btn-o btn-full" onclick="manualEntry()">✍️ Isi Borang Secara Manual (Tanpa OCR)</button>
-      <div class="et-hint" style="margin-top:8px">Langkau imbasan — terus isi semua maklumat sendiri.</div>
-    </div>
-
-    <!-- Hidden file inputs -->
-    <!-- capture="environment" → buka kamera belakang terus (iPhone & Android) -->
-    <input type="file" id="iKamera" accept="image/*" capture="environment" onchange="handleImg(event,'📷 Kamera')">
-    <!-- Tanpa capture → pilih dari galeri / fail -->
-    <input type="file" id="iGaleri" accept="image/*" onchange="handleImg(event,'🖼️ Galeri')">
-
-    <!-- OCR Progress -->
-    <div class="ocr-box" id="ocrBox">
-      <div class="spin"></div>
-      <div class="ocr-lbl" id="ocrLbl">Menyediakan...</div>
-      <div class="ocr-prog"><div class="ocr-bar" id="ocrBar"></div></div>
-      <div class="ocr-sub" id="ocrSub">Proses ini mengambil masa beberapa saat</div>
-      <ul class="ocr-steps">
-        <li class="ocr-step" id="step1"><span class="ocr-step-ico">⬜</span> Memampatkan & memproses gambar</li>
-        <li class="ocr-step" id="step2"><span class="ocr-step-ico">⬜</span> Memuatkan model AI tempatan (Transformers.js)</li>
-        <li class="ocr-step" id="step3"><span class="ocr-step-ico">⬜</span> Model sedang membaca teks borang</li>
-        <li class="ocr-step" id="step4"><span class="ocr-step-ico">⬜</span> Mengekstrak maklumat pemohon</li>
-      </ul>
-    </div>
-
-    <!-- OCR Done -->
-    <div class="ocr-done-card" id="ocrDone">
-      <div class="alert al-y">
-        <span>✏️</span>
-        <span>OCR selesai! Field <strong style="color:#3B8A5A">hijau</strong> = berjaya dibaca. Field <strong style="color:#C08A10">kuning</strong> = perlu disemak. Sila periksa semua data sebelum hantar.</span>
-      </div>
-      <button class="btn btn-g btn-full" onclick="showS(3)">Semak &amp; Edit Data →</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════ SCREEN 3: PREVIEW & EDIT ══════ -->
-<div class="screen" id="s3">
-  <div class="card">
+  <div class="card" id="formCard" style="display:none">
     <div class="prev-hdr">
       <span id="prevBadge" class="prev-badge"></span>
-      <span style="font-size:14px;font-weight:600">Semak &amp; Edit Data</span>
-      <button class="btn btn-sm btn-o" style="margin-left:auto" onclick="showS(2)">← Semula</button>
+      <span style="font-size:14px;font-weight:600">Isi Data Pemohon</span>
     </div>
     <div class="alert al-y">
       <span>⚠️</span>
-      <span>Sila semak semua maklumat. Field bertanda <span class="req">*</span> adalah wajib diisi.</span>
+      <span>Field bertanda <span class="req">*</span> wajib diisi untuk hantar sebagai <strong>Layak</strong>. Nama Penerima akan ditukar ke <strong>HURUF BESAR</strong> automatik.</span>
     </div>
 
     <!-- A: Butiran Pemohon -->
     <div class="fsec">
       <div class="fsec-ttl" id="ttlA">A. Butiran Pemohon</div>
-      <div class="frow">
+      <div class="frow frow1">
         <div class="field">
           <label class="fl">Nama Penerima <span class="req">*</span></label>
-          <input type="text" id="fNama" placeholder="NAMA PENUH PEMOHON" autocomplete="off" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+          <input type="text" id="fNama" placeholder="NAMA PENUH PEMOHON" autocomplete="off" oninput="upperNama(this)">
         </div>
+      </div>
+      <div class="frow">
         <div class="field">
           <label class="fl">No. Kad Pengenalan <span class="req">*</span></label>
           <input type="text" id="fIc" placeholder="000000-00-0000" inputmode="numeric" autocomplete="off">
+        </div>
+        <div class="field">
+          <label class="fl">No. Telefon <span class="req">*</span></label>
+          <input type="text" id="fTel" placeholder="01X-XXXXXXXX" inputmode="tel" autocomplete="tel">
         </div>
       </div>
       <div class="frow">
@@ -711,15 +332,9 @@ input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important;
       </div>
       <div class="frow">
         <div class="field">
-          <label class="fl">No. Telefon <span class="req">*</span></label>
-          <input type="text" id="fTel" placeholder="01X-XXXXXXXX" inputmode="tel" autocomplete="tel">
-        </div>
-        <div class="field">
           <label class="fl">Emel <span class="req">*</span></label>
           <input type="text" id="fEmel" placeholder="nama@gmail.com" inputmode="email" autocomplete="email">
         </div>
-      </div>
-      <div class="frow frow1">
         <div class="field">
           <label class="fl">Tarikh Penerimaan Kaunter <span class="req">*</span></label>
           <input type="date" id="fTarikh" value="2026-05-21">
@@ -740,16 +355,12 @@ input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important;
 
     <!-- Lokasi -->
     <div class="fsec">
-      <div class="fsec-ttl">Lokasi <span style="font-weight:400;text-transform:none;letter-spacing:0">(pilihan)</span></div>
+      <div class="fsec-ttl">Lokasi <span style="font-weight:400;text-transform:none;letter-spacing:0">(rujukan SPR)</span></div>
       <div class="frow">
         <div class="field">
           <label class="fl">Daerah</label>
           <select id="fDaerah" onchange="loadMukim()">
             <option value="">-- Pilih Daerah --</option>
-            <option>Johor Bahru</option><option>Kluang</option><option>Kota Tinggi</option>
-            <option>Mersing</option><option>Muar</option><option>Pontian</option>
-            <option>Segamat</option><option>Batu Pahat</option><option>Kulai</option>
-            <option>Tangkak</option>
           </select>
         </div>
         <div class="field">
@@ -765,7 +376,7 @@ input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important;
       <div class="frow frow1">
         <div class="field">
           <label class="fl" id="catatanLbl">Catatan</label>
-          <textarea id="fCatatan" placeholder="Masukkan catatan berkaitan permohonan ini..."></textarea>
+          <textarea id="fCatatan" placeholder="Catatan berkaitan permohonan / sebab tidak layak..."></textarea>
         </div>
       </div>
     </div>
@@ -773,8 +384,8 @@ input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important;
   <div style="height:80px"></div>
 </div>
 
-<!-- ══════ SCREEN 4: SUCCESS ══════ -->
-<div class="screen" id="s4">
+<!-- SCREEN 3: SUCCESS -->
+<div class="screen" id="s3">
   <div class="card">
     <div class="succ">
       <div class="succ-ico" id="succIco">✅</div>
@@ -790,29 +401,21 @@ input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important;
 
 </div><!-- /main -->
 
-<!-- ACTION BAR (screen 3 only) -->
+<!-- ACTION BAR (screen 2 form only) -->
 <div class="abar" id="abar" style="display:none">
   <button class="btn btn-r" onclick="doSubmit(true)"  style="flex:0.85">✕ Tidak Layak</button>
-  <button class="btn btn-g" onclick="doSubmit(false)" id="btnHantar" style="flex:1.15">Hantar ke Sheet ✓</button>
+  <button class="btn btn-g" onclick="doSubmit(false)" id="btnHantar" style="flex:1.15">Hantar (Layak) ✓</button>
 </div>
 
 <!-- SETTINGS MODAL -->
 <div class="modal-bg" id="modal" onclick="closeModalOut(event)">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title">⚙️ Kemaskini Konfigurasi</div>
-    <div class="cur-dep"><span>Deployment ID:</span><span id="curDepTxt">—</span></div>
-    <div class="cur-dep" style="margin-bottom:12px"><span>OCR.space API Key:</span><span id="curOcrTxt">—</span></div>
-    <div class="alert al-g" style="margin-bottom:13px">
-      <span>ℹ️</span><div>Kosongkan field yang tidak perlu diubah. OCR AI tempatan tidak memerlukan key.</div>
-    </div>
-    <div style="margin-bottom:10px">
+    <div class="modal-title">⚙️ Tukar Deployment ID</div>
+    <div class="cur-dep"><span>Deployment ID semasa:</span><span id="curDepTxt">—</span></div>
+    <div style="margin-bottom:13px">
       <label class="fl" style="margin-bottom:6px">🔑 Deployment ID Baru</label>
       <input type="text" id="newDepId" class="mono" placeholder="AKfycby...xxxx" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-    </div>
-    <div style="margin-bottom:13px">
-      <label class="fl" style="margin-bottom:6px">🔍 OCR.space API Key Baru</label>
-      <input type="text" id="newOcrKey" class="mono" placeholder="K8xxxxxxxxxxxx" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
     </div>
     <div style="display:flex;gap:10px">
       <button class="btn btn-o" style="flex:1" onclick="closeModal()">Batal</button>
@@ -823,668 +426,209 @@ input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important;
 
 <div class="toast" id="toast"></div>
 
-<!-- ════════════════════════════════════════════════════════
-     MODUL TRANSFORMERS.JS (ES module)
-     Memuatkan model Florence-2 (OCR) terus dalam pelayar.
-     Mendedahkan window.runTransformersOCR() & window.preloadTransformers()
-     untuk digunakan oleh skrip klasik di bawah.
-════════════════════════════════════════════════════════ -->
-<script type="module">
-import {
-  Florence2ForConditionalGeneration,
-  AutoProcessor,
-  AutoTokenizer,
-  RawImage,
-  env,
-} from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3';
-
-// Hanya muat model dari Hugging Face Hub (bukan path tempatan)
-env.allowLocalModels = false;
-
-const MODEL_ID = 'onnx-community/Florence-2-base-ft';
-// WebGPU jauh lebih laju; guna jika ada, jika tidak fallback ke WASM (CPU)
-const USE_WEBGPU = (typeof navigator !== 'undefined' && 'gpu' in navigator);
-
-let _model = null, _processor = null, _tokenizer = null, _loading = null;
-
-async function ensureModel(onProgress) {
-  if (_model && _processor && _tokenizer) return;
-  if (_loading) return _loading;
-
-  _loading = (async () => {
-    try {
-      _model = await Florence2ForConditionalGeneration.from_pretrained(MODEL_ID, {
-        // Campuran dtype: kekalkan ketepatan untuk embed/vision, kuantisasi q4 untuk enjin besar
-        dtype: {
-          embed_tokens:         'fp32',
-          vision_encoder:       'fp32',
-          encoder_model:        'q4',
-          decoder_model_merged: 'q4',
-        },
-        device: USE_WEBGPU ? 'webgpu' : 'wasm',
-        progress_callback: (data) => { if (onProgress) onProgress(data); },
-      });
-      _processor = await AutoProcessor.from_pretrained(MODEL_ID);
-      _tokenizer = await AutoTokenizer.from_pretrained(MODEL_ID);
-    } catch (e) {
-      // Reset supaya boleh cuba semula
-      _model = _processor = _tokenizer = null;
-      _loading = null;
-      throw e;
-    }
-  })();
-
-  return _loading;
-}
-
-// Prefetch di latar belakang (dipanggil selepas konfigurasi disimpan)
-window.preloadTransformers = (onProgress) =>
-  ensureModel(onProgress).catch(err => console.warn('Prefetch model gagal:', err));
-
-// Jalankan OCR penuh borang → kembalikan teks mentah
-window.runTransformersOCR = async function (base64jpeg, onProgress) {
-  await ensureModel(onProgress);
-
-  const image   = await RawImage.fromURL('data:image/jpeg;base64,' + base64jpeg);
-  const task    = '<OCR>';
-  const prompts = _processor.construct_prompts(task);
-  const inputs  = await _processor(image, prompts);
-
-  const generated_ids = await _model.generate({
-    ...inputs,
-    max_new_tokens: 512,
-    num_beams: 1,
-    do_sample: false,
-  });
-
-  const decoded = _tokenizer.batch_decode(generated_ids, { skip_special_tokens: false })[0];
-  const result  = _processor.post_process_generation(decoded, task, image.size);
-  return (result && result[task]) ? String(result[task]) : '';
-};
-
-window.__transformersReady = true;
-window.__transformersWebGPU = USE_WEBGPU;
-</script>
-
 <script>
-/* ════════════════════════════════════════
-   MUKIM DATA
-════════════════════════════════════════ */
-const MUKIM = {
-  "Johor Bahru": ["Johor Bahru","Pulai","Sungai Tiram","Tebrau","Plentong","Senai","Jelutong","Skudai","Kempas","Permas Jaya","Ulu Tiram"],
-  "Kluang":      ["Kluang","Yong Peng","Simpang Renggam","Kahang","Paloh","Rengam","Chamek","Bekok","Mengkibol"],
-  "Kota Tinggi": ["Kota Tinggi","Kota Tinggi Bandar","Ulu Sungai Johor","Johor Lama","Sungai Karang","Tanjung Surat","Sedili Besar","Pengerang","Penawar","Sedili Kecil"],
-  "Mersing":     ["Mersing","Endau","Jemaluang","Tenggaroh","Peta","Air Papan","Batu Bemban"],
-  "Muar":        ["Muar","Bukit Bakri","Parit Jawa","Sungai Balang","Lenga","Bukit Pasir","Sungai Raya","Serom","Maharani","Sungai Abong"],
-  "Pontian":     ["Pontian","Ayer Baloi","Kukup","Pekan Nenas","Sri Gading","Benut","Rimba Terjun","Sungai Karang"],
-  "Segamat":     ["Segamat","Labis","Gemas","Sungai Mati","Tenang","Jementah","Chaah","Paya Lebar","Genuang"],
-  "Batu Pahat":  ["Batu Pahat","Senggarang","Parit Raja","Ayer Hitam","Penggaram","Mak Ungu","Sri Gading","Simpang Kanan","Parit Sulong","Semerah"],
-  "Kulai":       ["Kulai","Senai","Sedenak","Saleng","Bukit Batu","Sungai Tiram","Pandan","Jelutong"],
-  "Tangkak":     ["Tangkak","Sagil","Bukit Gambir","Kesang","Sebrang","Nitar","Jalan Bakri","Ledang"]
+/* ════════ DAERAH & MUKIM — rujukan pentadbiran / SPR Johor ════════ */
+const DAERAH_MUKIM = {
+  "Johor Bahru": ["Bandar Johor Bahru","Plentong","Tebrau","Pulai","Sungai Tiram","Tanjung Kupang","Jelutong"],
+  "Kulai":       ["Bandar Kulai","Kulai","Senai","Sedenak","Bukit Batu"],
+  "Pontian":     ["Pontian","Ayer Baloi","Air Masin","Api-Api","Benut","Jeram Batu","Pengkalan Raja","Rimba Terjun","Serkat","Sungai Karang","Sungai Pinggan"],
+  "Kota Tinggi": ["Kota Tinggi","Ulu Sungai Johor","Ulu Sungai Sedili Besar","Johor Lama","Kambau","Pantai Timur","Pengerang","Sedili Besar","Sedili Kecil","Tanjung Surat"],
+  "Batu Pahat":  ["Bagan","Chaah Bahru","Kampung Bahru","Linau","Lubok","Minyak Beku","Peserai","Sri Gading","Sri Medan","Simpang Kanan","Simpang Kiri","Sungai Kluang","Sungai Punggor","Tanjung Sembrong"],
+  "Kluang":      ["Kluang","Ulu Benut","Kahang","Layang-Layang","Machap","Niyor","Paloh","Renggam"],
+  "Muar":        ["Bandar Maharani","Ayer Hitam","Bukit Kepong","Jalan Bakri","Jorak","Lenga","Parit Bakar","Parit Jawa","Sri Menanti","Sungai Balang","Sungai Raya","Sungai Terap"],
+  "Tangkak":     ["Tangkak","Grisek","Serom","Bukit Serampang","Kesang","Kundang"],
+  "Segamat":     ["Sungai Segamat","Bekok","Buloh Kasap","Chaah","Gemas","Gemereh","Jabi","Jementah","Labis","Pogoh","Sermin"],
+  "Mersing":     ["Mersing","Jemaluang","Lenggor","Padang Endau","Penyabong","Pulau Aur","Pulau Babi","Pulau Pemanggil","Pulau Sibu","Pulau Tinggi","Sembrong","Tenggaroh","Tenglu","Triang"]
 };
 
-/* ════════════════════════════════════════
-   STATE
-════════════════════════════════════════ */
-const ST = { depId:'', ocrKey:'', jenis:'', imgBase64:'', imgMime:'' };
+/* ════════ STATE ════════ */
+const ST = { depId:'', jenis:'' };
 
-/* ════════════════════════════════════════
-   SCREEN NAVIGATION
-════════════════════════════════════════ */
+/* ════════ NAVIGATION ════════ */
 function showS(n) {
-  ['s1','s2','s3','s4'].forEach((id,i) =>
-    document.getElementById(id).classList.toggle('active', i+1===n));
-  [1,2,3,4].forEach(i => {
+  ['s1','s2','s3'].forEach((id,i) => document.getElementById(id).classList.toggle('active', i+1===n));
+  [1,2,3].forEach(i => {
     document.getElementById('d'+i).classList.toggle('active', i===n);
     document.getElementById('d'+i).classList.toggle('done',   i<n);
   });
-  document.getElementById('abar').style.display = n===3 ? 'flex' : 'none';
+  document.getElementById('abar').style.display = (n===2 && ST.jenis) ? 'flex' : 'none';
   window.scrollTo({ top:0, behavior:'smooth' });
 }
 
-/* ════════════════════════════════════════
-   SETUP / CONFIG
-════════════════════════════════════════ */
+/* ════════ CONFIG ════════ */
 function saveConfig() {
-  const depId  = document.getElementById('depId').value.trim();
-  const ocrKey = document.getElementById('ocrKey').value.trim();
+  const depId = document.getElementById('depId').value.trim();
   if (!depId) { toast('Sila masukkan Deployment ID'); return; }
-  ST.depId  = depId;
-  ST.ocrKey = ocrKey;
+  ST.depId = depId;
   localStorage.setItem('pkj_dep', depId);
-  localStorage.setItem('pkj_ocr', ocrKey);
   vibrate(20);
-  // Mula muat turun model AI di latar belakang supaya imbasan pertama lebih pantas
-  if (window.preloadTransformers) window.preloadTransformers();
+  buildDaerah();
   showS(2);
 }
 
-/* ════════════════════════════════════════
-   SETTINGS MODAL
-════════════════════════════════════════ */
+/* ════════ SETTINGS MODAL ════════ */
 function openSettings() {
-  const dep = ST.depId  || '—';
-  const ocr = ST.ocrKey || '—';
-  document.getElementById('curDepTxt').textContent =
-    dep.length > 16 ? dep.slice(0,10)+'...'+dep.slice(-8) : dep;
-  document.getElementById('curOcrTxt').textContent =
-    ocr.length > 10 ? ocr.slice(0,6)+'...' : ocr;
-  document.getElementById('newDepId').value  = '';
-  document.getElementById('newOcrKey').value = '';
+  const dep = ST.depId || '—';
+  document.getElementById('curDepTxt').textContent = dep.length > 18 ? dep.slice(0,10)+'...'+dep.slice(-8) : dep;
+  document.getElementById('newDepId').value = '';
   document.getElementById('modal').classList.add('open');
   setTimeout(() => document.getElementById('newDepId').focus(), 350);
 }
-function closeModal()      { document.getElementById('modal').classList.remove('open'); }
-function closeModalOut(e)  { if (e.target===document.getElementById('modal')) closeModal(); }
+function closeModal()     { document.getElementById('modal').classList.remove('open'); }
+function closeModalOut(e) { if (e.target===document.getElementById('modal')) closeModal(); }
 function saveNewDep() {
-  const depId  = document.getElementById('newDepId').value.trim();
-  const ocrKey = document.getElementById('newOcrKey').value.trim();
-  if (!depId && !ocrKey) { toast('Tiada perubahan untuk disimpan'); return; }
-  if (depId)  { ST.depId = depId;   localStorage.setItem('pkj_dep', depId);  document.getElementById('depId').value = depId; }
-  if (ocrKey) { ST.ocrKey = ocrKey; localStorage.setItem('pkj_ocr', ocrKey); document.getElementById('ocrKey').value = ocrKey; }
+  const depId = document.getElementById('newDepId').value.trim();
+  if (!depId) { toast('Tiada perubahan'); return; }
+  ST.depId = depId;
+  localStorage.setItem('pkj_dep', depId);
+  document.getElementById('depId').value = depId;
   closeModal();
   vibrate([20,30,20]);
-  toast('✅ Konfigurasi berjaya dikemaskini');
+  toast('✅ Deployment ID dikemaskini');
 }
 
-/* ════════════════════════════════════════
-   OCR ENGINE TOGGLE (untuk fallback OCR.space sahaja)
-════════════════════════════════════════ */
-let ocrEngine = 2; // 2 = bercetak (default), 1 = tulisan tangan
-
-function setEngine(n) {
-  ocrEngine = n;
-  document.getElementById('etPrint').classList.toggle('on', n===2);
-  document.getElementById('etHand').classList.toggle('on', n===1);
-  document.getElementById('etHint').textContent = n===2
-    ? 'AI tempatan digunakan dahulu. Fallback OCR.space: Enjin 2 (teks bercetak).'
-    : 'AI tempatan digunakan dahulu. Fallback OCR.space: Enjin 1 (tulisan tangan).';
-}
-
-/* ════════════════════════════════════════
-   JENIS BORANG
-════════════════════════════════════════ */
+/* ════════ JENIS ════════ */
 function pickJenis(j, el) {
   document.querySelectorAll('.jk').forEach(c => c.classList.remove('sel'));
   el.classList.add('sel');
   ST.jenis = j;
-  document.getElementById('scanCard').style.display   = 'block';
-  document.getElementById('engineWrap').style.display = 'block';
-  document.getElementById('scanHint').textContent = {
-    BBR: 'Imbas Bahagian A (Butiran Pemohon) dan Bahagian B (Maklumat Harta) borang BBR.',
-    BMR: 'Imbas Bahagian A (Butiran Pemohon) dan Bahagian B (Maklumat Harta) borang BMR.',
-    BSR: 'Imbas Bahagian A (Maklumat Pemohon) sahaja untuk borang BSR.'
-  }[j];
-  resetScan();
-  vibrate(10);
-  setTimeout(() => {
-    document.getElementById('scanCard').scrollIntoView({ behavior:'smooth', block:'start' });
-  }, 100);
-}
-
-/* ════════════════════════════════════════
-   IMAGE HANDLING
-════════════════════════════════════════ */
-function handleImg(e, label) {
-  const f = e.target.files[0];
-  if (!f) return;
-  e.target.value = '';
-
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const src    = ev.target.result;
-    ST.imgBase64 = src.split(',')[1];
-    ST.imgMime   = f.type || 'image/jpeg';
-
-    document.getElementById('imgEl').src              = src;
-    document.getElementById('imgBadge').textContent   = label;
-    document.getElementById('imgPreview').style.display = 'block';
-    document.getElementById('scanBtns').style.display  = 'none';
-    document.getElementById('ocrDone').style.display   = 'none';
-
-    vibrate(15);
-    runOCR();
-  };
-  reader.readAsDataURL(f);
-}
-
-function resetScan() {
-  ST.imgBase64 = ''; ST.imgMime = '';
-  document.getElementById('imgPreview').style.display = 'none';
-  document.getElementById('imgEl').src                = '';
-  document.getElementById('scanBtns').style.display   = 'block';
-  document.getElementById('ocrBox').style.display     = 'none';
-  document.getElementById('ocrDone').style.display    = 'none';
-  document.getElementById('ocrBar').style.width       = '0%';
-  resetSteps();
-  ['iKamera','iGaleri'].forEach(id => { document.getElementById(id).value = ''; });
-}
-
-/* ════════════════════════════════════════
-   COMPRESS — versi penuh (grayscale + kontras)
-   untuk fallback OCR.space
-════════════════════════════════════════ */
-function compressForOCR(base64, mime) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onerror = () => reject(new Error('Gambar tidak dapat dimuatkan'));
-    img.onload  = () => {
-      try {
-        const MAX   = 900;
-        const scale = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
-        const w     = Math.round(img.naturalWidth  * scale);
-        const h     = Math.round(img.naturalHeight * scale);
-
-        const canvas = document.createElement('canvas');
-        canvas.width = w; canvas.height = h;
-        const ctx = canvas.getContext('2d');
-
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(0, 0, w, h);
-        ctx.drawImage(img, 0, 0, w, h);
-
-        const id = ctx.getImageData(0, 0, w, h);
-        const px = id.data;
-        const g  = new Uint8Array(w * h);
-        let lo = 255, hi = 0;
-        for (let i = 0, j = 0; i < px.length; i += 4, j++) {
-          const v = (0.299*px[i] + 0.587*px[i+1] + 0.114*px[i+2]) | 0;
-          g[j] = v; if (v < lo) lo = v; if (v > hi) hi = v;
-        }
-        const rng = (hi - lo) || 1;
-        for (let i = 0, j = 0; i < px.length; i += 4, j++) {
-          let v = (((g[j] - lo) / rng) * 255) | 0;
-          v = v < 128
-            ? Math.max(0,   v - ((128 - v) * 0.2 | 0))
-            : Math.min(255, v + ((v - 128) * 0.2 | 0));
-          px[i] = px[i+1] = px[i+2] = v; px[i+3] = 255;
-        }
-        ctx.putImageData(id, 0, 0);
-
-        resolve(canvas.toDataURL('image/jpeg', 0.5).split(',')[1]);
-      } catch(err) { reject(err); }
-    };
-    img.src = 'data:' + mime + ';base64,' + base64;
-  });
-}
-
-/* ════════════════════════════════════════
-   COMPRESS — versi ringan (kekal warna RGB)
-   untuk model Transformers.js / Florence-2
-════════════════════════════════════════ */
-function compressLight(base64, mime) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onerror = () => reject(new Error('Gambar tidak dapat dimuatkan'));
-    img.onload  = () => {
-      try {
-        const MAX   = 1000;
-        const scale = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
-        const w     = Math.round(img.naturalWidth  * scale);
-        const h     = Math.round(img.naturalHeight * scale);
-        const canvas = document.createElement('canvas');
-        canvas.width = w; canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
-        ctx.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', 0.85).split(',')[1]);
-      } catch(err) { reject(err); }
-    };
-    img.src = 'data:' + mime + ';base64,' + base64;
-  });
-}
-
-/* ════════════════════════════════════════
-   OCR via OCR.SPACE API — fallback
-   Percuma 25,000 req/bulan
-════════════════════════════════════════ */
-async function ocrSpace(compressed) {
-  const fd = new FormData();
-  fd.append('base64Image',       'data:image/jpeg;base64,' + compressed);
-  fd.append('language',          'eng');
-  fd.append('isOverlayRequired', 'false');
-  fd.append('detectOrientation', 'true');
-  fd.append('scale',             'true');
-  fd.append('OCREngine',         String(ocrEngine));
-
-  const resp = await fetch('https://api.ocr.space/parse/image', {
-    method: 'POST',
-    headers: { 'apikey': ST.ocrKey },
-    body: fd
-  });
-
-  if (!resp.ok) throw new Error('OCR.space HTTP ' + resp.status);
-  const data = await resp.json();
-  if (data.IsErroredOnProcessing) throw new Error(data.ErrorMessage?.[0] || 'OCR.space gagal');
-  if (!data.ParsedResults?.length)  throw new Error('Tiada teks dibaca');
-  return data.ParsedResults.map(r => r.ParsedText || '').join('\n');
-}
-
-/* ════════════════════════════════════════
-   RUN OCR
-   Utama : Transformers.js (Florence-2, AI tempatan)
-   Fallback : OCR.space (jika ada key & AI gagal)
-   Kedua-dua → teks mentah → parseBorang()
-════════════════════════════════════════ */
-async function runOCR() {
-  const ocrBox  = document.getElementById('ocrBox');
-  const ocrLbl  = document.getElementById('ocrLbl');
-  const ocrSub  = document.getElementById('ocrSub');
-  const ocrDone = document.getElementById('ocrDone');
-
-  ocrBox.style.display  = 'block';
-  ocrDone.style.display = 'none';
-  resetSteps(); setBar(0);
-
-  const hasLocal = !!window.runTransformersOCR;
-  const hasSpace = !!ST.ocrKey;
-
-  try {
-    // ── Step 1: sediakan gambar ──
-    setStep(1,'active'); setBar(6);
-    ocrLbl.textContent = 'Memampatkan gambar...';
-    ocrSub.textContent = 'Menyediakan gambar untuk OCR';
-
-    let text = '';
-    let usedEngine = '';
-
-    // ── Laluan utama: AI tempatan ──
-    if (hasLocal) {
-      const light = await compressLight(ST.imgBase64, ST.imgMime);
-      setStep(1,'done'); setStep(2,'active'); setBar(15);
-
-      ocrLbl.textContent = 'Memuatkan model AI tempatan...';
-      ocrSub.textContent = window.__transformersWebGPU
-        ? 'Menggunakan WebGPU (laju). Kali pertama: muat turun ~250MB.'
-        : 'Menggunakan CPU (WASM). Kali pertama: muat turun ~250MB.';
-
-      try {
-        text = await window.runTransformersOCR(light, (p) => {
-          if (p && p.status === 'progress' && typeof p.progress === 'number') {
-            const pct = Math.min(72, 15 + Math.round(p.progress * 0.55));
-            setBar(pct);
-            const fname = (p.file || '').split('/').pop();
-            ocrSub.textContent = 'Memuat turun model: ' + fname + ' (' + Math.round(p.progress) + '%)';
-          } else if (p && (p.status === 'ready' || p.status === 'done')) {
-            ocrLbl.textContent = 'Model membaca borang...';
-          }
-        });
-        usedEngine = 'AI Tempatan';
-        setStep(2,'done'); setStep(3,'active'); setBar(80);
-      } catch (localErr) {
-        console.error('Transformers.js gagal:', localErr);
-        if (!hasSpace) throw localErr; // tiada fallback
-        ocrSub.textContent = 'AI tempatan gagal — cuba OCR.space...';
-      }
-    }
-
-    // ── Fallback: OCR.space ──
-    if (!text && hasSpace) {
-      const compressed = await compressForOCR(ST.imgBase64, ST.imgMime);
-      setStep(1,'done'); setStep(2,'done'); setStep(3,'active'); setBar(70);
-      ocrLbl.textContent = 'Menghantar ke OCR.space (fallback)...';
-      ocrSub.textContent = 'Enjin OCR memproses gambar';
-      text = await ocrSpace(compressed);
-      usedEngine = 'OCR.space';
-    }
-
-    if (!text || !text.trim()) throw new Error('Tiada teks dibaca dari borang');
-
-    // ── Step 4: parse + isi borang ──
-    setStep(3,'done'); setStep(4,'active'); setBar(92);
-    ocrLbl.textContent = 'Mengekstrak maklumat pemohon...';
-    ocrSub.textContent = 'Enjin: ' + usedEngine;
-
-    const parsed = parseBorang(text, ST.jenis);
-    fillPreview(parsed);
-
-    setStep(4,'done'); setBar(100);
-    ocrLbl.textContent = '✓ Selesai (' + usedEngine + ')';
-    vibrate([20, 50, 20]);
-
-    setTimeout(() => {
-      ocrBox.style.display  = 'none';
-      ocrDone.style.display = 'block';
-    }, 700);
-
-  } catch(err) {
-    ocrBox.style.display  = 'none';
-    ocrDone.style.display = 'none';
-    console.error('OCR Error:', err);
-
-    let msg = err.message || 'Sila cuba semula';
-    if (/quota|429/i.test(msg))                 msg = 'Had percuma OCR.space tercapai. Cuba lagi esok.';
-    else if (/network|fetch|load|download/i.test(msg)) msg = 'Masalah sambungan / muat turun model. Semak internet & cuba semula.';
-    toast('Ralat: ' + msg);
-    document.getElementById('imgPreview').style.display = 'none';
-    document.getElementById('scanBtns').style.display   = 'block';
-  }
-}
-
-/* ════════════════════════════════════════
-   OCR STEP UI HELPERS
-════════════════════════════════════════ */
-function resetSteps() {
-  [1,2,3,4].forEach(i => {
-    const el = document.getElementById('step'+i);
-    if (!el) return;
-    el.classList.remove('done','active');
-    el.querySelector('.ocr-step-ico').textContent = '⬜';
-  });
-}
-function setStep(n, status) {
-  const el = document.getElementById('step'+n);
-  if (!el) return;
-  el.classList.remove('done','active');
-  el.classList.add(status);
-  el.querySelector('.ocr-step-ico').textContent = status==='done' ? '✅' : '⏳';
-}
-function setBar(pct) {
-  document.getElementById('ocrBar').style.width = pct + '%';
-}
-
-/* ════════════════════════════════════════
-   PARSE OCR TEXT — versi robust
-════════════════════════════════════════ */
-function parseBorang(raw, jenis) {
-  const out = { nama:'', ic:'', namaPsng:'', icPsng:'', tel:'', emel:'', harga:'' };
-  if (!raw || !raw.trim()) return out;
-
-  const text = raw.replace(/\r/g, '').replace(/[^\S\n]+/g, ' ').trim();
-  const flat = text.replace(/\n/g, ' ').replace(/\s{2,}/g, ' ');
-
-  // ══ 1. REGEX ══
-  const icAll = [...flat.matchAll(/\b(\d{6})\s*[-—–.]\s*(\d{2})\s*[-—–.]\s*(\d{4})\b/g)]
-                .map(m => m[1]+'-'+m[2]+'-'+m[3]);
-  if (icAll[0]) out.ic     = icAll[0];
-  if (icAll[1]) out.icPsng = icAll[1];
-
-  const emM = flat.match(/[\w.+\-]+@[\w.\-]+\.[a-z]{2,}/i);
-  if (emM) out.emel = emM[0].toLowerCase().trim();
-
-  const phM = flat.match(/\b(01[0-9])[\s.\-]?(\d{3,4})[\s.\-]?(\d{4})\b/);
-  if (phM) out.tel = phM[1] + phM[2] + phM[3];
-
-  // ══ 2. LABEL-ANCHORED ══
-  const STOP = /\b(Nama\s*(Kedua|Pasangan|Pertama|Penuh|dan\s*No|Pemi)|No\.?\s*(Kad|K\/|KP\b|Lot|PTD|Tel|Pass)|Keturunan|Agama|Status|Email|Emel|Harga|Bayaran|Warganegara|Alamat|Jenis\s*Rumah|Sektor|Majikan|Pendapatan|Tarikh|Nama\s*Pemaju)\b/i;
-
-  function grab(labelRe) {
-    const full = new RegExp(labelRe.source + '[^:\\n]{0,60}[:：]?\\s*', 'i');
-    const m    = full.exec(flat);
-    if (!m) return '';
-
-    let val = flat.slice(m.index + m[0].length).trim();
-    val = val.replace(/^[.…_\s\(\)【】]+/, '').trim();
-    const stopM = STOP.exec(val);
-    if (stopM && stopM.index < 120) val = val.slice(0, stopM.index).trim();
-    val = val.replace(/[.…_\s]+$/, '').trim();
-    if (val.length < 2)             return '';
-    if (/^\d{6}[-—–]/.test(val))    return '';
-    if (/^\d+$/.test(val) && val.length !== 11) return '';
-    return val;
-  }
-
-  out.nama     = grab(/Nama\s*(Pertama|Penuh\s*\(seperti|Penuh)/);
-  out.namaPsng = grab(/Nama\s*Pasangan/);
-  const hRaw   = grab(/Harga\s*Rumah|Bayaran\s*Sewa(\s*Sebulan)?/);
-  if (hRaw) {
-    const numM = hRaw.match(/[1-9][\d,\s]*/);
-    if (numM) out.harga = numM[0].replace(/[,\s]/g, '');
-  }
-
-  Object.keys(out).forEach(k => {
-    if (out[k]) out[k] = out[k].replace(/^[.\s…_()+]+|[.\s…_()]+$/g,'').trim();
-  });
-
-  return out;
-}
-
-/* ════════════════════════════════════════
-   FILL PREVIEW FORM
-════════════════════════════════════════ */
-function fillPreview(d) {
-  const setF = (id, val) => {
-    const el = document.getElementById(id);
-    el.value = val || '';
-    el.classList.remove('ocr-ok','ocr-no');
-    el.classList.add(val && val.length > 1 ? 'ocr-ok' : 'ocr-no');
-  };
-  setF('fNama',    d.nama);
-  setF('fIc',      d.ic);
-  setF('fNamaPsng',d.namaPsng);
-  setF('fIcPsng',  d.icPsng);
-  setF('fTel',     d.tel);
-  setF('fEmel',    d.emel);
-  setF('fHarga',   d.harga);
-  document.getElementById('fTarikh').value  = '2026-05-21';
-  document.getElementById('fCatatan').value = '';
-  document.getElementById('fDaerah').value  = '';
-  document.getElementById('fMukim').innerHTML = '<option value="">-- Pilih Mukim --</option>';
 
   const badge = document.getElementById('prevBadge');
-  badge.textContent = ST.jenis;
-  badge.className   = 'prev-badge ' + ST.jenis.toLowerCase();
+  badge.textContent = j;
+  badge.className = 'prev-badge ' + j.toLowerCase();
 
-  const isBSR = ST.jenis === 'BSR';
+  const isBSR = j === 'BSR';
   document.getElementById('ttlA').textContent = isBSR ? 'A. Maklumat Pemohon' : 'A. Butiran Pemohon';
   document.getElementById('ttlB').textContent = isBSR ? 'Maklumat Sewa' : 'B. Maklumat Harta (Rumah)';
-  document.getElementById('hargaLbl').innerHTML = (isBSR
-    ? 'Bayaran Sewa Sebulan (RM)' : 'Harga Rumah (RM)') + ' <span class="req">*</span>';
+  document.getElementById('hargaLbl').innerHTML = (isBSR ? 'Bayaran Sewa Sebulan (RM)' : 'Harga Rumah (RM)') + ' <span class="req">*</span>';
   document.getElementById('fHarga').placeholder = isBSR ? 'cth: 500' : 'cth: 250000';
-  document.getElementById('btnHantar').style.background =
-    {BBR:'#185FA5', BMR:'#1B4B3A', BSR:'#854F0B'}[ST.jenis];
+  document.getElementById('catatanLbl').innerHTML = isBSR ? 'Catatan <span class="req">*</span>' : 'Catatan';
+  document.getElementById('btnHantar').style.background = {BBR:'#185FA5', BMR:'#1B4B3A', BSR:'#854F0B'}[j];
 
-  document.getElementById('catatanLbl').innerHTML =
-    ST.jenis === 'BSR' ? 'Catatan <span class="req">*</span>' : 'Catatan';
-}
-
-/* ════════════════════════════════════════
-   ISI MANUAL — langkau OCR, terus ke borang kosong
-════════════════════════════════════════ */
-function manualEntry() {
-  if (!ST.jenis) { toast('Sila pilih jenis borang dahulu'); return; }
-  // Isi borang dengan nilai kosong + tetapkan label/badge ikut jenis
-  fillPreview({});
-  // Buang penanda warna OCR (hijau/kuning) supaya kelihatan neutral
-  ['fNama','fIc','fNamaPsng','fIcPsng','fTel','fEmel','fHarga'].forEach(id => {
-    document.getElementById(id).classList.remove('ocr-ok','ocr-no');
-  });
+  document.getElementById('formCard').style.display = 'block';
+  document.getElementById('abar').style.display = 'flex';
   vibrate(10);
-  showS(3);
+  setTimeout(() => document.getElementById('formCard').scrollIntoView({ behavior:'smooth', block:'start' }), 100);
 }
 
-/* ════════════════════════════════════════
-   MUKIM DROPDOWN
-════════════════════════════════════════ */
+/* ════════ NAMA AUTO UPPERCASE ════════ */
+function upperNama(el) {
+  const pos = el.selectionStart;
+  el.value = el.value.toUpperCase();
+  try { el.setSelectionRange(pos, pos); } catch(e){}
+}
+
+/* ════════ DAERAH / MUKIM DROPDOWN ════════ */
+function buildDaerah() {
+  const sel = document.getElementById('fDaerah');
+  if (sel.options.length > 1) return;
+  Object.keys(DAERAH_MUKIM).sort().forEach(d => {
+    const o = document.createElement('option');
+    o.value = d; o.textContent = d;
+    sel.appendChild(o);
+  });
+}
 function loadMukim() {
-  const d   = document.getElementById('fDaerah').value;
+  const d = document.getElementById('fDaerah').value;
   const sel = document.getElementById('fMukim');
   sel.innerHTML = '<option value="">-- Pilih Mukim --</option>';
-  if (!d || !MUKIM[d]) return;
-  MUKIM[d].forEach(m => {
+  if (!d || !DAERAH_MUKIM[d]) return;
+  DAERAH_MUKIM[d].slice().sort().forEach(m => {
     const o = document.createElement('option');
     o.value = m; o.textContent = m;
     sel.appendChild(o);
   });
 }
 
-/* ════════════════════════════════════════
-   FORM & SUBMIT
-════════════════════════════════════════ */
+/* ════════ FORM HELPERS ════════ */
 const v = id => document.getElementById(id).value.trim();
+
+// Tukar "2026-05-21" → "21/05/2026" untuk paparan Sheet
+function fmtDate(iso) {
+  if (!iso) return '';
+  const p = iso.split('-');
+  return p.length === 3 ? p[2]+'/'+p[1]+'/'+p[0] : iso;
+}
 
 function getForm() {
   return {
-    jenis: ST.jenis, sheet:'',
-    nama:     v('fNama').toUpperCase(), ic:      v('fIc'),
-    namaPsng: v('fNamaPsng'),icPsng:  v('fIcPsng'),
-    tel:      v('fTel'),     emel:    v('fEmel'),
-    tarikh:   v('fTarikh'),
-    harga:    v('fHarga'),   daerah:  v('fDaerah'),
-    mukim:    v('fMukim'),   catatan: v('fCatatan')
+    jenis: ST.jenis,
+    nama:     v('fNama'),
+    ic:       v('fIc'),
+    namaPsng: v('fNamaPsng'),
+    icPsng:   v('fIcPsng'),
+    tarikh:   fmtDate(v('fTarikh')),
+    emel:     v('fEmel'),
+    tel:      v('fTel'),
+    harga:    v('fHarga'),
+    daerah:   v('fDaerah'),
+    mukim:    v('fMukim'),
+    catatan:  v('fCatatan')
   };
 }
 
+/* ════════ SUBMIT ════════
+   Data dihantar ke Apps Script guna GET + mode:'no-cors'.
+   Nota: 'no-cors' bermaksud browser benarkan permintaan keluar
+   ke domain Google, tetapi TIDAK membenarkan kita baca balasannya.
+   Jadi kita anggap berjaya selepas hantar (tiada ralat rangkaian).
+   Ini cara paling mudah & berkesan untuk elak masalah CORS Apps Script.
+*/
 async function doSubmit(tidakLayak) {
   const d = getForm();
 
   if (tidakLayak) {
-    if (!d.catatan)       { toast('Sila isi Catatan (sebab tidak layak)'); return; }
     if (!d.nama && !d.ic) { toast('Sila isi sekurang-kurangnya Nama atau No. KP'); return; }
+    if (!d.catatan)       { toast('Sila isi Catatan (sebab tidak layak)'); return; }
   } else {
-    if (!d.nama)    { toast('Nama penerima wajib diisi'); return; }
-    if (!d.ic)      { toast('No. Kad Pengenalan wajib diisi'); return; }
-    if (!d.tel)     { toast('No. Telefon wajib diisi'); return; }
-    if (!d.emel)    { toast('Emel wajib diisi'); return; }
-    if (!d.harga)   { toast('Harga Rumah/Sewa wajib diisi'); return; }
+    if (!d.nama)   { toast('Nama Penerima wajib diisi'); return; }
+    if (!d.ic)     { toast('No. Kad Pengenalan wajib diisi'); return; }
+    if (!d.tel)    { toast('No. Telefon wajib diisi'); return; }
+    if (!d.emel)   { toast('Emel wajib diisi'); return; }
+    if (!d.harga)  { toast('Harga Rumah / Sewa wajib diisi'); return; }
+    if (!d.tarikh) { toast('Tarikh Penerimaan Kaunter wajib diisi'); return; }
     if (ST.jenis === 'BSR' && !d.catatan) { toast('Catatan wajib diisi untuk BSR'); return; }
   }
 
-  d.sheet = tidakLayak ? 'Tidak Layak' : ST.jenis;
+  d.sheet = tidakLayak ? 'TIDAK LAYAK' : ST.jenis;
+
   document.getElementById('abar').style.display = 'none';
   toast('Menghantar data...');
 
   try {
-    const url = 'https://script.google.com/macros/s/' + ST.depId + '/exec';
-    await fetch(url + '?' + new URLSearchParams(d).toString(),
-      { method:'GET', mode:'no-cors' });
+    const url = 'https://script.google.com/macros/s/' + ST.depId + '/exec?' + new URLSearchParams(d).toString();
+    await fetch(url, { method:'GET', mode:'no-cors' });
 
-    vibrate([30, 60, 30]);
-    document.getElementById('succIco').textContent = tidakLayak ? '⛔' : '✅';
-    document.getElementById('succIco').className   = 'succ-ico' + (tidakLayak ? ' tl' : '');
-    document.getElementById('succTtl').textContent = tidakLayak
-      ? 'Direkod: Tidak Layak' : 'Berjaya Dihantar';
+    vibrate([30,60,30]);
+    const ico = document.getElementById('succIco');
+    ico.textContent = tidakLayak ? '⛔' : '✅';
+    ico.className   = 'succ-ico' + (tidakLayak ? ' tl' : '');
+    document.getElementById('succTtl').textContent = tidakLayak ? 'Direkod: Tidak Layak' : 'Berjaya Dihantar';
     document.getElementById('succMsg').textContent = tidakLayak
-      ? 'Data ' + (d.nama||'pemohon') + ' direkod dalam sheet Tidak Layak.'
+      ? 'Data ' + (d.nama || 'pemohon') + ' direkod dalam sheet TIDAK LAYAK (Jenis: ' + ST.jenis + ').'
       : 'Data ' + d.nama + ' direkod dalam sheet ' + ST.jenis + '.';
-    showS(4);
+    showS(3);
   } catch(err) {
     document.getElementById('abar').style.display = 'flex';
     toast('Ralat pengiriman. Semak sambungan internet.');
   }
 }
 
-/* ════════════════════════════════════════
-   RESET
-════════════════════════════════════════ */
+/* ════════ RESET ════════ */
 function resetAll() {
-  ST.jenis = ''; ST.imgBase64 = ''; ST.imgMime = '';
+  ST.jenis = '';
+  ['fNama','fIc','fNamaPsng','fIcPsng','fEmel','fTel','fHarga','fCatatan'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('fTarikh').value = '2026-05-21';
+  document.getElementById('fDaerah').value = '';
+  document.getElementById('fMukim').innerHTML = '<option value="">-- Pilih Mukim --</option>';
   document.querySelectorAll('.jk').forEach(c => c.classList.remove('sel'));
-  document.getElementById('scanCard').style.display = 'none';
-  resetScan();
+  document.getElementById('formCard').style.display = 'none';
+  document.getElementById('abar').style.display = 'none';
   showS(2);
 }
 
-/* ════════════════════════════════════════
-   HAPTIC
-════════════════════════════════════════ */
-function vibrate(pattern) {
-  try { navigator.vibrate && navigator.vibrate(pattern); } catch(e) {}
-}
-
-/* ════════════════════════════════════════
-   TOAST
-════════════════════════════════════════ */
+/* ════════ UTIL ════════ */
+function vibrate(p) { try { navigator.vibrate && navigator.vibrate(p); } catch(e){} }
 let _tt;
 function toast(msg) {
   const el = document.getElementById('toast');
@@ -1492,27 +636,11 @@ function toast(msg) {
   clearTimeout(_tt); _tt = setTimeout(() => el.classList.remove('on'), 3200);
 }
 
-/* ════════════════════════════════════════
-   INIT
-════════════════════════════════════════ */
+/* ════════ INIT ════════ */
 (function init() {
+  buildDaerah();
   const dep = localStorage.getItem('pkj_dep');
-  const ocr = localStorage.getItem('pkj_ocr');
-  if (dep) { document.getElementById('depId').value  = dep; ST.depId  = dep; }
-  if (ocr) { document.getElementById('ocrKey').value = ocr; ST.ocrKey = ocr; }
-  if (dep) {
-    showS(2);
-    // Prefetch model sebaik sahaja modul sedia
-    if (window.preloadTransformers) window.preloadTransformers();
-    else window.addEventListener('load', () => window.preloadTransformers && window.preloadTransformers());
-  }
-
-  let lastTouch = 0;
-  document.addEventListener('touchend', e => {
-    const now = Date.now();
-    if (now - lastTouch < 300) e.preventDefault();
-    lastTouch = now;
-  }, { passive: false });
+  if (dep) { document.getElementById('depId').value = dep; ST.depId = dep; showS(2); }
 })();
 </script>
 </body>
