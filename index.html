@@ -122,6 +122,7 @@ body {
 /* ══════════════════ FORM ELEMENTS ══════════════════ */
 input[type=text],
 input[type=number],
+input[type=date],
 select,
 textarea {
   width: 100%;
@@ -691,7 +692,7 @@ input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important;
       <div class="frow">
         <div class="field">
           <label class="fl">Nama Penerima <span class="req">*</span></label>
-          <input type="text" id="fNama" placeholder="Nama penuh pemohon" autocomplete="off">
+          <input type="text" id="fNama" placeholder="NAMA PENUH PEMOHON" autocomplete="off" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
         </div>
         <div class="field">
           <label class="fl">No. Kad Pengenalan <span class="req">*</span></label>
@@ -716,6 +717,12 @@ input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important;
         <div class="field">
           <label class="fl">Emel <span class="req">*</span></label>
           <input type="text" id="fEmel" placeholder="nama@gmail.com" inputmode="email" autocomplete="email">
+        </div>
+      </div>
+      <div class="frow frow1">
+        <div class="field">
+          <label class="fl">Tarikh Penerimaan Kaunter <span class="req">*</span></label>
+          <input type="date" id="fTarikh" value="2026-05-21">
         </div>
       </div>
     </div>
@@ -1349,6 +1356,7 @@ function fillPreview(d) {
   setF('fTel',     d.tel);
   setF('fEmel',    d.emel);
   setF('fHarga',   d.harga);
+  document.getElementById('fTarikh').value  = '2026-05-21';
   document.getElementById('fCatatan').value = '';
   document.getElementById('fDaerah').value  = '';
   document.getElementById('fMukim').innerHTML = '<option value="">-- Pilih Mukim --</option>';
@@ -1408,9 +1416,10 @@ const v = id => document.getElementById(id).value.trim();
 function getForm() {
   return {
     jenis: ST.jenis, sheet:'',
-    nama:     v('fNama'),    ic:      v('fIc'),
+    nama:     v('fNama').toUpperCase(), ic:      v('fIc'),
     namaPsng: v('fNamaPsng'),icPsng:  v('fIcPsng'),
     tel:      v('fTel'),     emel:    v('fEmel'),
+    tarikh:   v('fTarikh'),
     harga:    v('fHarga'),   daerah:  v('fDaerah'),
     mukim:    v('fMukim'),   catatan: v('fCatatan')
   };
