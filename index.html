@@ -634,6 +634,11 @@ input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important;
         Semua teks <strong>jelas kelihatan</strong> •
         Tiada bayang atau pantulan
       </div>
+
+      <!-- Isi manual — langkau OCR sepenuhnya -->
+      <div class="divider"></div>
+      <button class="btn btn-o btn-full" onclick="manualEntry()">✍️ Isi Borang Secara Manual (Tanpa OCR)</button>
+      <div class="et-hint" style="margin-top:8px">Langkau imbasan — terus isi semua maklumat sendiri.</div>
     </div>
 
     <!-- Hidden file inputs -->
@@ -1363,6 +1368,21 @@ function fillPreview(d) {
 
   document.getElementById('catatanLbl').innerHTML =
     ST.jenis === 'BSR' ? 'Catatan <span class="req">*</span>' : 'Catatan';
+}
+
+/* ════════════════════════════════════════
+   ISI MANUAL — langkau OCR, terus ke borang kosong
+════════════════════════════════════════ */
+function manualEntry() {
+  if (!ST.jenis) { toast('Sila pilih jenis borang dahulu'); return; }
+  // Isi borang dengan nilai kosong + tetapkan label/badge ikut jenis
+  fillPreview({});
+  // Buang penanda warna OCR (hijau/kuning) supaya kelihatan neutral
+  ['fNama','fIc','fNamaPsng','fIcPsng','fTel','fEmel','fHarga'].forEach(id => {
+    document.getElementById(id).classList.remove('ocr-ok','ocr-no');
+  });
+  vibrate(10);
+  showS(3);
 }
 
 /* ════════════════════════════════════════
