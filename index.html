@@ -526,14 +526,13 @@ input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important;
   <div class="card">
     <div class="card-ttl">⚙️ Konfigurasi</div>
 
-    <div class="dep-wrap">
-      <div class="dep-lbl">🤖 Gemini API Key <span style="color:var(--bsr);font-size:10px;font-weight:400">(pilihan — tapi sangat disyorkan untuk tulisan tangan)</span></div>
-      <input type="text" id="geminiKey" class="mono" placeholder="AIzaSy..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-      <div class="dep-hint">Percuma 1,500 req/hari → <strong>aistudio.google.com</strong> → Get API key</div>
+    <div class="alert al-g" style="margin-bottom:12px">
+      <span>🧠</span>
+      <div><strong>OCR AI Tempatan (Transformers.js)</strong> kini digunakan — model AI berjalan terus dalam pelayar telefon. <strong>Tiada API key diperlukan</strong> &amp; data borang tidak keluar dari peranti. Model dimuat turun <strong>sekali sahaja (~250MB)</strong> pada imbasan pertama, kemudian disimpan dalam cache pelayar.</div>
     </div>
 
-    <div class="dep-wrap" style="margin-top:10px">
-      <div class="dep-lbl">🔍 OCR API Key <span style="color:var(--bsr);font-size:10px;font-weight:400">(fallback jika tiada Gemini key)</span></div>
+    <div class="dep-wrap">
+      <div class="dep-lbl">🔍 OCR.space API Key <span style="color:var(--bsr);font-size:10px;font-weight:400">(pilihan — fallback jika AI tempatan gagal)</span></div>
       <input type="text" id="ocrKey" class="mono" placeholder="K8xxxxxxxxxxxx" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
       <div class="dep-hint">Percuma 25,000 req/bulan → <strong>ocr.space/ocrapi/freekey</strong></div>
     </div>
@@ -544,11 +543,7 @@ input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important;
       <div class="dep-hint">Contoh: AKfycbxxxxxxxxxxxxxxxxxxxxxxxxxxx</div>
     </div>
 
-    <div class="alert al-g" style="margin-bottom:14px">
-      <span>ℹ️</span>
-      <div><strong>Gemini</strong> = terbaik untuk tulisan tangan (AI Google). <strong>OCR.space</strong> = fallback untuk teks bercetak. Kedua-duanya percuma.</div>
-    </div>
-    <button class="btn btn-g btn-full" onclick="saveConfig()">Simpan & Mula →</button>
+    <button class="btn btn-g btn-full" onclick="saveConfig()">Simpan &amp; Mula →</button>
     <div class="divider"></div>
     <div class="card-ttl">📖 Cara Dapatkan Deployment ID</div>
     <ul class="guide">
@@ -593,13 +588,13 @@ input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important;
       <span>📌</span><span id="scanHint"></span>
     </div>
 
-    <!-- Engine toggle: Bercetak vs Tulisan Tangan -->
+    <!-- Engine toggle: hanya untuk fallback OCR.space -->
     <div class="engine-wrap" id="engineWrap">
       <div class="engine-toggle">
         <button class="et-btn on" id="etPrint" onclick="setEngine(2)">🖨️ Bercetak / Taip</button>
         <button class="et-btn"   id="etHand"  onclick="setEngine(1)">✍️ Tulisan Tangan</button>
       </div>
-      <div class="et-hint" id="etHint">Mod semasa: Enjin 2 — optimum untuk teks bercetak &amp; digital</div>
+      <div class="et-hint" id="etHint">AI tempatan digunakan dahulu. Toggle ini hanya mempengaruhi fallback OCR.space.</div>
     </div>
 
     <!-- Image preview (hidden until photo taken) -->
@@ -652,11 +647,11 @@ input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important;
       <div class="spin"></div>
       <div class="ocr-lbl" id="ocrLbl">Menyediakan...</div>
       <div class="ocr-prog"><div class="ocr-bar" id="ocrBar"></div></div>
-      <div class="ocr-sub" id="ocrSub">Proses ini mengambil 5–10 saat</div>
+      <div class="ocr-sub" id="ocrSub">Proses ini mengambil masa beberapa saat</div>
       <ul class="ocr-steps">
         <li class="ocr-step" id="step1"><span class="ocr-step-ico">⬜</span> Memampatkan & memproses gambar</li>
-        <li class="ocr-step" id="step2"><span class="ocr-step-ico">⬜</span> Menghantar gambar ke Google</li>
-        <li class="ocr-step" id="step3"><span class="ocr-step-ico">⬜</span> Google sedang membaca teks borang</li>
+        <li class="ocr-step" id="step2"><span class="ocr-step-ico">⬜</span> Memuatkan model AI tempatan (Transformers.js)</li>
+        <li class="ocr-step" id="step3"><span class="ocr-step-ico">⬜</span> Model sedang membaca teks borang</li>
         <li class="ocr-step" id="step4"><span class="ocr-step-ico">⬜</span> Mengekstrak maklumat pemohon</li>
       </ul>
     </div>
@@ -795,21 +790,16 @@ input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important;
     <div class="modal-handle"></div>
     <div class="modal-title">⚙️ Kemaskini Konfigurasi</div>
     <div class="cur-dep"><span>Deployment ID:</span><span id="curDepTxt">—</span></div>
-    <div class="cur-dep"><span>OCR API Key:</span><span id="curOcrTxt">—</span></div>
-    <div class="cur-dep" style="margin-bottom:12px"><span>Gemini API Key:</span><span id="curGemTxt">—</span></div>
+    <div class="cur-dep" style="margin-bottom:12px"><span>OCR.space API Key:</span><span id="curOcrTxt">—</span></div>
     <div class="alert al-g" style="margin-bottom:13px">
-      <span>ℹ️</span><div>Kosongkan field yang tidak perlu diubah.</div>
+      <span>ℹ️</span><div>Kosongkan field yang tidak perlu diubah. OCR AI tempatan tidak memerlukan key.</div>
     </div>
     <div style="margin-bottom:10px">
       <label class="fl" style="margin-bottom:6px">🔑 Deployment ID Baru</label>
       <input type="text" id="newDepId" class="mono" placeholder="AKfycby...xxxx" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
     </div>
-    <div style="margin-bottom:10px">
-      <label class="fl" style="margin-bottom:6px">🤖 Gemini API Key Baru</label>
-      <input type="text" id="newGemKey" class="mono" placeholder="AIzaSy..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-    </div>
     <div style="margin-bottom:13px">
-      <label class="fl" style="margin-bottom:6px">🔍 OCR API Key Baru</label>
+      <label class="fl" style="margin-bottom:6px">🔍 OCR.space API Key Baru</label>
       <input type="text" id="newOcrKey" class="mono" placeholder="K8xxxxxxxxxxxx" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
     </div>
     <div style="display:flex;gap:10px">
@@ -820,6 +810,89 @@ input.ocr-no { border-color: #E8C96A !important; background: #FFFBF0 !important;
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- ════════════════════════════════════════════════════════
+     MODUL TRANSFORMERS.JS (ES module)
+     Memuatkan model Florence-2 (OCR) terus dalam pelayar.
+     Mendedahkan window.runTransformersOCR() & window.preloadTransformers()
+     untuk digunakan oleh skrip klasik di bawah.
+════════════════════════════════════════════════════════ -->
+<script type="module">
+import {
+  Florence2ForConditionalGeneration,
+  AutoProcessor,
+  AutoTokenizer,
+  RawImage,
+  env,
+} from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3';
+
+// Hanya muat model dari Hugging Face Hub (bukan path tempatan)
+env.allowLocalModels = false;
+
+const MODEL_ID = 'onnx-community/Florence-2-base-ft';
+// WebGPU jauh lebih laju; guna jika ada, jika tidak fallback ke WASM (CPU)
+const USE_WEBGPU = (typeof navigator !== 'undefined' && 'gpu' in navigator);
+
+let _model = null, _processor = null, _tokenizer = null, _loading = null;
+
+async function ensureModel(onProgress) {
+  if (_model && _processor && _tokenizer) return;
+  if (_loading) return _loading;
+
+  _loading = (async () => {
+    try {
+      _model = await Florence2ForConditionalGeneration.from_pretrained(MODEL_ID, {
+        // Campuran dtype: kekalkan ketepatan untuk embed/vision, kuantisasi q4 untuk enjin besar
+        dtype: {
+          embed_tokens:         'fp32',
+          vision_encoder:       'fp32',
+          encoder_model:        'q4',
+          decoder_model_merged: 'q4',
+        },
+        device: USE_WEBGPU ? 'webgpu' : 'wasm',
+        progress_callback: (data) => { if (onProgress) onProgress(data); },
+      });
+      _processor = await AutoProcessor.from_pretrained(MODEL_ID);
+      _tokenizer = await AutoTokenizer.from_pretrained(MODEL_ID);
+    } catch (e) {
+      // Reset supaya boleh cuba semula
+      _model = _processor = _tokenizer = null;
+      _loading = null;
+      throw e;
+    }
+  })();
+
+  return _loading;
+}
+
+// Prefetch di latar belakang (dipanggil selepas konfigurasi disimpan)
+window.preloadTransformers = (onProgress) =>
+  ensureModel(onProgress).catch(err => console.warn('Prefetch model gagal:', err));
+
+// Jalankan OCR penuh borang → kembalikan teks mentah
+window.runTransformersOCR = async function (base64jpeg, onProgress) {
+  await ensureModel(onProgress);
+
+  const image   = await RawImage.fromURL('data:image/jpeg;base64,' + base64jpeg);
+  const task    = '<OCR>';
+  const prompts = _processor.construct_prompts(task);
+  const inputs  = await _processor(image, prompts);
+
+  const generated_ids = await _model.generate({
+    ...inputs,
+    max_new_tokens: 512,
+    num_beams: 1,
+    do_sample: false,
+  });
+
+  const decoded = _tokenizer.batch_decode(generated_ids, { skip_special_tokens: false })[0];
+  const result  = _processor.post_process_generation(decoded, task, image.size);
+  return (result && result[task]) ? String(result[task]) : '';
+};
+
+window.__transformersReady = true;
+window.__transformersWebGPU = USE_WEBGPU;
+</script>
 
 <script>
 /* ════════════════════════════════════════
@@ -841,7 +914,7 @@ const MUKIM = {
 /* ════════════════════════════════════════
    STATE
 ════════════════════════════════════════ */
-const ST = { depId:'', ocrKey:'', geminiKey:'', jenis:'', imgBase64:'', imgMime:'' };
+const ST = { depId:'', ocrKey:'', jenis:'', imgBase64:'', imgMime:'' };
 
 /* ════════════════════════════════════════
    SCREEN NAVIGATION
@@ -861,18 +934,16 @@ function showS(n) {
    SETUP / CONFIG
 ════════════════════════════════════════ */
 function saveConfig() {
-  const depId     = document.getElementById('depId').value.trim();
-  const ocrKey    = document.getElementById('ocrKey').value.trim();
-  const geminiKey = document.getElementById('geminiKey').value.trim();
-  if (!depId)               { toast('Sila masukkan Deployment ID'); return; }
-  if (!ocrKey && !geminiKey){ toast('Sila masukkan sekurang-kurangnya satu OCR key'); return; }
-  ST.depId     = depId;
-  ST.ocrKey    = ocrKey;
-  ST.geminiKey = geminiKey;
+  const depId  = document.getElementById('depId').value.trim();
+  const ocrKey = document.getElementById('ocrKey').value.trim();
+  if (!depId) { toast('Sila masukkan Deployment ID'); return; }
+  ST.depId  = depId;
+  ST.ocrKey = ocrKey;
   localStorage.setItem('pkj_dep', depId);
   localStorage.setItem('pkj_ocr', ocrKey);
-  localStorage.setItem('pkj_gem', geminiKey);
   vibrate(20);
+  // Mula muat turun model AI di latar belakang supaya imbasan pertama lebih pantas
+  if (window.preloadTransformers) window.preloadTransformers();
   showS(2);
 }
 
@@ -880,38 +951,32 @@ function saveConfig() {
    SETTINGS MODAL
 ════════════════════════════════════════ */
 function openSettings() {
-  const dep = ST.depId     || '—';
-  const ocr = ST.ocrKey    || '—';
-  const gem = ST.geminiKey || '—';
+  const dep = ST.depId  || '—';
+  const ocr = ST.ocrKey || '—';
   document.getElementById('curDepTxt').textContent =
     dep.length > 16 ? dep.slice(0,10)+'...'+dep.slice(-8) : dep;
   document.getElementById('curOcrTxt').textContent =
     ocr.length > 10 ? ocr.slice(0,6)+'...' : ocr;
-  document.getElementById('curGemTxt').textContent =
-    gem.length > 10 ? gem.slice(0,8)+'...' : gem;
   document.getElementById('newDepId').value  = '';
   document.getElementById('newOcrKey').value = '';
-  document.getElementById('newGemKey').value = '';
   document.getElementById('modal').classList.add('open');
   setTimeout(() => document.getElementById('newDepId').focus(), 350);
 }
 function closeModal()      { document.getElementById('modal').classList.remove('open'); }
 function closeModalOut(e)  { if (e.target===document.getElementById('modal')) closeModal(); }
 function saveNewDep() {
-  const depId     = document.getElementById('newDepId').value.trim();
-  const ocrKey    = document.getElementById('newOcrKey').value.trim();
-  const geminiKey = document.getElementById('newGemKey').value.trim();
-  if (!depId && !ocrKey && !geminiKey) { toast('Tiada perubahan untuk disimpan'); return; }
-  if (depId)     { ST.depId = depId;         localStorage.setItem('pkj_dep', depId);     document.getElementById('depId').value = depId; }
-  if (ocrKey)    { ST.ocrKey = ocrKey;       localStorage.setItem('pkj_ocr', ocrKey);    document.getElementById('ocrKey').value = ocrKey; }
-  if (geminiKey) { ST.geminiKey = geminiKey; localStorage.setItem('pkj_gem', geminiKey); document.getElementById('geminiKey').value = geminiKey; }
+  const depId  = document.getElementById('newDepId').value.trim();
+  const ocrKey = document.getElementById('newOcrKey').value.trim();
+  if (!depId && !ocrKey) { toast('Tiada perubahan untuk disimpan'); return; }
+  if (depId)  { ST.depId = depId;   localStorage.setItem('pkj_dep', depId);  document.getElementById('depId').value = depId; }
+  if (ocrKey) { ST.ocrKey = ocrKey; localStorage.setItem('pkj_ocr', ocrKey); document.getElementById('ocrKey').value = ocrKey; }
   closeModal();
   vibrate([20,30,20]);
   toast('✅ Konfigurasi berjaya dikemaskini');
 }
 
 /* ════════════════════════════════════════
-   OCR ENGINE TOGGLE
+   OCR ENGINE TOGGLE (untuk fallback OCR.space sahaja)
 ════════════════════════════════════════ */
 let ocrEngine = 2; // 2 = bercetak (default), 1 = tulisan tangan
 
@@ -920,8 +985,8 @@ function setEngine(n) {
   document.getElementById('etPrint').classList.toggle('on', n===2);
   document.getElementById('etHand').classList.toggle('on', n===1);
   document.getElementById('etHint').textContent = n===2
-    ? 'Mod semasa: Enjin 2 — optimum untuk teks bercetak & digital'
-    : 'Mod semasa: Enjin 1 — optimum untuk tulisan tangan';
+    ? 'AI tempatan digunakan dahulu. Fallback OCR.space: Enjin 2 (teks bercetak).'
+    : 'AI tempatan digunakan dahulu. Fallback OCR.space: Enjin 1 (tulisan tangan).';
 }
 
 /* ════════════════════════════════════════
@@ -984,9 +1049,8 @@ function resetScan() {
 }
 
 /* ════════════════════════════════════════
-   COMPRESS IMAGE
-   Kecilkan & tingkatkan kualiti sebelum
-   dihantar ke Google untuk OCR
+   COMPRESS — versi penuh (grayscale + kontras)
+   untuk fallback OCR.space
 ════════════════════════════════════════ */
 function compressForOCR(base64, mime) {
   return new Promise((resolve, reject) => {
@@ -994,7 +1058,6 @@ function compressForOCR(base64, mime) {
     img.onerror = () => reject(new Error('Gambar tidak dapat dimuatkan'));
     img.onload  = () => {
       try {
-        // Max 900px — cukup untuk Google OCR baca teks
         const MAX   = 900;
         const scale = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
         const w     = Math.round(img.naturalWidth  * scale);
@@ -1004,12 +1067,10 @@ function compressForOCR(base64, mime) {
         canvas.width = w; canvas.height = h;
         const ctx = canvas.getContext('2d');
 
-        // Latar putih
         ctx.fillStyle = '#fff';
         ctx.fillRect(0, 0, w, h);
         ctx.drawImage(img, 0, 0, w, h);
 
-        // Grayscale + auto-contrast
         const id = ctx.getImageData(0, 0, w, h);
         const px = id.data;
         const g  = new Uint8Array(w * h);
@@ -1028,7 +1089,6 @@ function compressForOCR(base64, mime) {
         }
         ctx.putImageData(id, 0, 0);
 
-        // Export JPEG quality 0.5 — kecil & cukup jelas
         resolve(canvas.toDataURL('image/jpeg', 0.5).split(',')[1]);
       } catch(err) { reject(err); }
     };
@@ -1036,79 +1096,34 @@ function compressForOCR(base64, mime) {
   });
 }
 
-// Tukar standard base64 → URL-safe (tiada +, /, = yang perlu URL-encode)
-function toUrlSafe(b64) {
-  return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-}
-
 /* ════════════════════════════════════════
-   OCR via GEMINI API
-   Auto-try model terbaru → fallback
+   COMPRESS — versi ringan (kekal warna RGB)
+   untuk model Transformers.js / Florence-2
 ════════════════════════════════════════ */
-
-// Senarai model — cuba dari atas ke bawah
-const GEMINI_MODELS = [
-  'gemini-2.0-flash',
-  'gemini-2.0-flash-lite',
-  'gemini-1.5-flash-latest',
-];
-
-async function ocrGemini(compressed, jenis) {
-  const prompt = `Ini adalah borang permohonan ${jenis} PKJ (Perbadanan Kemajuan Johor) Malaysia.
-Baca semua teks dalam borang ini termasuk tulisan tangan.
-Kembalikan JSON sahaja (tiada penjelasan, tiada markdown):
-{
-  "nama": "nama penuh pemohon dari ruangan Nama Pertama",
-  "ic": "nombor kad pengenalan format XXXXXX-XX-XXXX",
-  "namaPsng": "nama pasangan jika ada, kosong jika tiada",
-  "icPsng": "no KP pasangan format XXXXXX-XX-XXXX, kosong jika tiada",
-  "tel": "nombor telefon bermula 01, tanpa tanda sempang",
-  "emel": "alamat emel, kosong jika tiada",
-  "harga": "harga rumah ATAU bayaran sewa dalam angka sahaja tanpa RM atau koma"
-}`;
-
-  let lastErr;
-  for (const model of GEMINI_MODELS) {
-    try {
-      const resp = await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + ST.geminiKey,
-        {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [
-              { text: prompt },
-              { inline_data: { mime_type: 'image/jpeg', data: compressed } }
-            ]}],
-            generationConfig: { temperature: 0, maxOutputTokens: 512 }
-          })
-        }
-      );
-
-      // Model not found → try next
-      if (resp.status === 404) { lastErr = new Error(model + ' tidak tersedia'); continue; }
-
-      if (!resp.ok) {
-        const e = await resp.json().catch(() => ({}));
-        throw new Error(e.error?.message || 'Gemini HTTP ' + resp.status);
-      }
-
-      const data  = await resp.json();
-      const raw   = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      const clean = raw.replace(/```json|```/g, '').trim();
-      return JSON.parse(clean);
-
-    } catch (err) {
-      if (err.message.includes('tidak tersedia')) { lastErr = err; continue; }
-      throw err; // error lain — jangan retry
-    }
-  }
-  throw lastErr || new Error('Semua model Gemini tidak tersedia');
+function compressLight(base64, mime) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onerror = () => reject(new Error('Gambar tidak dapat dimuatkan'));
+    img.onload  = () => {
+      try {
+        const MAX   = 1000;
+        const scale = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
+        const w     = Math.round(img.naturalWidth  * scale);
+        const h     = Math.round(img.naturalHeight * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.85).split(',')[1]);
+      } catch(err) { reject(err); }
+    };
+    img.src = 'data:' + mime + ';base64,' + base64;
+  });
 }
 
 /* ════════════════════════════════════════
-   OCR via OCR.SPACE API
-   Fallback untuk teks bercetak
+   OCR via OCR.SPACE API — fallback
    Percuma 25,000 req/bulan
 ════════════════════════════════════════ */
 async function ocrSpace(compressed) {
@@ -1134,9 +1149,10 @@ async function ocrSpace(compressed) {
 }
 
 /* ════════════════════════════════════════
-   RUN OCR — auto pilih enjin
-   Gemini (ada key) → terus extract JSON
-   OCR.space (fallback) → parse dengan regex
+   RUN OCR
+   Utama : Transformers.js (Florence-2, AI tempatan)
+   Fallback : OCR.space (jika ada key & AI gagal)
+   Kedua-dua → teks mentah → parseBorang()
 ════════════════════════════════════════ */
 async function runOCR() {
   const ocrBox  = document.getElementById('ocrBox');
@@ -1148,65 +1164,70 @@ async function runOCR() {
   ocrDone.style.display = 'none';
   resetSteps(); setBar(0);
 
-  const useGemini = !!ST.geminiKey;
+  const hasLocal = !!window.runTransformersOCR;
+  const hasSpace = !!ST.ocrKey;
 
   try {
-    // Step 1 — compress
-    setStep(1,'active'); setBar(8);
+    // ── Step 1: sediakan gambar ──
+    setStep(1,'active'); setBar(6);
     ocrLbl.textContent = 'Memampatkan gambar...';
-    ocrSub.textContent = useGemini
-      ? 'Menyediakan untuk Google Gemini AI'
-      : 'Menyediakan untuk OCR.space';
-    const compressed = await compressForOCR(ST.imgBase64, ST.imgMime);
-    setStep(1,'done'); setStep(2,'active'); setBar(20);
+    ocrSub.textContent = 'Menyediakan gambar untuk OCR';
 
-    let parsed;
+    let text = '';
+    let usedEngine = '';
 
-    if (useGemini) {
-      // ── Laluan Gemini ──
-      ocrLbl.textContent = 'Menghantar ke Google Gemini AI...';
-      ocrSub.textContent = 'Gemini membaca & mengekstrak data secara langsung';
-      setBar(35);
+    // ── Laluan utama: AI tempatan ──
+    if (hasLocal) {
+      const light = await compressLight(ST.imgBase64, ST.imgMime);
+      setStep(1,'done'); setStep(2,'active'); setBar(15);
 
-      const result = await ocrGemini(compressed, ST.jenis);
+      ocrLbl.textContent = 'Memuatkan model AI tempatan...';
+      ocrSub.textContent = window.__transformersWebGPU
+        ? 'Menggunakan WebGPU (laju). Kali pertama: muat turun ~250MB.'
+        : 'Menggunakan CPU (WASM). Kali pertama: muat turun ~250MB.';
 
-      setStep(2,'done'); setStep(3,'active'); setBar(80);
-      ocrLbl.textContent = 'Gemini berjaya membaca borang ✓';
-      ocrSub.textContent = 'Memproses keputusan...';
-
-      // Gemini terus bagi JSON — tak perlu parseBorang
-      parsed = {
-        nama:     (result.nama     || '').trim(),
-        ic:       (result.ic       || '').trim(),
-        namaPsng: (result.namaPsng || '').trim(),
-        icPsng:   (result.icPsng   || '').trim(),
-        tel:      (result.tel      || '').replace(/\D/g,'').replace(/^60/,'0'),
-        emel:     (result.emel     || '').toLowerCase().trim(),
-        harga:    (result.harga    || '').replace(/[^0-9]/g,'')
-      };
-
-    } else {
-      // ── Laluan OCR.space ──
-      ocrLbl.textContent = 'Menghantar ke OCR.space...';
-      ocrSub.textContent = 'Enjin OCR memproses gambar';
-      setBar(35);
-
-      const text = await ocrSpace(compressed);
-
-      setStep(2,'done'); setStep(3,'active'); setBar(75);
-      ocrLbl.textContent = 'Mengekstrak maklumat dari teks...';
-      ocrSub.textContent = '';
-
-      parsed = parseBorang(text, ST.jenis);
+      try {
+        text = await window.runTransformersOCR(light, (p) => {
+          if (p && p.status === 'progress' && typeof p.progress === 'number') {
+            const pct = Math.min(72, 15 + Math.round(p.progress * 0.55));
+            setBar(pct);
+            const fname = (p.file || '').split('/').pop();
+            ocrSub.textContent = 'Memuat turun model: ' + fname + ' (' + Math.round(p.progress) + '%)';
+          } else if (p && (p.status === 'ready' || p.status === 'done')) {
+            ocrLbl.textContent = 'Model membaca borang...';
+          }
+        });
+        usedEngine = 'AI Tempatan';
+        setStep(2,'done'); setStep(3,'active'); setBar(80);
+      } catch (localErr) {
+        console.error('Transformers.js gagal:', localErr);
+        if (!hasSpace) throw localErr; // tiada fallback
+        ocrSub.textContent = 'AI tempatan gagal — cuba OCR.space...';
+      }
     }
 
-    // Step 4 — fill form
-    setStep(3,'done'); setStep(4,'active'); setBar(93);
-    ocrLbl.textContent = 'Mengisi borang preview...';
+    // ── Fallback: OCR.space ──
+    if (!text && hasSpace) {
+      const compressed = await compressForOCR(ST.imgBase64, ST.imgMime);
+      setStep(1,'done'); setStep(2,'done'); setStep(3,'active'); setBar(70);
+      ocrLbl.textContent = 'Menghantar ke OCR.space (fallback)...';
+      ocrSub.textContent = 'Enjin OCR memproses gambar';
+      text = await ocrSpace(compressed);
+      usedEngine = 'OCR.space';
+    }
+
+    if (!text || !text.trim()) throw new Error('Tiada teks dibaca dari borang');
+
+    // ── Step 4: parse + isi borang ──
+    setStep(3,'done'); setStep(4,'active'); setBar(92);
+    ocrLbl.textContent = 'Mengekstrak maklumat pemohon...';
+    ocrSub.textContent = 'Enjin: ' + usedEngine;
+
+    const parsed = parseBorang(text, ST.jenis);
     fillPreview(parsed);
 
     setStep(4,'done'); setBar(100);
-    ocrLbl.textContent = useGemini ? '✓ Gemini selesai' : '✓ OCR.space selesai';
+    ocrLbl.textContent = '✓ Selesai (' + usedEngine + ')';
     vibrate([20, 50, 20]);
 
     setTimeout(() => {
@@ -1220,9 +1241,8 @@ async function runOCR() {
     console.error('OCR Error:', err);
 
     let msg = err.message || 'Sila cuba semula';
-    if (msg.includes('401') || msg.includes('API_KEY')) msg = 'API Key tidak sah. Semak konfigurasi.';
-    else if (msg.includes('QUOTA') || msg.includes('429'))  msg = 'Had percuma tercapai. Cuba lagi esok.';
-    else if (msg.includes('fetch') || msg.includes('Network')) msg = 'Tiada sambungan internet.';
+    if (/quota|429/i.test(msg))                 msg = 'Had percuma OCR.space tercapai. Cuba lagi esok.';
+    else if (/network|fetch|load|download/i.test(msg)) msg = 'Masalah sambungan / muat turun model. Semak internet & cuba semula.';
     toast('Ralat: ' + msg);
     document.getElementById('imgPreview').style.display = 'none';
     document.getElementById('scanBtns').style.display   = 'block';
@@ -1253,73 +1273,53 @@ function setBar(pct) {
 
 /* ════════════════════════════════════════
    PARSE OCR TEXT — versi robust
-   Strategi: cari label → ekstrak nilai →
-   berhenti apabila jumpa label seterusnya
 ════════════════════════════════════════ */
 function parseBorang(raw, jenis) {
   const out = { nama:'', ic:'', namaPsng:'', icPsng:'', tel:'', emel:'', harga:'' };
   if (!raw || !raw.trim()) return out;
 
-  // Normalize teks
   const text = raw.replace(/\r/g, '').replace(/[^\S\n]+/g, ' ').trim();
-  // Versi rata (satu baris) untuk carian label
   const flat = text.replace(/\n/g, ' ').replace(/\s{2,}/g, ' ');
 
-  // ══ 1. REGEX — sentiasa tepat ══
-
-  // IC: 6-2-4 digit dengan pelbagai pemisah
+  // ══ 1. REGEX ══
   const icAll = [...flat.matchAll(/\b(\d{6})\s*[-—–.]\s*(\d{2})\s*[-—–.]\s*(\d{4})\b/g)]
                 .map(m => m[1]+'-'+m[2]+'-'+m[3]);
   if (icAll[0]) out.ic     = icAll[0];
   if (icAll[1]) out.icPsng = icAll[1];
 
-  // Email
   const emM = flat.match(/[\w.+\-]+@[\w.\-]+\.[a-z]{2,}/i);
   if (emM) out.emel = emM[0].toLowerCase().trim();
 
-  // Telefon Malaysia (01x)
   const phM = flat.match(/\b(01[0-9])[\s.\-]?(\d{3,4})[\s.\-]?(\d{4})\b/);
   if (phM) out.tel = phM[1] + phM[2] + phM[3];
 
-  // ══ 2. LABEL-ANCHORED — nama & harga ══
-  // Senarai label yang menanda PERMULAAN field baharu
-  // (nilai berhenti apabila jumpa mana-mana label ini)
+  // ══ 2. LABEL-ANCHORED ══
   const STOP = /\b(Nama\s*(Kedua|Pasangan|Pertama|Penuh|dan\s*No|Pemi)|No\.?\s*(Kad|K\/|KP\b|Lot|PTD|Tel|Pass)|Keturunan|Agama|Status|Email|Emel|Harga|Bayaran|Warganegara|Alamat|Jenis\s*Rumah|Sektor|Majikan|Pendapatan|Tarikh|Nama\s*Pemaju)\b/i;
 
-  // grab(labelPattern) — cari label, ambil nilai, berhenti di label seterusnya
   function grab(labelRe) {
-    // Bina regex: cari label + apa-apa + titik dua pilihan + ruang
     const full = new RegExp(labelRe.source + '[^:\\n]{0,60}[:：]?\\s*', 'i');
     const m    = full.exec(flat);
     if (!m) return '';
 
     let val = flat.slice(m.index + m[0].length).trim();
-    // Buang aksara pengisi hadapan
     val = val.replace(/^[.…_\s\(\)【】]+/, '').trim();
-    // Berhenti di label seterusnya
     const stopM = STOP.exec(val);
     if (stopM && stopM.index < 120) val = val.slice(0, stopM.index).trim();
-    // Buang aksara pengisi ekor
     val = val.replace(/[.…_\s]+$/, '').trim();
-    // Sanitasi: jangan terima jika nampak seperti IC atau terlalu pendek
     if (val.length < 2)             return '';
-    if (/^\d{6}[-—–]/.test(val))    return ''; // bukan IC
-    if (/^\d+$/.test(val) && val.length !== 11) return ''; // bukan nombor berguna
+    if (/^\d{6}[-—–]/.test(val))    return '';
+    if (/^\d+$/.test(val) && val.length !== 11) return '';
     return val;
   }
 
-  // Nama pemohon — BBR/BMR: "Nama Pertama", BSR: "Nama Penuh"
   out.nama     = grab(/Nama\s*(Pertama|Penuh\s*\(seperti|Penuh)/);
-  // Nama pasangan
   out.namaPsng = grab(/Nama\s*Pasangan/);
-  // Harga rumah / bayaran sewa
   const hRaw   = grab(/Harga\s*Rumah|Bayaran\s*Sewa(\s*Sebulan)?/);
   if (hRaw) {
     const numM = hRaw.match(/[1-9][\d,\s]*/);
     if (numM) out.harga = numM[0].replace(/[,\s]/g, '');
   }
 
-  // Bersihkan semua nilai akhir
   Object.keys(out).forEach(k => {
     if (out[k]) out[k] = out[k].replace(/^[.\s…_()+]+|[.\s…_()]+$/g,'').trim();
   });
@@ -1361,7 +1361,6 @@ function fillPreview(d) {
   document.getElementById('btnHantar').style.background =
     {BBR:'#185FA5', BMR:'#1B4B3A', BSR:'#854F0B'}[ST.jenis];
 
-  // Catatan wajib untuk BSR sahaja
   document.getElementById('catatanLbl').innerHTML =
     ST.jenis === 'BSR' ? 'Catatan <span class="req">*</span>' : 'Catatan';
 }
@@ -1409,7 +1408,6 @@ async function doSubmit(tidakLayak) {
     if (!d.tel)     { toast('No. Telefon wajib diisi'); return; }
     if (!d.emel)    { toast('Emel wajib diisi'); return; }
     if (!d.harga)   { toast('Harga Rumah/Sewa wajib diisi'); return; }
-    // Catatan wajib untuk BSR sahaja
     if (ST.jenis === 'BSR' && !d.catatan) { toast('Catatan wajib diisi untuk BSR'); return; }
   }
 
@@ -1449,7 +1447,7 @@ function resetAll() {
 }
 
 /* ════════════════════════════════════════
-   HAPTIC (Android) / no-op on iOS
+   HAPTIC
 ════════════════════════════════════════ */
 function vibrate(pattern) {
   try { navigator.vibrate && navigator.vibrate(pattern); } catch(e) {}
@@ -1471,11 +1469,14 @@ function toast(msg) {
 (function init() {
   const dep = localStorage.getItem('pkj_dep');
   const ocr = localStorage.getItem('pkj_ocr');
-  const gem = localStorage.getItem('pkj_gem');
-  if (dep) { document.getElementById('depId').value     = dep; ST.depId     = dep; }
-  if (ocr) { document.getElementById('ocrKey').value    = ocr; ST.ocrKey    = ocr; }
-  if (gem) { document.getElementById('geminiKey').value = gem; ST.geminiKey = gem; }
-  if (dep && (ocr || gem)) showS(2);
+  if (dep) { document.getElementById('depId').value  = dep; ST.depId  = dep; }
+  if (ocr) { document.getElementById('ocrKey').value = ocr; ST.ocrKey = ocr; }
+  if (dep) {
+    showS(2);
+    // Prefetch model sebaik sahaja modul sedia
+    if (window.preloadTransformers) window.preloadTransformers();
+    else window.addEventListener('load', () => window.preloadTransformers && window.preloadTransformers());
+  }
 
   let lastTouch = 0;
   document.addEventListener('touchend', e => {
