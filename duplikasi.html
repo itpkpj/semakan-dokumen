@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Semakan Duplikat No. KP</title>
+<style>
+:root{
+  --dakwat:#141b2d; --dakwat-lembut:#2c3752; --kertas:#f7f5f0; --garis:#d8d3c7;
+  --amaran:#b8460e; --amaran-latar:#fdeee6; --selamat:#1f6f5c; --selamat-latar:#e6f2ee; --neutral:#6f6a5e;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  background:var(--kertas);color:var(--dakwat);line-height:1.5;padding:16px;-webkit-text-size-adjust:100%}
+.bekas{max-width:1000px;margin:0 auto}
+header{border-bottom:2px solid var(--dakwat);padding-bottom:14px;margin-bottom:22px}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--neutral);font-weight:600;margin-bottom:4px}
+h1{font-size:23px;font-weight:700;letter-spacing:-.02em}
+header p{font-size:13px;color:var(--neutral);margin-top:6px}
+.kad{background:#fff;border:1px solid var(--garis);border-radius:8px;padding:16px;margin-bottom:14px}
+.kad h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+
+.jatuh{border:2px dashed var(--garis);border-radius:8px;padding:26px 16px;text-align:center;
+  cursor:pointer;transition:.15s;background:#fff;display:block}
+.jatuh:hover,.jatuh.aktif{border-color:var(--dakwat);background:#fafaf7}
+.jatuh .nama{font-size:15px;font-weight:600}
+.jatuh .kira{font-size:12px;color:var(--neutral);margin-top:4px}
+.jatuh input{display:none}
+.ralat{color:var(--amaran);font-size:13px;margin-top:10px}
+
+.fail-kad{border:1px solid var(--garis);border-radius:8px;margin-bottom:12px;overflow:hidden;background:#fff}
+.fail-atas{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 13px;
+  background:var(--dakwat);color:#fff}
+.fail-tanda{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  background:rgba(255,255,255,.16);padding:2px 7px;border-radius:3px}
+.fail-nama{font-size:14px;font-weight:600;word-break:break-all}
+.fail-buang{margin-left:auto;background:none;border:1px solid rgba(255,255,255,.4);color:#fff;
+  border-radius:4px;padding:3px 9px;font-size:12px;cursor:pointer}
+.fail-buang:hover{background:rgba(255,255,255,.14)}
+
+.sheet-baris{border-top:1px solid var(--garis);padding:11px 13px}
+.sheet-baris.mati{opacity:.45;background:#fbfaf7}
+.sheet-atas{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:9px}
+.sheet-nama{font-size:14px;font-weight:600}
+.sheet-kira{font-size:12px;color:var(--neutral);margin-left:auto;font-variant-numeric:tabular-nums}
+.sheet-medan{display:grid;gap:9px}
+@media(min-width:560px){.sheet-medan{grid-template-columns:1fr 1fr}}
+label.medan{display:block;font-size:11px;font-weight:600;margin-bottom:3px;color:var(--neutral);
+  text-transform:uppercase;letter-spacing:.06em}
+select,button{font-family:inherit;font-size:14px}
+select{width:100%;padding:8px 9px;border:1px solid var(--garis);border-radius:6px;background:#fff;color:var(--dakwat)}
+.suis{display:flex;align-items:flex-start;gap:9px;margin-top:12px;font-size:13px;cursor:pointer}
+.suis input{margin-top:3px;flex-shrink:0}
+button.utama{width:100%;padding:13px;border:none;border-radius:6px;background:var(--dakwat);color:#fff;
+  font-weight:600;cursor:pointer}
+button.utama:hover:not(:disabled){background:var(--dakwat-lembut)}
+button.utama:disabled{background:var(--garis);cursor:not-allowed}
+button.kedua{padding:8px 14px;border:1px solid var(--dakwat);border-radius:6px;background:#fff;
+  color:var(--dakwat);font-weight:600;cursor:pointer;font-size:13px}
+button.kedua:hover{background:var(--kertas)}
+button:focus-visible,select:focus-visible,.jatuh:focus-visible,input:focus-visible{outline:2px solid var(--amaran);outline-offset:2px}
+
+.integriti{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
+@media(min-width:560px){.integriti{grid-template-columns:repeat(4,1fr)}}
+.tanda{border:1px solid var(--garis);border-radius:8px;padding:12px;background:#fff;text-align:center}
+.tanda .angka{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.tanda .label{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--neutral);margin-top:2px}
+.tanda.bahaya{border-color:var(--amaran);background:var(--amaran-latar)}
+.tanda.bahaya .angka{color:var(--amaran)}
+.tanda.ok{border-color:var(--selamat);background:var(--selamat-latar)}
+.tanda.ok .angka{color:var(--selamat)}
+.amaran-kotak{border-left:3px solid var(--amaran);background:var(--amaran-latar);padding:11px 13px;
+  font-size:13px;border-radius:0 6px 6px 0;margin-bottom:14px}
+.amaran-kotak strong{display:block;margin-bottom:3px}
+
+.kumpulan{border:1px solid var(--garis);border-radius:8px;background:#fff;margin-bottom:10px;overflow:hidden}
+.kumpulan-atas{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:11px 14px;
+  border-bottom:1px solid var(--garis);background:#fbfaf7}
+.ic{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:16px;font-weight:600;
+  letter-spacing:.06em;font-variant-numeric:tabular-nums}
+.ic .segmen{color:var(--neutral);font-weight:400}
+.lencana{font-size:10px;text-transform:uppercase;letter-spacing:.07em;font-weight:700;padding:3px 7px;border-radius:3px}
+.lencana.dalam{background:#efe7d8;color:#7a5a15}
+.lencana.silang{background:var(--amaran-latar);color:var(--amaran)}
+.lencana.dua{background:var(--dakwat);color:#fff}
+.lencana.nama-beza{background:#fff;color:var(--amaran);border:1px solid var(--amaran)}
+.kumpulan ul{list-style:none;padding:4px 14px 11px}
+.kumpulan li{font-size:13px;padding:7px 0;border-bottom:1px solid #f0eee8;display:grid;gap:2px}
+@media(min-width:640px){.kumpulan li{grid-template-columns:1fr auto;align-items:baseline;gap:12px}}
+.kumpulan li:last-child{border:none}
+.orang{font-weight:600}
+.orang.tiada{font-weight:400;color:var(--neutral);font-style:italic}
+.lokasi{font-size:12px;color:var(--neutral)}
+.lokasi .sheet-tanda{font-weight:600;color:var(--dakwat)}
+.mentah{font-family:ui-monospace,monospace;font-size:12px;color:var(--neutral);font-variant-numeric:tabular-nums}
+.kosong{text-align:center;padding:34px 16px;color:var(--neutral);font-size:14px}
+.hasil-atas{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.hasil-atas h2{font-size:15px;text-transform:none;letter-spacing:0;margin:0}
+.sembunyi{display:none}
+footer{font-size:12px;color:var(--neutral);text-align:center;padding:20px 0}
+</style>
+</head>
+<body>
+<div class="bekas">
+
+<header>
+  <div class="eyebrow">Alat semakan data</div>
+  <h1>Semakan Duplikat No. Kad Pengenalan</h1>
+  <p>Muat naik seberapa banyak fail. Semua sheet dibaca. Pemprosesan berlaku dalam pelayar ini &mdash; tiada data dihantar ke pelayan.</p>
+</header>
+
+<div class="kad">
+  <h2>1 &middot; Muat naik fail</h2>
+  <label class="jatuh" id="zon" tabindex="0">
+    <div class="nama">Klik atau seret fail ke sini</div>
+    <div class="kira">CSV, TSV atau XLSX &middot; boleh pilih banyak fail sekaligus</div>
+    <input type="file" id="pilihFail" multiple accept=".csv,.tsv,.txt,.xlsx,.xls">
+  </label>
+  <div class="ralat sembunyi" id="ralat"></div>
+</div>
+
+<div class="kad sembunyi" id="kadLajur">
+  <h2>2 &middot; Tetapkan lajur bagi setiap sheet</h2>
+  <div id="senaraiFail"></div>
+  <label class="suis">
+    <input type="checkbox" id="padZero" checked>
+    <span>Pulihkan sifar di depan &mdash; jika IC jadi 10 atau 11 digit kerana dibaca sebagai nombor, tambah sifar sehingga 12 digit.</span>
+  </label>
+  <label class="suis">
+    <input type="checkbox" id="abaiKosong" checked>
+    <span>Abaikan baris yang tiada No. KP.</span>
+  </label>
+</div>
+
+<div class="kad sembunyi" id="kadJalan">
+  <button class="utama" id="butJalan">Mulakan semakan</button>
+</div>
+
+<div id="hasil"></div>
+<footer>Data diproses secara setempat &middot; <span id="jam"></span></footer>
+</div>
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+<script>
+let fail = [];      /* {id, nama, sheet:[{id,namaSheet,tajuk,baris,guna,idxIC,idxNama}]} */
+let kiraId = 0;
+
+/* ---------- Pembaca ---------- */
+function pisahCSV(teks){
+  const b1 = teks.split('\n')[0];
+  const pemisah = b1.split('\t').length > b1.split(',').length ? '\t' : ',';
+  const baris=[]; let medan='', semasa=[], dlmPetik=false;
+  for(let i=0;i<teks.length;i++){
+    const c=teks[i];
+    if(dlmPetik){
+      if(c==='"'){ if(teks[i+1]==='"'){medan+='"';i++;} else dlmPetik=false; }
+      else medan+=c;
+    } else if(c==='"'){ dlmPetik=true; }
+    else if(c===pemisah){ semasa.push(medan); medan=''; }
+    else if(c==='\n'){ semasa.push(medan); baris.push(semasa); semasa=[]; medan=''; }
+    else if(c!=='\r'){ medan+=c; }
+  }
+  if(medan!==''||semasa.length){ semasa.push(medan); baris.push(semasa); }
+  return baris.filter(b=>b.some(v=>String(v).trim()!==''));
+}
+
+function bacaFail(f){
+  return new Promise((tepat,gagal)=>{
+    const ext=f.name.split('.').pop().toLowerCase();
+    const fr=new FileReader();
+    fr.onerror=()=>gagal(new Error(f.name+': fail tidak dapat dibaca.'));
+    if(ext==='xlsx'||ext==='xls'){
+      if(typeof XLSX==='undefined'){
+        gagal(new Error(f.name+': pembaca XLSX tidak dimuatkan. Eksport sebagai CSV.')); return;
+      }
+      fr.onload=e=>{
+        try{
+          const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellText:true,raw:false});
+          const s=wb.SheetNames.map(n=>({
+            namaSheet:n,
+            baris:XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:false})
+              .filter(b=>b.some(v=>String(v).trim()!==''))
+          })).filter(x=>x.baris.length>=2);
+          if(!s.length) gagal(new Error(f.name+': tiada sheet yang mengandungi data.'));
+          else tepat(s);
+        }catch(err){ gagal(new Error(f.name+': fail Excel rosak atau tidak disokong.')); }
+      };
+      fr.readAsArrayBuffer(f);
+    } else {
+      fr.onload=e=>{
+        const baris=pisahCSV(e.target.result);
+        if(baris.length<2) gagal(new Error(f.name+': perlu ada baris tajuk dan sekurang-kurangnya satu baris data.'));
+        else tepat([{namaSheet:f.name.replace(/\.[^.]+$/,''), baris:baris}]);
+      };
+      fr.readAsText(f,'UTF-8');
+    }
+  });
+}
+
+/* ---------- Normalisasi ---------- */
+function normalisasiIC(v,pad){
+  if(v===null||v===undefined) return '';
+  let s=String(v).toUpperCase().replace(/[^0-9A-Z]/g,'').trim();
+  if(pad && /^\d{10,11}$/.test(s)) s=s.padStart(12,'0');
+  return s;
+}
+function formatIC(ic){
+  if(/^\d{12}$/.test(ic))
+    return ic.slice(0,6)+'<span class="segmen">-</span>'+ic.slice(6,8)+'<span class="segmen">-</span>'+ic.slice(8);
+  return ic;
+}
+function normNama(n){ return String(n||'').toUpperCase().replace(/[^A-Z0-9]/g,''); }
+function lepas(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ---------- Muat ---------- */
+const zon=document.getElementById('zon'), input=document.getElementById('pilihFail');
+zon.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();input.click();} });
+['dragover','dragenter'].forEach(ev=>zon.addEventListener(ev,e=>{e.preventDefault();zon.classList.add('aktif');}));
+['dragleave','drop'].forEach(ev=>zon.addEventListener(ev,e=>{e.preventDefault();zon.classList.remove('aktif');}));
+zon.addEventListener('drop',e=>{ if(e.dataTransfer.files.length) muatBanyak(e.dataTransfer.files); });
+input.addEventListener('change',e=>{ if(e.target.files.length) muatBanyak(e.target.files); input.value=''; });
+
+async function muatBanyak(senaraiFail){
+  const ralat=[];
+  for(const f of senaraiFail){
+    try{
+      const sheets=await bacaFail(f);
+      fail.push({
+        id:'f'+(kiraId++), nama:f.name,
+        sheet: sheets.map((s,i)=>({
+          id:'s'+(kiraId++), namaSheet:s.namaSheet, tajuk:s.baris[0], baris:s.baris.slice(1),
+          guna:true, idxIC:-1, idxNama:-1
+        }))
+      });
+    }catch(err){ ralat.push(err.message); }
+  }
+  const kotak=document.getElementById('ralat');
+  kotak.classList.toggle('sembunyi',!ralat.length);
+  kotak.textContent=ralat.join(' · ');
+  binaKonfig();
+}
+
+function teka(tajuk,corak){ return tajuk.findIndex(t=>corak.test(String(t))); }
+
+function binaKonfig(){
+  const bekas=document.getElementById('senaraiFail');
+  bekas.innerHTML='';
+  fail.forEach((f,fi)=>{
+    const kad=document.createElement('div');
+    kad.className='fail-kad';
+    let html='<div class="fail-atas">'+
+      '<span class="fail-tanda">Fail '+(fi+1)+'</span>'+
+      '<span class="fail-nama">'+lepas(f.nama)+'</span>'+
+      '<button class="fail-buang" data-buang="'+f.id+'">Buang</button></div>';
+    f.sheet.forEach(s=>{
+      if(s.idxIC===-1){
+        const t=teka(s.tajuk,/\b(ic|kp|k\/p|kad ?pengenalan|mykad|no ?kp|nokp|no ?ic)\b/i);
+        s.idxIC = t>=0?t:0;
+      }
+      if(s.idxNama===-1) s.idxNama = teka(s.tajuk,/\b(nama|name|pemohon|penerima|nama ?penuh)\b/i);
+      const ops=s.tajuk.map((t,i)=>'<option value="'+i+'">'+lepas(t||('Lajur '+(i+1)))+'</option>').join('');
+      html+='<div class="sheet-baris'+(s.guna?'':' mati')+'" data-baris="'+s.id+'">'+
+        '<div class="sheet-atas">'+
+          '<input type="checkbox" '+(s.guna?'checked':'')+' data-guna="'+s.id+'" aria-label="Sertakan sheet ini">'+
+          '<span class="sheet-nama">'+lepas(s.namaSheet)+'</span>'+
+          '<span class="sheet-kira">'+s.baris.length.toLocaleString()+' baris</span></div>'+
+        '<div class="sheet-medan">'+
+          '<div><label class="medan">Lajur No. KP</label><select data-ic="'+s.id+'">'+ops+'</select></div>'+
+          '<div><label class="medan">Lajur Nama</label><select data-nama="'+s.id+'"><option value="-1">— tiada —</option>'+ops+'</select></div>'+
+        '</div></div>';
+    });
+    kad.innerHTML=html;
+    bekas.appendChild(kad);
+    f.sheet.forEach(s=>{
+      kad.querySelector('[data-ic="'+s.id+'"]').value=s.idxIC;
+      kad.querySelector('[data-nama="'+s.id+'"]').value=s.idxNama;
+    });
+  });
+
+  bekas.querySelectorAll('[data-buang]').forEach(el=>el.addEventListener('click',e=>{
+    fail=fail.filter(f=>f.id!==e.target.dataset.buang);
+    binaKonfig();
+  }));
+  bekas.querySelectorAll('[data-guna]').forEach(el=>el.addEventListener('change',e=>{
+    const s=cariSheet(e.target.dataset.guna); s.guna=e.target.checked;
+    e.target.closest('.sheet-baris').classList.toggle('mati',!e.target.checked);
+    semakSedia();
+  }));
+  bekas.querySelectorAll('[data-ic]').forEach(el=>el.addEventListener('change',e=>{
+    cariSheet(e.target.dataset.ic).idxIC=parseInt(e.target.value,10);
+  }));
+  bekas.querySelectorAll('[data-nama]').forEach(el=>el.addEventListener('change',e=>{
+    cariSheet(e.target.dataset.nama).idxNama=parseInt(e.target.value,10);
+  }));
+  semakSedia();
+}
+
+function cariSheet(id){
+  for(const f of fail){ const s=f.sheet.find(x=>x.id===id); if(s) return s; }
+}
+function semuaSheet(){
+  const out=[];
+  fail.forEach((f,fi)=>f.sheet.forEach(s=>out.push({f:f,fi:fi+1,s:s})));
+  return out;
+}
+
+function semakSedia(){
+  const aktif=semuaSheet().filter(x=>x.s.guna).length;
+  const ada=fail.length>0;
+  document.getElementById('kadLajur').classList.toggle('sembunyi',!ada);
+  document.getElementById('kadJalan').classList.toggle('sembunyi',!ada);
+  const but=document.getElementById('butJalan');
+  but.disabled=aktif<1;
+  but.textContent = aktif<1 ? 'Pilih sekurang-kurangnya satu sheet' : 'Mulakan semakan · '+aktif+' sheet';
+}
+
+/* ---------- Semakan ---------- */
+document.getElementById('butJalan').addEventListener('click',jalankan);
+
+function jalankan(){
+  const pad=document.getElementById('padZero').checked;
+  const abai=document.getElementById('abaiKosong').checked;
+  const peta=new Map();
+  let jumlah=0, tidakSah=0, kosong=0;
+
+  semuaSheet().filter(x=>x.s.guna).forEach(({f,fi,s})=>{
+    s.baris.forEach((baris,i)=>{
+      const mentah=baris[s.idxIC];
+      const ic=normalisasiIC(mentah,pad);
+      if(ic===''){ kosong++; if(abai) return; }
+      jumlah++;
+      if(!/^\d{12}$/.test(ic)) tidakSah++;
+      const nama = s.idxNama>=0 ? String(baris[s.idxNama]||'').trim() : '';
+      if(!peta.has(ic)) peta.set(ic,[]);
+      peta.get(ic).push({
+        failNo:fi, namaFail:f.nama, namaSheet:s.namaSheet, kunciSheet:f.id+'§'+s.id,
+        nomborBaris:i+2, mentah:String(mentah||'').trim(), nama:nama
+      });
+    });
+  });
+
+  const kumpulan=[];
+  peta.forEach((senarai,ic)=>{
+    if(senarai.length<2) return;
+    const sheetUnik=new Set(senarai.map(r=>r.kunciSheet));
+    const failUnik=new Set(senarai.map(r=>r.failNo));
+    const berulangDalamSheet = sheetUnik.size < senarai.length;
+    let jenis,kelas;
+    if(failUnik.size>1 && berulangDalamSheet){ jenis='Dalam sheet + silang fail'; kelas='dua'; }
+    else if(failUnik.size>1){ jenis='Silang fail'; kelas='silang'; }
+    else if(sheetUnik.size>1){ jenis='Silang sheet'; kelas='silang'; }
+    else { jenis='Dalam sheet sama'; kelas='dalam'; }
+    const namaAda=senarai.map(r=>normNama(r.nama)).filter(n=>n!=='');
+    kumpulan.push({ic,senarai,jenis,kelas,namaBerbeza:new Set(namaAda).size>1});
+  });
+  kumpulan.sort((a,b)=>b.senarai.length-a.senarai.length||a.ic.localeCompare(b.ic));
+  paparHasil(kumpulan,jumlah,tidakSah,kosong);
+}
+
+function paparHasil(kumpulan,jumlah,tidakSah,kosong){
+  const bekas=document.getElementById('hasil');
+  const terlibat=kumpulan.reduce((j,k)=>j+k.senarai.length,0);
+  const konflik=kumpulan.filter(k=>k.namaBerbeza).length;
+  const bilSheet=semuaSheet().filter(x=>x.s.guna).length;
+
+  let html='<div class="kad"><div class="hasil-atas"><h2>3 &middot; Keputusan semakan</h2>'+
+    (kumpulan.length?'<button class="kedua" id="butMuat">Muat turun CSV</button>':'')+'</div>'+
+    '<div class="integriti">'+
+    '<div class="tanda"><div class="angka">'+jumlah.toLocaleString()+'</div><div class="label">Rekod disemak</div></div>'+
+    '<div class="tanda"><div class="angka">'+bilSheet+'</div><div class="label">Sheet disemak</div></div>'+
+    '<div class="tanda '+(kumpulan.length?'bahaya':'ok')+'"><div class="angka">'+kumpulan.length+'</div><div class="label">No. KP berulang</div></div>'+
+    '<div class="tanda '+(tidakSah?'bahaya':'ok')+'"><div class="angka">'+tidakSah+'</div><div class="label">Bukan 12 digit</div></div></div>';
+
+  if(tidakSah>0) html+='<div class="amaran-kotak"><strong>Semak format sebelum percaya keputusan ini.</strong>'+
+    tidakSah+' rekod bukan 12 digit. Punca lazim: lajur IC disimpan sebagai nombor, jadi sifar di depan hilang atau nilai bertukar format lain. Betulkan lajur kepada Plain text, eksport semula sebagai CSV, dan jalankan semula.</div>';
+  if(konflik>0) html+='<div class="amaran-kotak"><strong>'+konflik+' kumpulan ada No. KP sama tetapi nama berbeza.</strong>'+
+    'Ini boleh bermakna salah taip pada IC, atau dua orang berlainan diberi nombor yang sama. Semak manual dahulu sebelum buang mana-mana rekod.</div>';
+  if(kosong>0) html+='<div class="amaran-kotak"><strong>'+kosong+' baris tiada No. KP.</strong>Baris ini '+
+    (document.getElementById('abaiKosong').checked?'diabaikan':'dikumpulkan bersama')+'.</div>';
+  html+='</div>';
+
+  if(!kumpulan.length){
+    html+='<div class="kad"><div class="kosong">Tiada No. KP berulang dijumpai dalam sheet yang dipilih.</div></div>';
+  } else {
+    html+='<div class="kad"><h2>'+kumpulan.length+' kumpulan &middot; '+terlibat+' baris terlibat</h2><div id="senarai"></div></div>';
+  }
+  bekas.innerHTML=html;
+
+  if(kumpulan.length){
+    const senarai=document.getElementById('senarai');
+    kumpulan.forEach(k=>{
+      const d=document.createElement('div');
+      d.className='kumpulan';
+      d.innerHTML='<div class="kumpulan-atas">'+
+        '<span class="ic">'+formatIC(k.ic)+'</span>'+
+        '<span class="lencana '+k.kelas+'">'+k.jenis+'</span>'+
+        (k.namaBerbeza?'<span class="lencana nama-beza">Nama berbeza</span>':'')+
+        '<span class="lokasi" style="margin-left:auto">'+k.senarai.length+'&times;</span></div>'+
+        '<ul>'+k.senarai.map(r=>
+          '<li><div>'+
+          (r.nama?'<div class="orang">'+lepas(r.nama)+'</div>':'<div class="orang tiada">Nama tidak ditetapkan</div>')+
+          '<div class="lokasi">Fail '+r.failNo+' &middot; <span class="sheet-tanda">'+lepas(r.namaSheet)+'</span> &middot; baris '+r.nomborBaris+'</div>'+
+          '</div><div class="mentah">'+lepas(r.mentah)+'</div></li>').join('')+'</ul>';
+      senarai.appendChild(d);
+    });
+    document.getElementById('butMuat').addEventListener('click',()=>muatTurun(kumpulan));
+  }
+  bekas.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function muatTurun(kumpulan){
+  const baris=[['No KP','Nama','Jenis','Nama Berbeza','Bilangan','Fail','Nama Fail','Sheet','Baris','Nilai Asal']];
+  kumpulan.forEach(k=>k.senarai.forEach(r=>{
+    baris.push([k.ic,r.nama,k.jenis,k.namaBerbeza?'YA':'',k.senarai.length,
+      'Fail '+r.failNo,r.namaFail,r.namaSheet,r.nomborBaris,r.mentah]);
+  }));
+  const csv='\uFEFF'+baris.map(b=>b.map(s=>'"'+String(s).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  const a=document.createElement('a'); a.href=url; a.download='laporan-duplikat-ic.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('jam').textContent=new Date().toLocaleDateString('ms-MY',{day:'numeric',month:'long',year:'numeric'});
+</script>
+</body>
+</html>
