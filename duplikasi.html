@@ -28,6 +28,48 @@ header p{font-size:13px;color:var(--neutral);margin-top:6px}
 .jatuh input{display:none}
 .ralat{color:var(--amaran);font-size:13px;margin-top:10px}
 
+.peringatan{border-left:3px solid var(--dakwat)}
+.peringatan h2{color:var(--dakwat)}
+.pg-intro{font-size:13px;color:var(--neutral);margin-bottom:11px}
+.langkah{list-style:none;counter-reset:pg;padding:0}
+.langkah li{counter-increment:pg;position:relative;padding-left:28px;margin-bottom:10px;font-size:13px}
+.langkah li::before{content:counter(pg);position:absolute;left:0;top:0;
+  width:19px;height:19px;border-radius:50%;background:var(--dakwat);color:#fff;
+  font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.formula{display:block;margin:6px 0 3px;padding:8px 10px;background:var(--kertas);
+  border:1px solid var(--garis);border-radius:5px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;
+  color:var(--dakwat);overflow-x:auto;white-space:nowrap}
+.nota{display:block;font-size:12px;color:var(--neutral)}
+.pg-amaran{border-left:3px solid var(--amaran);background:var(--amaran-latar);
+  padding:10px 12px;font-size:12.5px;border-radius:0 6px 6px 0;margin-top:12px}
+.pg-amaran strong{display:block;margin-bottom:3px}
+.pg-amaran code{font-family:ui-monospace,monospace;background:rgba(0,0,0,.05);padding:1px 4px;border-radius:3px}
+.cari-bar{display:flex;gap:8px;margin-bottom:10px}
+#inputCari{flex:1;min-width:0;padding:11px 12px;border:1px solid var(--garis);border-radius:6px;
+  font-family:inherit;font-size:15px;background:#fff;color:var(--dakwat)}
+#inputCari:focus{outline:2px solid var(--dakwat);outline-offset:-1px;border-color:var(--dakwat)}
+.cari-mod{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:9px}
+.pil{cursor:pointer}
+.pil input{position:absolute;opacity:0;pointer-events:none}
+.pil span{display:inline-block;padding:5px 11px;border:1px solid var(--garis);border-radius:20px;
+  font-size:12px;font-weight:600;background:#fff;color:var(--neutral);transition:.12s}
+.pil input:checked + span{background:var(--dakwat);color:#fff;border-color:var(--dakwat)}
+.pil input:focus-visible + span{outline:2px solid var(--amaran);outline-offset:2px}
+.cari-nota{font-size:12px;color:var(--neutral);margin-bottom:12px}
+.cari-nota code{font-family:ui-monospace,monospace;background:var(--kertas);
+  border:1px solid var(--garis);padding:1px 4px;border-radius:3px;font-size:11px}
+.cari-kira{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--neutral);padding:8px 0;border-top:1px solid var(--garis)}
+.padan{border:1px solid var(--garis);border-radius:7px;background:#fff;padding:10px 13px;margin-bottom:8px}
+.padan-atas{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.padan .nama-p{font-weight:600;font-size:14px}
+.padan .ic-p{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;
+  letter-spacing:.05em;margin-left:auto;color:var(--neutral);font-variant-numeric:tabular-nums}
+.padan .lokasi{margin-top:3px}
+mark{background:#ffe9a8;color:inherit;padding:0 1px;border-radius:2px}
+.tanda-dup{font-size:10px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+  background:var(--amaran-latar);color:var(--amaran);padding:2px 6px;border-radius:3px}
 .fail-kad{border:1px solid var(--garis);border-radius:8px;margin-bottom:12px;overflow:hidden;background:#fff}
 .fail-atas{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 13px;
   background:var(--dakwat);color:#fff}
@@ -119,6 +161,21 @@ footer{font-size:12px;color:var(--neutral);text-align:center;padding:20px 0}
   <div class="ralat sembunyi" id="ralat"></div>
 </div>
 
+<div class="kad peringatan">
+  <h2>Peringatan &middot; Jika No. KP hilang format</h2>
+  <p class="pg-intro">Bila IC disimpan sebagai <em>nombor</em>, sifar di depan hilang dan tanda sengkang lenyap. Betulkan di Excel dahulu sebelum muat naik:</p>
+  <ol class="langkah">
+    <li>Dalam lajur kosong bersebelahan, masukkan formula:
+      <code class="formula">=TEXT(A2, "000000-00-0000")</code>
+      <span class="nota">Tukar <strong>A2</strong> kepada sel IC pertama, kemudian tarik ke bawah.</span></li>
+    <li>Salin keseluruhan lajur hasil formula tadi.</li>
+    <li><strong>Paste Special &rarr; Values</strong> ke lajur kosong yang lain. Ini menukar formula kepada teks sebenar.</li>
+    <li>Salin nilai dari lajur itu, kemudian <strong>Paste Special &rarr; Values</strong> semula ke atas lajur IC asal.</li>
+    <li>Buang lajur bantuan, simpan, dan eksport sebagai CSV.</li>
+  </ol>
+  <div class="pg-amaran"><strong>Had kaedah ini.</strong> Formula <code>TEXT</code> hanya memulihkan sifar di depan yang hilang daripada nombor 10&ndash;11 digit. Jika nilai sel sudah menjadi 4 atau 5 digit sahaja, data asal sudah hilang dan formula ini tidak dapat memulihkannya &mdash; IC tersebut kena diisi semula dari sumber asal.</div>
+</div>
+
 <div class="kad sembunyi" id="kadLajur">
   <h2>2 &middot; Tetapkan lajur bagi setiap sheet</h2>
   <div id="senaraiFail"></div>
@@ -134,6 +191,25 @@ footer{font-size:12px;color:var(--neutral);text-align:center;padding:20px 0}
 
 <div class="kad sembunyi" id="kadJalan">
   <button class="utama" id="butJalan">Mulakan semakan</button>
+</div>
+
+<div class="kad sembunyi" id="kadCari">
+  <h2>Carian &middot; Cari nama atau No. KP</h2>
+  <div class="cari-bar">
+    <input type="search" id="inputCari" placeholder="Taip nama atau No. KP…" autocomplete="off">
+    <button class="kedua" id="butKosongkan">Kosongkan</button>
+  </div>
+  <div class="cari-mod">
+    <label class="pil"><input type="radio" name="mod" value="auto" checked><span>Auto</span></label>
+    <label class="pil"><input type="radio" name="mod" value="ic"><span>No. KP sahaja</span></label>
+    <label class="pil"><input type="radio" name="mod" value="nama"><span>Nama sahaja</span></label>
+  </div>
+  <label class="suis" style="margin-top:0;margin-bottom:10px">
+    <input type="checkbox" id="cariLuas" checked>
+    <span>Cari dalam semua lajur &mdash; berguna jika tetapan &ldquo;Lajur No. KP&rdquo; atau &ldquo;Lajur Nama&rdquo; tersilap.</span>
+  </label>
+  <p class="cari-nota">Tanda sengkang dan ruang diabaikan &mdash; <code>010115-01-1519</code> dan <code>010115011519</code> memberi hasil sama. Nama dicari secara separa: taip <code>aiman</code> untuk semua yang mengandungi perkataan itu.</p>
+  <div id="hasilCari"></div>
 </div>
 
 <div id="hasil"></div>
@@ -288,9 +364,11 @@ function binaKonfig(){
   }));
   bekas.querySelectorAll('[data-ic]').forEach(el=>el.addEventListener('change',e=>{
     cariSheet(e.target.dataset.ic).idxIC=parseInt(e.target.value,10);
+    semakSedia();
   }));
   bekas.querySelectorAll('[data-nama]').forEach(el=>el.addEventListener('change',e=>{
     cariSheet(e.target.dataset.nama).idxNama=parseInt(e.target.value,10);
+    semakSedia();
   }));
   semakSedia();
 }
@@ -312,10 +390,14 @@ function semakSedia(){
   const but=document.getElementById('butJalan');
   but.disabled=aktif<1;
   but.textContent = aktif<1 ? 'Pilih sekurang-kurangnya satu sheet' : 'Mulakan semakan · '+aktif+' sheet';
+  if(aktif>0){ binaIndeks(); jalankanCarian(); }
+  else { document.getElementById('kadCari').classList.add('sembunyi'); }
 }
 
 /* ---------- Semakan ---------- */
 document.getElementById('butJalan').addEventListener('click',jalankan);
+['padZero','abaiKosong'].forEach(id=>document.getElementById(id)
+  .addEventListener('change',()=>{ if(fail.length){ binaIndeks(); jalankanCarian(); } }));
 
 function jalankan(){
   const pad=document.getElementById('padZero').checked;
@@ -407,6 +489,130 @@ function paparHasil(kumpulan,jumlah,tidakSah,kosong){
   }
   bekas.scrollIntoView({behavior:'smooth',block:'start'});
 }
+
+/* ---------- Carian ---------- */
+let indeks = [];        /* semua rekod yang dimuatkan */
+let setDuplikat = new Set();
+
+function binaIndeks(){
+  const pad=document.getElementById('padZero').checked;
+  indeks=[];
+  semuaSheet().filter(x=>x.s.guna).forEach(({f,fi,s})=>{
+    s.baris.forEach((baris,i)=>{
+      const mentah=baris[s.idxIC];
+      const ic=normalisasiIC(mentah,pad);
+      const nama = s.idxNama>=0 ? String(baris[s.idxNama]||'').trim() : '';
+      /* Simpan semua sel baris ini supaya carian tetap berjaya
+         walaupun tetapan lajur tersilap */
+      const semuaIC=[], semuaNama=[];
+      baris.forEach(sel=>{
+        const t=String(sel||'').trim();
+        if(t==='') return;
+        const n=normalisasiIC(t,false);
+        if(/^\d{6,12}$/.test(n)) semuaIC.push(n);
+        if(/[A-Za-z]/.test(t)) semuaNama.push(normNama(t));
+      });
+      if(ic==='' && nama==='' && !semuaIC.length && !semuaNama.length) return;
+      indeks.push({
+        ic:ic, icMentah:String(mentah||'').trim(), nama:nama, namaCari:normNama(nama),
+        icLain:semuaIC, namaLain:semuaNama,
+        failNo:fi, namaFail:f.nama, namaSheet:s.namaSheet, nomborBaris:i+2
+      });
+    });
+  });
+  document.getElementById('kadCari').classList.remove('sembunyi');
+}
+
+function jalankanCarian(){
+  const mentahQ=document.getElementById('inputCari').value.trim();
+  const mod=document.querySelector('input[name="mod"]:checked').value;
+  const bekas=document.getElementById('hasilCari');
+
+  if(mentahQ===''){ bekas.innerHTML=''; return; }
+
+  const qIC=normalisasiIC(mentahQ,false);
+  const qNama=normNama(mentahQ);
+  /* Anggap sebagai IC jika buang semua pemisah lazim tinggal digit sahaja */
+  const nampakNombor = qIC!=='' && /^\d+$/.test(qIC);
+
+  let cariIC = mod==='ic' || (mod==='auto' && nampakNombor);
+  let cariNama = mod==='nama' || (mod==='auto' && !nampakNombor);
+
+  const luas=document.getElementById('cariLuas').checked;
+  let padanan=indeks.filter(r=>{
+    if(cariIC && qIC!==''){
+      if(r.ic.includes(qIC)) return true;
+      if(luas && r.icLain.some(v=>v.includes(qIC))) return true;
+    }
+    if(cariNama && qNama!==''){
+      if(r.namaCari.includes(qNama)) return true;
+      if(luas && r.namaLain.some(v=>v.includes(qNama))) return true;
+    }
+    return false;
+  });
+
+  padanan.sort((a,b)=> a.ic.localeCompare(b.ic) || a.failNo-b.failNo || a.nomborBaris-b.nomborBaris);
+
+  if(!padanan.length){
+    bekas.innerHTML='<div class="kosong">Tiada padanan untuk &ldquo;'+lepas(mentahQ)+'&rdquo;.</div>';
+    return;
+  }
+
+  /* IC yang muncul lebih sekali dalam hasil carian ini */
+  const kiraIC={};
+  padanan.forEach(r=>{ if(r.ic) kiraIC[r.ic]=(kiraIC[r.ic]||0)+1; });
+
+  let html='<div class="cari-kira">'+padanan.length+' padanan dijumpai</div>';
+  padanan.forEach(r=>{
+    const berulang = r.ic && kiraIC[r.ic]>1;
+    html+='<div class="padan"><div class="padan-atas">'+
+      '<span class="nama-p">'+(r.nama?tandaNama(r.nama,qNama,cariNama):'<span class="orang tiada">Nama tidak ditetapkan</span>')+'</span>'+
+      (berulang?'<span class="tanda-dup">Berulang '+kiraIC[r.ic]+'&times;</span>':'')+
+      '<span class="ic-p">'+(cariIC?tandaIC(r.ic,qIC):formatIC(r.ic))+'</span></div>'+
+      '<div class="lokasi">Fail '+r.failNo+' &middot; <span class="sheet-tanda">'+lepas(r.namaSheet)+'</span> &middot; baris '+r.nomborBaris+
+      ' &middot; <span class="mentah">'+lepas(r.icMentah)+'</span></div></div>';
+  });
+  bekas.innerHTML=html;
+}
+
+/* Serlahkan bahagian nama yang sepadan, tanpa menjejaskan ejaan asal */
+function tandaNama(nama,q,aktif){
+  const selamat=lepas(nama);
+  if(!aktif||q==='') return selamat;
+  const norm=normNama(nama);
+  const mula=norm.indexOf(q);
+  if(mula<0) return selamat;
+  /* petakan kedudukan ternormal kembali ke rentetan asal */
+  let n=0, aMula=-1, aTamat=-1;
+  for(let i=0;i<nama.length;i++){
+    if(/[A-Za-z0-9]/.test(nama[i])){
+      if(n===mula) aMula=i;
+      if(n===mula+q.length-1){ aTamat=i+1; break; }
+      n++;
+    }
+  }
+  if(aMula<0||aTamat<0) return selamat;
+  return lepas(nama.slice(0,aMula))+'<mark>'+lepas(nama.slice(aMula,aTamat))+'</mark>'+lepas(nama.slice(aTamat));
+}
+
+function tandaIC(ic,q){
+  if(q==='' || !ic.includes(q)) return formatIC(ic);
+  const i=ic.indexOf(q);
+  return lepas(ic.slice(0,i))+'<mark>'+lepas(ic.slice(i,i+q.length))+'</mark>'+lepas(ic.slice(i+q.length));
+}
+
+let masaTaip;
+document.getElementById('inputCari').addEventListener('input',()=>{
+  clearTimeout(masaTaip);
+  masaTaip=setTimeout(jalankanCarian,180);
+});
+document.querySelectorAll('input[name="mod"]').forEach(el=>el.addEventListener('change',jalankanCarian));
+document.getElementById('cariLuas').addEventListener('change',jalankanCarian);
+document.getElementById('butKosongkan').addEventListener('click',()=>{
+  document.getElementById('inputCari').value='';
+  document.getElementById('hasilCari').innerHTML='';
+  document.getElementById('inputCari').focus();
+});
 
 function muatTurun(kumpulan){
   const baris=[['No KP','Nama','Jenis','Nama Berbeza','Bilangan','Fail','Nama Fail','Sheet','Baris','Nilai Asal']];
