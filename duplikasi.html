@@ -45,6 +45,16 @@ header p{font-size:13px;color:var(--neutral);margin-top:6px}
   padding:10px 12px;font-size:12.5px;border-radius:0 6px 6px 0;margin-top:12px}
 .pg-amaran strong{display:block;margin-bottom:3px}
 .pg-amaran code{font-family:ui-monospace,monospace;background:rgba(0,0,0,.05);padding:1px 4px;border-radius:3px}
+.mod-pil{display:flex;gap:8px;flex-wrap:wrap}
+.tab-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;border-bottom:1px solid var(--garis);padding-bottom:10px}
+.tab{padding:7px 13px;border:1px solid var(--garis);border-radius:6px;background:#fff;
+  font-size:13px;font-weight:600;cursor:pointer;color:var(--neutral);font-family:inherit}
+.tab:hover{border-color:var(--dakwat);color:var(--dakwat)}
+.tab.pilih{background:var(--dakwat);color:#fff;border-color:var(--dakwat)}
+.tab .bil{font-variant-numeric:tabular-nums;opacity:.75;margin-left:4px}
+.rujuk-tanda{font-size:10px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+  background:var(--dakwat);color:#fff;padding:2px 6px;border-radius:3px}
+.lencana.hilang{background:#fff;color:var(--neutral);border:1px solid var(--garis)}
 .cari-bar{display:flex;gap:8px;margin-bottom:10px}
 #inputCari{flex:1;min-width:0;padding:11px 12px;border:1px solid var(--garis);border-radius:6px;
   font-family:inherit;font-size:15px;background:#fff;color:var(--dakwat)}
@@ -187,6 +197,19 @@ footer{font-size:12px;color:var(--neutral);text-align:center;padding:20px 0}
     <input type="checkbox" id="abaiKosong" checked>
     <span>Abaikan baris yang tiada No. KP.</span>
   </label>
+</div>
+
+<div class="kad sembunyi" id="kadMod">
+  <h2>3 &middot; Mod semakan</h2>
+  <div class="mod-pil">
+    <label class="pil"><input type="radio" name="modSemak" value="semua" checked><span>Semua lawan semua</span></label>
+    <label class="pil"><input type="radio" name="modSemak" value="rujukan"><span>Guna fail rujukan</span></label>
+  </div>
+  <div id="pilihRujukan" class="sembunyi">
+    <label class="medan" for="failRujukan" style="margin-top:10px">Fail rujukan (induk)</label>
+    <select id="failRujukan"></select>
+    <p class="cari-nota" style="margin-top:8px">Hanya No. KP yang wujud dalam fail rujukan akan dilaporkan. Rekod dalam fail lain yang tiada dalam rujukan diabaikan.</p>
+  </div>
 </div>
 
 <div class="kad sembunyi" id="kadJalan">
@@ -370,6 +393,11 @@ function binaKonfig(){
     cariSheet(e.target.dataset.nama).idxNama=parseInt(e.target.value,10);
     semakSedia();
   }));
+  const sel=document.getElementById('failRujukan');
+  const dahulu=sel.value;
+  sel.innerHTML=fail.map((f,i)=>'<option value="'+(i+1)+'">Fail '+(i+1)+' — '+lepas(f.nama)+'</option>').join('');
+  if(dahulu && sel.querySelector('option[value="'+dahulu+'"]')) sel.value=dahulu;
+  document.getElementById('kadMod').classList.toggle('sembunyi',fail.length<1);
   semakSedia();
 }
 
@@ -396,12 +424,18 @@ function semakSedia(){
 
 /* ---------- Semakan ---------- */
 document.getElementById('butJalan').addEventListener('click',jalankan);
+document.querySelectorAll('input[name="modSemak"]').forEach(el=>el.addEventListener('change',e=>{
+  document.getElementById('pilihRujukan').classList.toggle('sembunyi',e.target.value!=='rujukan');
+}));
 ['padZero','abaiKosong'].forEach(id=>document.getElementById(id)
   .addEventListener('change',()=>{ if(fail.length){ binaIndeks(); jalankanCarian(); } }));
 
 function jalankan(){
   const pad=document.getElementById('padZero').checked;
   const abai=document.getElementById('abaiKosong').checked;
+  const mod=document.querySelector('input[name="modSemak"]:checked').value;
+  const rujukNo = mod==='rujukan' ? parseInt(document.getElementById('failRujukan').value,10) : null;
+
   const peta=new Map();
   let jumlah=0, tidakSah=0, kosong=0;
 
@@ -416,13 +450,45 @@ function jalankan(){
       if(!peta.has(ic)) peta.set(ic,[]);
       peta.get(ic).push({
         failNo:fi, namaFail:f.nama, namaSheet:s.namaSheet, kunciSheet:f.id+'§'+s.id,
-        nomborBaris:i+2, mentah:String(mentah||'').trim(), nama:nama
+        nomborBaris:i+2, mentah:String(mentah||'').trim(), nama:nama,
+        rujukan: rujukNo!==null && fi===rujukNo
       });
     });
   });
 
-  const kumpulan=[];
+  const kumpulan=[], hilang=[], tunggal=[];
+
   peta.forEach((senarai,ic)=>{
+    const namaAda=senarai.map(r=>normNama(r.nama)).filter(n=>n!=='');
+    const namaBerbeza=new Set(namaAda).size>1;
+
+    if(mod==='rujukan'){
+      const dlmRujukan=senarai.filter(r=>r.rujukan);
+      const luarRujukan=senarai.filter(r=>!r.rujukan);
+
+      /* Tiada dalam fail rujukan — abaikan sepenuhnya */
+      if(!dlmRujukan.length) return;
+
+      if(luarRujukan.length===0){
+        /* Ada dalam rujukan sahaja */
+        if(dlmRujukan.length>1){
+          kumpulan.push({ic,senarai,jenis:'Berulang dalam rujukan',kelas:'dalam',namaBerbeza});
+        } else {
+          tunggal.push({ic,senarai,jenis:'Hanya dalam rujukan',kelas:'hilang',namaBerbeza});
+        }
+        return;
+      }
+
+      /* Dijumpai dalam rujukan dan sekurang-kurangnya satu fail lain */
+      const failLain=new Set(luarRujukan.map(r=>r.failNo));
+      const jenis = failLain.size>1
+        ? 'Dalam rujukan + '+failLain.size+' fail lain'
+        : 'Dalam rujukan + Fail '+[...failLain][0];
+      kumpulan.push({ic,senarai,jenis,kelas:'silang',namaBerbeza});
+      return;
+    }
+
+    /* Mod semua lawan semua */
     if(senarai.length<2) return;
     const sheetUnik=new Set(senarai.map(r=>r.kunciSheet));
     const failUnik=new Set(senarai.map(r=>r.failNo));
@@ -432,26 +498,38 @@ function jalankan(){
     else if(failUnik.size>1){ jenis='Silang fail'; kelas='silang'; }
     else if(sheetUnik.size>1){ jenis='Silang sheet'; kelas='silang'; }
     else { jenis='Dalam sheet sama'; kelas='dalam'; }
-    const namaAda=senarai.map(r=>normNama(r.nama)).filter(n=>n!=='');
-    kumpulan.push({ic,senarai,jenis,kelas,namaBerbeza:new Set(namaAda).size>1});
+    kumpulan.push({ic,senarai,jenis,kelas,namaBerbeza});
   });
-  kumpulan.sort((a,b)=>b.senarai.length-a.senarai.length||a.ic.localeCompare(b.ic));
-  paparHasil(kumpulan,jumlah,tidakSah,kosong);
+
+  const isih=(a,b)=>b.senarai.length-a.senarai.length||a.ic.localeCompare(b.ic);
+  kumpulan.sort(isih);
+  tunggal.sort((a,b)=>a.ic.localeCompare(b.ic));
+
+  paparHasil(kumpulan,jumlah,tidakSah,kosong,{mod:mod,rujukNo:rujukNo,tunggal:tunggal});
 }
 
-function paparHasil(kumpulan,jumlah,tidakSah,kosong){
+function paparHasil(kumpulan,jumlah,tidakSah,kosong,opsi){
   const bekas=document.getElementById('hasil');
   const terlibat=kumpulan.reduce((j,k)=>j+k.senarai.length,0);
   const konflik=kumpulan.filter(k=>k.namaBerbeza).length;
   const bilSheet=semuaSheet().filter(x=>x.s.guna).length;
+  const rujuk = opsi.mod==='rujukan';
+  const namaRujuk = rujuk ? (fail[opsi.rujukNo-1]||{}).nama : '';
 
-  let html='<div class="kad"><div class="hasil-atas"><h2>3 &middot; Keputusan semakan</h2>'+
-    (kumpulan.length?'<button class="kedua" id="butMuat">Muat turun CSV</button>':'')+'</div>'+
-    '<div class="integriti">'+
+  let html='<div class="kad"><div class="hasil-atas"><h2>4 &middot; Keputusan semakan</h2>'+
+    ((kumpulan.length||opsi.tunggal.length)?'<button class="kedua" id="butMuat">Muat turun CSV</button>':'')+'</div>';
+
+  if(rujuk) html+='<div class="cari-nota" style="margin:-4px 0 12px">Fail rujukan: <strong>Fail '+opsi.rujukNo+' — '+lepas(namaRujuk)+'</strong>. Rekod yang tiada dalam fail ini tidak dilaporkan.</div>';
+
+  html+='<div class="integriti">'+
     '<div class="tanda"><div class="angka">'+jumlah.toLocaleString()+'</div><div class="label">Rekod disemak</div></div>'+
     '<div class="tanda"><div class="angka">'+bilSheet+'</div><div class="label">Sheet disemak</div></div>'+
-    '<div class="tanda '+(kumpulan.length?'bahaya':'ok')+'"><div class="angka">'+kumpulan.length+'</div><div class="label">No. KP berulang</div></div>'+
-    '<div class="tanda '+(tidakSah?'bahaya':'ok')+'"><div class="angka">'+tidakSah+'</div><div class="label">Bukan 12 digit</div></div></div>';
+    (rujuk
+      ? '<div class="tanda '+(kumpulan.length?'bahaya':'ok')+'"><div class="angka">'+kumpulan.length+'</div><div class="label">Padan dengan rujukan</div></div>'+
+        '<div class="tanda"><div class="angka">'+opsi.tunggal.length+'</div><div class="label">Hanya dalam rujukan</div></div>'
+      : '<div class="tanda '+(kumpulan.length?'bahaya':'ok')+'"><div class="angka">'+kumpulan.length+'</div><div class="label">No. KP berulang</div></div>'+
+        '<div class="tanda '+(tidakSah?'bahaya':'ok')+'"><div class="angka">'+tidakSah+'</div><div class="label">Bukan 12 digit</div></div>')+
+    '</div>';
 
   if(tidakSah>0) html+='<div class="amaran-kotak"><strong>Semak format sebelum percaya keputusan ini.</strong>'+
     tidakSah+' rekod bukan 12 digit. Punca lazim: lajur IC disimpan sebagai nombor, jadi sifar di depan hilang atau nilai bertukar format lain. Betulkan lajur kepada Plain text, eksport semula sebagai CSV, dan jalankan semula.</div>';
@@ -461,16 +539,28 @@ function paparHasil(kumpulan,jumlah,tidakSah,kosong){
     (document.getElementById('abaiKosong').checked?'diabaikan':'dikumpulkan bersama')+'.</div>';
   html+='</div>';
 
-  if(!kumpulan.length){
-    html+='<div class="kad"><div class="kosong">Tiada No. KP berulang dijumpai dalam sheet yang dipilih.</div></div>';
-  } else {
-    html+='<div class="kad"><h2>'+kumpulan.length+' kumpulan &middot; '+terlibat+' baris terlibat</h2><div id="senarai"></div></div>';
+  if(!kumpulan.length && !opsi.tunggal.length){
+    html+='<div class="kad"><div class="kosong">Tiada padanan dijumpai dalam sheet yang dipilih.</div></div>';
+    bekas.innerHTML=html; bekas.scrollIntoView({behavior:'smooth',block:'start'}); return;
   }
+
+  html+='<div class="kad">';
+  if(rujuk){
+    html+='<div class="tab-bar">'+
+      '<button class="tab pilih" data-tab="padan">Padan dengan rujukan<span class="bil">'+kumpulan.length+'</span></button>'+
+      '<button class="tab" data-tab="tunggal">Hanya dalam rujukan<span class="bil">'+opsi.tunggal.length+'</span></button>'+
+      '</div>';
+  } else {
+    html+='<h2>'+kumpulan.length+' kumpulan &middot; '+terlibat+' baris terlibat</h2>';
+  }
+  html+='<div id="senarai"></div></div>';
   bekas.innerHTML=html;
 
-  if(kumpulan.length){
-    const senarai=document.getElementById('senarai');
-    kumpulan.forEach(k=>{
+  function lukis(senaraiK){
+    const w=document.getElementById('senarai');
+    w.innerHTML='';
+    if(!senaraiK.length){ w.innerHTML='<div class="kosong">Tiada rekod dalam kategori ini.</div>'; return; }
+    senaraiK.forEach(k=>{
       const d=document.createElement('div');
       d.className='kumpulan';
       d.innerHTML='<div class="kumpulan-atas">'+
@@ -481,12 +571,23 @@ function paparHasil(kumpulan,jumlah,tidakSah,kosong){
         '<ul>'+k.senarai.map(r=>
           '<li><div>'+
           (r.nama?'<div class="orang">'+lepas(r.nama)+'</div>':'<div class="orang tiada">Nama tidak ditetapkan</div>')+
-          '<div class="lokasi">Fail '+r.failNo+' &middot; <span class="sheet-tanda">'+lepas(r.namaSheet)+'</span> &middot; baris '+r.nomborBaris+'</div>'+
-          '</div><div class="mentah">'+lepas(r.mentah)+'</div></li>').join('')+'</ul>';
-      senarai.appendChild(d);
+          '<div class="lokasi">'+(r.rujukan?'<span class="rujuk-tanda">Rujukan</span> ':'')+
+          'Fail '+r.failNo+' &middot; <span class="sheet-tanda">'+lepas(r.namaSheet)+'</span> &middot; baris '+r.nomborBaris+
+          '</div></div><div class="mentah">'+lepas(r.mentah)+'</div></li>').join('')+'</ul>';
+      w.appendChild(d);
     });
-    document.getElementById('butMuat').addEventListener('click',()=>muatTurun(kumpulan));
   }
+  lukis(kumpulan);
+
+  if(rujuk){
+    bekas.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',e=>{
+      bekas.querySelectorAll('.tab').forEach(x=>x.classList.remove('pilih'));
+      e.currentTarget.classList.add('pilih');
+      lukis(e.currentTarget.dataset.tab==='padan'?kumpulan:opsi.tunggal);
+    }));
+  }
+  const bm=document.getElementById('butMuat');
+  if(bm) bm.addEventListener('click',()=>muatTurun(kumpulan.concat(opsi.tunggal)));
   bekas.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
@@ -615,9 +716,9 @@ document.getElementById('butKosongkan').addEventListener('click',()=>{
 });
 
 function muatTurun(kumpulan){
-  const baris=[['No KP','Nama','Jenis','Nama Berbeza','Bilangan','Fail','Nama Fail','Sheet','Baris','Nilai Asal']];
+  const baris=[['No KP','Nama','Jenis','Rujukan','Nama Berbeza','Bilangan','Fail','Nama Fail','Sheet','Baris','Nilai Asal']];
   kumpulan.forEach(k=>k.senarai.forEach(r=>{
-    baris.push([k.ic,r.nama,k.jenis,k.namaBerbeza?'YA':'',k.senarai.length,
+    baris.push([k.ic,r.nama,k.jenis,r.rujukan?'YA':'',k.namaBerbeza?'YA':'',k.senarai.length,
       'Fail '+r.failNo,r.namaFail,r.namaSheet,r.nomborBaris,r.mentah]);
   }));
   const csv='\uFEFF'+baris.map(b=>b.map(s=>'"'+String(s).replace(/"/g,'""')+'"').join(',')).join('\n');
