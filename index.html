@@ -527,8 +527,8 @@ function upperNama(el) {
   try { el.setSelectionRange(pos, pos); } catch(e){}
 }
 
-/* ======== AUTOSUGGEST NAMA (dari Google Sheet, JSONP) ======== */
-var AC = { items: [], hi: -1, timer: null, seq: 0 };
+/* ======== AUTOSUGGEST NAMA — cache tempatan, tapis SERTA-MERTA ======== */
+var AC = { items: [], hi: -1, words: [], loaded: false };
 
 // Ambil perkataan TERAKHIR yang sedang ditaip (selepas ruang terakhir)
 function lastWord(val) {
@@ -536,41 +536,33 @@ function lastWord(val) {
   return parts[parts.length - 1] || '';
 }
 
-function onNamaInput(el) {
-  upperNama(el);                       // kekal auto huruf besar
-  var w = lastWord(el.value);          // hanya perkataan terakhir yang dicari
-  clearTimeout(AC.timer);
-  if (w.length < 1) { acClose(); return; }
-  AC.timer = setTimeout(function(){ fetchNames(w); }, 250);
-}
-
-// JSONP: cara BACA balasan Apps Script tanpa masalah CORS
-function fetchNames(q) {
+// Muat turun SEMUA perkataan sekali (masa borang dibuka) -> simpan dalam ingatan
+function loadWords() {
   if (!ST.depId || ST.depId === 'LETAK_DEPLOYMENT_ID_ANDA_DI_SINI') return;
-  var mySeq = ++AC.seq;
-  var cbName = 'pkjCb_' + mySeq;
+  var cbName = 'pkjWords';
   var script = document.createElement('script');
-  var timeout = setTimeout(function(){ cleanup(); }, 8000);
-
-  function cleanup() {
-    clearTimeout(timeout);
+  window[cbName] = function(resp) {
+    AC.words = (resp && resp.words) ? resp.words : [];
+    AC.loaded = true;
     try { delete window[cbName]; } catch(e){ window[cbName] = undefined; }
     if (script.parentNode) script.parentNode.removeChild(script);
-  }
-
-  window[cbName] = function(resp) {
-    cleanup();
-    if (mySeq !== AC.seq) return;      // abai balasan lama (pengguna dah taip lagi)
-    var names = (resp && resp.names) ? resp.names : [];
-    showSuggest(names, q);
   };
-
-  var url = 'https://script.google.com/macros/s/' + ST.depId + '/exec'
-          + '?mode=names&q=' + encodeURIComponent(q)
-          + '&callback=' + cbName;
-  script.src = url;
-  script.onerror = function(){ cleanup(); };
+  script.src = 'https://script.google.com/macros/s/' + ST.depId + '/exec'
+             + '?mode=allwords&callback=' + cbName;
+  script.onerror = function(){ if (script.parentNode) script.parentNode.removeChild(script); };
   document.body.appendChild(script);
+}
+
+function onNamaInput(el) {
+  upperNama(el);
+  var w = lastWord(el.value).toUpperCase();
+  if (w.length < 1) { acClose(); return; }
+  // Tapis tempatan — SERTA-MERTA, tiada panggilan server
+  var hits = [];
+  for (var i = 0; i < AC.words.length && hits.length < 10; i++) {
+    if (AC.words[i].indexOf(w) === 0) hits.push(AC.words[i]);
+  }
+  showSuggest(hits, w);
 }
 
 function showSuggest(names, q) {
@@ -725,6 +717,14 @@ async function doSubmit(tidakLayak) {
     const url = 'https://script.google.com/macros/s/' + ST.depId + '/exec?' + new URLSearchParams(d).toString();
     await fetch(url, { method:'GET', mode:'no-cors' });
 
+    // Tambah perkataan nama baharu ke cache tempatan (tak perlu muat semula server)
+    if (d.nama) {
+      d.nama.toUpperCase().split(/\s+/).forEach(function(w){
+        if (w && AC.words.indexOf(w) < 0) AC.words.push(w);
+      });
+      AC.words.sort();
+    }
+
     vibrate([30,60,30]);
     var nama = d.nama || 'pemohon';
     toast(tidakLayak
@@ -769,6 +769,7 @@ function toast(msg) {
 (function init() {
   localStorage.removeItem('pkj_dep');   // buang sebarang ID lama tersangkut
   buildDaerah();
+  loadWords();                          // muat turun perkataan sekali -> suggest pantas
   showS(1);
 })();
 </script>
