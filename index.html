@@ -719,14 +719,11 @@ async function doSubmit(tidakLayak) {
     await fetch(url, { method:'GET', mode:'no-cors' });
 
     vibrate([30,60,30]);
-    const ico = document.getElementById('succIco');
-    ico.textContent = tidakLayak ? '⛔' : '✅';
-    ico.className   = 'succ-ico' + (tidakLayak ? ' tl' : '');
-    document.getElementById('succTtl').textContent = tidakLayak ? 'Direkod: Tidak Layak' : 'Berjaya Dihantar';
-    document.getElementById('succMsg').textContent = tidakLayak
-      ? 'Data ' + (d.nama || 'pemohon') + ' direkod dalam sheet TIDAK LAYAK (Jenis: ' + ST.jenis + ').'
-      : 'Data ' + d.nama + ' direkod dalam sheet ' + ST.jenis + '.';
-    showS(2);
+    var nama = d.nama || 'pemohon';
+    toast(tidakLayak
+      ? '⛔ ' + nama + ' → TIDAK LAYAK (' + ST.jenis + ')'
+      : '✅ ' + nama + ' → ' + ST.jenis + ' berjaya dihantar');
+    resetAll();   // terus kembali ke borang kosong (jenis sama), sedia rekod baru
   } catch(err) {
     document.getElementById('abar').style.display = 'flex';
     toast('Ralat pengiriman. Semak sambungan internet.');
