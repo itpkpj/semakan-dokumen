@@ -106,7 +106,11 @@ select {
 label.fl { font-size: 12px; font-weight: 600; color: var(--text2); display: block; margin-bottom: 5px; }
 .req { color: var(--danger); }
 .field { display: flex; flex-direction: column; gap: 4px; }
-input#fNama { text-transform: uppercase; }
+input#fNama, input#fNamaPsng { text-transform: uppercase; }
+.ic-hint { font-size: 11px; margin-top: 2px; min-height: 14px; font-family: 'DM Mono', monospace; line-height: 1.3; }
+.ic-hint.warn { color: var(--danger); }
+.ic-hint.ok   { color: var(--accent); }
+input.ic-bad  { border-color: var(--danger) !important; }
 
 /* BUTTONS */
 .btn {
@@ -134,11 +138,6 @@ input#fNama { text-transform: uppercase; }
 .dep-lbl  { font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 8px; }
 .dep-hint { font-size: 11px; color: var(--text3); margin-top: 6px; font-family: 'DM Mono', monospace; }
 .divider  { height: 1px; background: var(--border); margin: 14px 0; }
-.guide    { list-style: none; padding: 0; }
-.guide li { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text2); line-height: 1.5; }
-.guide li:last-child { border-bottom: none; }
-.step-num { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
-.guide code { background: var(--surface); border: 1px solid var(--border); border-radius: 5px; padding: 1px 5px; font-family: 'DM Mono', monospace; font-size: 11px; }
 
 /* JENIS */
 .jenis-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
@@ -228,50 +227,17 @@ input#fNama { text-transform: uppercase; }
     <div class="step-dots">
       <div class="dot active" id="d1"></div>
       <div class="dot" id="d2"></div>
-      <div class="dot" id="d3"></div>
     </div>
-    <div class="gear" onclick="openSettings()">⚙️</div>
+    <div class="gear" onclick="openSettings()">&#9881;&#65039;</div>
   </div>
 </div>
 
 <div class="main">
 
-<!-- SCREEN 1: SETUP -->
+<!-- SCREEN 1: JENIS + FORM -->
 <div class="screen active" id="s1">
-  <div class="hero">
-    <div class="hero-icon">📝</div>
-    <h1>Sistem Key-In PKJ</h1>
-    <p>Masukkan Deployment ID untuk mula</p>
-  </div>
   <div class="card">
-    <div class="card-ttl">⚙️ Konfigurasi</div>
-    <div class="dep-wrap">
-      <div class="dep-lbl">🔑 Deployment ID (Apps Script) <span style="color:var(--danger)">*</span></div>
-      <input type="text" id="depId" class="mono" placeholder="AKfycby...xxxx" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-      <div class="dep-hint">Masukkan ID sahaja — bukan URL penuh</div>
-    </div>
-    <div class="alert al-g" style="margin-bottom:14px">
-      <span>ℹ️</span>
-      <div>Data akan dihantar terus ke Google Sheet melalui Apps Script. Sila pastikan sheet <strong>BBR</strong>, <strong>BMR</strong>, <strong>BSR</strong> dan <strong>TIDAK LAYAK</strong> sudah disediakan (jalankan <code>setupAllHeaders</code> sekali sahaja).</div>
-    </div>
-    <button class="btn btn-g btn-full" onclick="saveConfig()">Simpan & Mula →</button>
-    <div class="divider"></div>
-    <div class="card-ttl">📖 Cara Dapatkan Deployment ID</div>
-    <ul class="guide">
-      <li><div class="step-num">1</div><div>Buka Google Sheet → <strong>Extensions</strong> → <strong>Apps Script</strong></div></li>
-      <li><div class="step-num">2</div><div>Tampal kod <code>pkj-apps-script.gs</code> → klik <strong>Save (💾)</strong></div></li>
-      <li><div class="step-num">3</div><div>Pilih fungsi <strong>setupAllHeaders</strong> → klik <strong>Run ▶</strong> (sekali sahaja, untuk cipta header)</div></li>
-      <li><div class="step-num">4</div><div>Klik <strong>Deploy → New deployment</strong> → Type: <strong>Web app</strong></div></li>
-      <li><div class="step-num">5</div><div>Execute as: <strong>Me</strong> → Who has access: <strong>Anyone</strong> → <strong>Deploy</strong></div></li>
-      <li><div class="step-num">6</div><div>Salin <strong>Deployment ID</strong> (kod AKfycb...) → tampal di atas</div></li>
-    </ul>
-  </div>
-</div>
-
-<!-- SCREEN 2: JENIS + FORM -->
-<div class="screen" id="s2">
-  <div class="card">
-    <div class="card-ttl">📄 Jenis Inisiatif</div>
+    <div class="card-ttl">&#128196; Jenis Inisiatif</div>
     <div class="jenis-grid">
       <div class="jk bbr" onclick="pickJenis('BBR',this)">
         <div class="jk-code">BBR</div>
@@ -297,8 +263,8 @@ input#fNama { text-transform: uppercase; }
       <span style="font-size:14px;font-weight:600">Isi Data Pemohon</span>
     </div>
     <div class="alert al-y">
-      <span>⚠️</span>
-      <span>Field bertanda <span class="req">*</span> wajib diisi untuk hantar sebagai <strong>Layak</strong>. Nama Penerima akan ditukar ke <strong>HURUF BESAR</strong> automatik.</span>
+      <span>&#9888;&#65039;</span>
+      <span>Field bertanda <span class="req">*</span> wajib diisi untuk hantar sebagai <strong>Layak</strong>. Nama akan ditukar ke <strong>HURUF BESAR</strong> automatik.</span>
     </div>
 
     <!-- A: Butiran Pemohon -->
@@ -313,7 +279,8 @@ input#fNama { text-transform: uppercase; }
       <div class="frow">
         <div class="field">
           <label class="fl">No. Kad Pengenalan <span class="req">*</span></label>
-          <input type="text" id="fIc" placeholder="000000-00-0000" inputmode="numeric" autocomplete="off">
+          <input type="text" id="fIc" placeholder="000000-00-0000" inputmode="numeric" autocomplete="off" maxlength="14" oninput="formatIC(this,'icHint')">
+          <div class="ic-hint" id="icHint"></div>
         </div>
         <div class="field">
           <label class="fl">No. Telefon <span class="req">*</span></label>
@@ -323,11 +290,12 @@ input#fNama { text-transform: uppercase; }
       <div class="frow">
         <div class="field">
           <label class="fl">Nama Pasangan</label>
-          <input type="text" id="fNamaPsng" placeholder="Jika berkahwin" autocomplete="off" oninput="upperNama(this)">
+          <input type="text" id="fNamaPsng" placeholder="JIKA BERKAHWIN" autocomplete="off" oninput="upperNama(this)">
         </div>
         <div class="field">
           <label class="fl">No. KP Pasangan</label>
-          <input type="text" id="fIcPsng" placeholder="000000-00-0000" inputmode="numeric" autocomplete="off">
+          <input type="text" id="fIcPsng" placeholder="000000-00-0000" inputmode="numeric" autocomplete="off" maxlength="14" oninput="formatIC(this,'icPsngHint')">
+          <div class="ic-hint" id="icPsngHint"></div>
         </div>
       </div>
       <div class="frow">
@@ -384,42 +352,43 @@ input#fNama { text-transform: uppercase; }
   <div style="height:80px"></div>
 </div>
 
-<!-- SCREEN 3: SUCCESS -->
-<div class="screen" id="s3">
+<!-- SCREEN 2: SUCCESS -->
+<div class="screen" id="s2">
   <div class="card">
     <div class="succ">
-      <div class="succ-ico" id="succIco">✅</div>
+      <div class="succ-ico" id="succIco">&#9989;</div>
       <h2 id="succTtl">Berjaya Dihantar</h2>
       <p id="succMsg"></p>
-      <button class="btn btn-g btn-full" onclick="resetAll()">＋ Rekod Pemohon Baharu</button>
-      <div style="margin-top:10px">
-        <button class="btn btn-o btn-full" onclick="openSettings()">⚙ Tukar Deployment ID</button>
-      </div>
+      <button class="btn btn-g btn-full" onclick="resetAll()">&#65291; Rekod Pemohon Baharu</button>
     </div>
   </div>
 </div>
 
 </div><!-- /main -->
 
-<!-- ACTION BAR (screen 2 form only) -->
+<!-- ACTION BAR -->
 <div class="abar" id="abar" style="display:none">
-  <button class="btn btn-r" onclick="doSubmit(true)"  style="flex:0.85">✕ Tidak Layak</button>
-  <button class="btn btn-g" onclick="doSubmit(false)" id="btnHantar" style="flex:1.15">Hantar (Layak) ✓</button>
+  <button class="btn btn-r" onclick="doSubmit(true)"  style="flex:0.85">&#10005; Tidak Layak</button>
+  <button class="btn btn-g" onclick="doSubmit(false)" id="btnHantar" style="flex:1.15">Hantar (Layak) &#10003;</button>
 </div>
 
 <!-- SETTINGS MODAL -->
 <div class="modal-bg" id="modal" onclick="closeModalOut(event)">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title">⚙️ Tukar Deployment ID</div>
-    <div class="cur-dep"><span>Deployment ID semasa:</span><span id="curDepTxt">—</span></div>
+    <div class="modal-title">&#9881;&#65039; Tukar Deployment ID (sementara)</div>
+    <div class="cur-dep"><span>Deployment ID semasa:</span><span id="curDepTxt">&mdash;</span></div>
+    <div class="alert al-y" style="margin-bottom:13px">
+      <span>&#8505;&#65039;</span>
+      <div>ID ini dibenam dalam kod. Tukar di sini hanya untuk ujian sementara pada peranti ini.</div>
+    </div>
     <div style="margin-bottom:13px">
-      <label class="fl" style="margin-bottom:6px">🔑 Deployment ID Baru</label>
+      <label class="fl" style="margin-bottom:6px">&#128273; Deployment ID Baru</label>
       <input type="text" id="newDepId" class="mono" placeholder="AKfycby...xxxx" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
     </div>
     <div style="display:flex;gap:10px">
       <button class="btn btn-o" style="flex:1" onclick="closeModal()">Batal</button>
-      <button class="btn btn-g" style="flex:1.5" onclick="saveNewDep()">Simpan ✓</button>
+      <button class="btn btn-g" style="flex:1.5" onclick="saveNewDep()">Guna ID Ini &#10003;</button>
     </div>
   </div>
 </div>
@@ -427,7 +396,14 @@ input#fNama { text-transform: uppercase; }
 <div class="toast" id="toast"></div>
 
 <script>
-/* ════════ DAERAH & MUKIM — rujukan pentadbiran / SPR Johor ════════ */
+/* ================================================================
+   DEPLOYMENT ID — DIBENAM DALAM KOD
+   Tukar teks di bawah dengan Deployment ID betul anda.
+   Semua pengguna / peranti akan guna ID yang sama ini.
+================================================================ */
+const DEPLOYMENT_ID = 'LETAK_DEPLOYMENT_ID_ANDA_DI_SINI';
+
+/* ======== DAERAH & MUKIM — rujukan pentadbiran / SPR Johor ======== */
 const DAERAH_MUKIM = {
   "Johor Bahru": ["Bandar Johor Bahru","Plentong","Tebrau","Pulai","Sungai Tiram","Tanjung Kupang","Jelutong"],
   "Kulai":       ["Bandar Kulai","Kulai","Senai","Sedenak","Bukit Batu"],
@@ -441,32 +417,21 @@ const DAERAH_MUKIM = {
   "Mersing":     ["Mersing","Jemaluang","Lenggor","Padang Endau","Penyabong","Pulau Aur","Pulau Babi","Pulau Pemanggil","Pulau Sibu","Pulau Tinggi","Sembrong","Tenggaroh","Tenglu","Triang"]
 };
 
-/* ════════ STATE ════════ */
-const ST = { depId:'', jenis:'' };
+/* ======== STATE ======== */
+const ST = { depId: DEPLOYMENT_ID, jenis:'' };
 
-/* ════════ NAVIGATION ════════ */
+/* ======== NAVIGATION ======== */
 function showS(n) {
-  ['s1','s2','s3'].forEach((id,i) => document.getElementById(id).classList.toggle('active', i+1===n));
-  [1,2,3].forEach(i => {
+  ['s1','s2'].forEach((id,i) => document.getElementById(id).classList.toggle('active', i+1===n));
+  [1,2].forEach(i => {
     document.getElementById('d'+i).classList.toggle('active', i===n);
     document.getElementById('d'+i).classList.toggle('done',   i<n);
   });
-  document.getElementById('abar').style.display = (n===2 && ST.jenis) ? 'flex' : 'none';
+  document.getElementById('abar').style.display = (n===1 && ST.jenis) ? 'flex' : 'none';
   window.scrollTo({ top:0, behavior:'smooth' });
 }
 
-/* ════════ CONFIG ════════ */
-function saveConfig() {
-  const depId = document.getElementById('depId').value.trim();
-  if (!depId) { toast('Sila masukkan Deployment ID'); return; }
-  ST.depId = depId;
-  localStorage.setItem('pkj_dep', depId);
-  vibrate(20);
-  buildDaerah();
-  showS(2);
-}
-
-/* ════════ SETTINGS MODAL ════════ */
+/* ======== SETTINGS MODAL (ujian sementara sahaja) ======== */
 function openSettings() {
   const dep = ST.depId || '—';
   document.getElementById('curDepTxt').textContent = dep.length > 18 ? dep.slice(0,10)+'...'+dep.slice(-8) : dep;
@@ -480,14 +445,12 @@ function saveNewDep() {
   const depId = document.getElementById('newDepId').value.trim();
   if (!depId) { toast('Tiada perubahan'); return; }
   ST.depId = depId;
-  localStorage.setItem('pkj_dep', depId);
-  document.getElementById('depId').value = depId;
   closeModal();
   vibrate([20,30,20]);
-  toast('✅ Deployment ID dikemaskini');
+  toast('✅ ID sementara digunakan (peranti ini sahaja)');
 }
 
-/* ════════ JENIS ════════ */
+/* ======== JENIS ======== */
 function pickJenis(j, el) {
   document.querySelectorAll('.jk').forEach(c => c.classList.remove('sel'));
   el.classList.add('sel');
@@ -502,7 +465,7 @@ function pickJenis(j, el) {
   document.getElementById('ttlB').textContent = isBSR ? 'Maklumat Sewa' : 'B. Maklumat Harta (Rumah)';
   document.getElementById('hargaLbl').innerHTML = (isBSR ? 'Bayaran Sewa Sebulan (RM)' : 'Harga Rumah (RM)') + ' <span class="req">*</span>';
   document.getElementById('fHarga').placeholder = isBSR ? 'cth: 500' : 'cth: 250000';
-  document.getElementById('catatanLbl').innerHTML = isBSR ? 'Catatan <span class="req">*</span>' : 'Catatan';
+  document.getElementById('catatanLbl').innerHTML = 'Catatan';   // tak wajib untuk mana-mana jenis
   document.getElementById('btnHantar').style.background = {BBR:'#185FA5', BMR:'#1B4B3A', BSR:'#854F0B'}[j];
 
   document.getElementById('formCard').style.display = 'block';
@@ -511,14 +474,36 @@ function pickJenis(j, el) {
   setTimeout(() => document.getElementById('formCard').scrollIntoView({ behavior:'smooth', block:'start' }), 100);
 }
 
-/* ════════ NAMA AUTO UPPERCASE ════════ */
+/* ======== IC AUTO-FORMAT (auto dash) + SEMAKAN DIGIT ======== */
+function formatIC(el, hintId) {
+  var digits = el.value.replace(/\D/g, '').slice(0, 12);   // nombor sahaja, maks 12
+  var out = digits;
+  if (digits.length > 6) out = digits.slice(0,6) + '-' + digits.slice(6);
+  if (digits.length > 8) out = digits.slice(0,6) + '-' + digits.slice(6,8) + '-' + digits.slice(8);
+  el.value = out;
+
+  var hint = document.getElementById(hintId);
+  if (digits.length === 0) {
+    hint.textContent = ''; hint.className = 'ic-hint'; el.classList.remove('ic-bad');
+  } else if (digits.length < 12) {
+    hint.textContent = 'IC belum lengkap (' + digits.length + '/12 digit)';
+    hint.className = 'ic-hint warn'; el.classList.add('ic-bad');
+  } else {
+    hint.textContent = '✓ 12 digit lengkap';
+    hint.className = 'ic-hint ok'; el.classList.remove('ic-bad');
+  }
+}
+// Kira bilangan digit dalam satu IC
+function icDigits(val) { return String(val).replace(/\D/g, '').length; }
+
+/* ======== NAMA AUTO UPPERCASE ======== */
 function upperNama(el) {
   const pos = el.selectionStart;
   el.value = el.value.toUpperCase();
   try { el.setSelectionRange(pos, pos); } catch(e){}
 }
 
-/* ════════ DAERAH / MUKIM DROPDOWN ════════ */
+/* ======== DAERAH / MUKIM DROPDOWN ======== */
 function buildDaerah() {
   const sel = document.getElementById('fDaerah');
   if (sel.options.length > 1) return;
@@ -540,10 +525,10 @@ function loadMukim() {
   });
 }
 
-/* ════════ FORM HELPERS ════════ */
+/* ======== FORM HELPERS ======== */
 const v = id => document.getElementById(id).value.trim();
 
-// Tukar "2026-05-21" → "21/05/2026" untuk paparan Sheet
+// Tukar "2026-05-21" -> "21/05/2026" untuk paparan Sheet
 function fmtDate(iso) {
   if (!iso) return '';
   const p = iso.split('-');
@@ -567,28 +552,37 @@ function getForm() {
   };
 }
 
-/* ════════ SUBMIT ════════
+/* ======== SUBMIT ========
    Data dihantar ke Apps Script guna GET + mode:'no-cors'.
-   Nota: 'no-cors' bermaksud browser benarkan permintaan keluar
-   ke domain Google, tetapi TIDAK membenarkan kita baca balasannya.
-   Jadi kita anggap berjaya selepas hantar (tiada ralat rangkaian).
-   Ini cara paling mudah & berkesan untuk elak masalah CORS Apps Script.
+   'no-cors' = browser benarkan permintaan keluar ke Google tetapi
+   tidak benarkan kita baca balasannya, jadi kita anggap berjaya
+   selepas hantar tanpa ralat rangkaian. Cara ini elak masalah CORS.
+   Catatan HANYA wajib bila tekan butang "Tidak Layak" (semua jenis).
 */
 async function doSubmit(tidakLayak) {
+  if (!ST.depId || ST.depId === 'LETAK_DEPLOYMENT_ID_ANDA_DI_SINI') {
+    toast('Deployment ID belum ditetapkan dalam kod'); return;
+  }
+
   const d = getForm();
 
   if (tidakLayak) {
     if (!d.nama && !d.ic) { toast('Sila isi sekurang-kurangnya Nama atau No. KP'); return; }
     if (!d.catatan)       { toast('Sila isi Catatan (sebab tidak layak)'); return; }
+    // Kalau IC diisi, ia mesti lengkap 12 digit
+    if (d.ic && icDigits(d.ic) !== 12) { toast('No. KP tidak lengkap — perlu 12 digit'); return; }
   } else {
     if (!d.nama)   { toast('Nama Penerima wajib diisi'); return; }
     if (!d.ic)     { toast('No. Kad Pengenalan wajib diisi'); return; }
+    if (icDigits(d.ic) !== 12) { toast('No. KP tidak lengkap — perlu 12 digit'); return; }
     if (!d.tel)    { toast('No. Telefon wajib diisi'); return; }
     if (!d.emel)   { toast('Emel wajib diisi'); return; }
     if (!d.harga)  { toast('Harga Rumah / Sewa wajib diisi'); return; }
     if (!d.tarikh) { toast('Tarikh Penerimaan Kaunter wajib diisi'); return; }
-    if (ST.jenis === 'BSR' && !d.catatan) { toast('Catatan wajib diisi untuk BSR'); return; }
   }
+
+  // No. KP Pasangan — kalau diisi, mesti lengkap 12 digit (kedua-dua Layak & Tidak Layak)
+  if (d.icPsng && icDigits(d.icPsng) !== 12) { toast('No. KP Pasangan tidak lengkap — perlu 12 digit'); return; }
 
   d.sheet = tidakLayak ? 'TIDAK LAYAK' : ST.jenis;
 
@@ -607,27 +601,30 @@ async function doSubmit(tidakLayak) {
     document.getElementById('succMsg').textContent = tidakLayak
       ? 'Data ' + (d.nama || 'pemohon') + ' direkod dalam sheet TIDAK LAYAK (Jenis: ' + ST.jenis + ').'
       : 'Data ' + d.nama + ' direkod dalam sheet ' + ST.jenis + '.';
-    showS(3);
+    showS(2);
   } catch(err) {
     document.getElementById('abar').style.display = 'flex';
     toast('Ralat pengiriman. Semak sambungan internet.');
   }
 }
 
-/* ════════ RESET ════════ */
+/* ======== RESET ======== */
 function resetAll() {
   ST.jenis = '';
   ['fNama','fIc','fNamaPsng','fIcPsng','fEmel','fTel','fHarga','fCatatan'].forEach(id => document.getElementById(id).value = '');
+  ['icHint','icPsngHint'].forEach(id => { var h=document.getElementById(id); h.textContent=''; h.className='ic-hint'; });
+  document.getElementById('fIc').classList.remove('ic-bad');
+  document.getElementById('fIcPsng').classList.remove('ic-bad');
   document.getElementById('fTarikh').value = '2026-05-21';
   document.getElementById('fDaerah').value = '';
   document.getElementById('fMukim').innerHTML = '<option value="">-- Pilih Mukim --</option>';
   document.querySelectorAll('.jk').forEach(c => c.classList.remove('sel'));
   document.getElementById('formCard').style.display = 'none';
   document.getElementById('abar').style.display = 'none';
-  showS(2);
+  showS(1);
 }
 
-/* ════════ UTIL ════════ */
+/* ======== UTIL ======== */
 function vibrate(p) { try { navigator.vibrate && navigator.vibrate(p); } catch(e){} }
 let _tt;
 function toast(msg) {
@@ -636,11 +633,11 @@ function toast(msg) {
   clearTimeout(_tt); _tt = setTimeout(() => el.classList.remove('on'), 3200);
 }
 
-/* ════════ INIT ════════ */
+/* ======== INIT ======== */
 (function init() {
+  localStorage.removeItem('pkj_dep');   // buang sebarang ID lama tersangkut
   buildDaerah();
-  const dep = localStorage.getItem('pkj_dep');
-  if (dep) { document.getElementById('depId').value = dep; ST.depId = dep; showS(2); }
+  showS(1);
 })();
 </script>
 </body>
