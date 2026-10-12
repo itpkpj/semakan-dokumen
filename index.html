@@ -530,13 +530,18 @@ function upperNama(el) {
 /* ======== AUTOSUGGEST NAMA (dari Google Sheet, JSONP) ======== */
 var AC = { items: [], hi: -1, timer: null, seq: 0 };
 
+// Ambil perkataan TERAKHIR yang sedang ditaip (selepas ruang terakhir)
+function lastWord(val) {
+  var parts = val.split(/\s+/);
+  return parts[parts.length - 1] || '';
+}
+
 function onNamaInput(el) {
   upperNama(el);                       // kekal auto huruf besar
-  var q = el.value.trim();
+  var w = lastWord(el.value);          // hanya perkataan terakhir yang dicari
   clearTimeout(AC.timer);
-  if (q.length < 2) { acClose(); return; }
-  // debounce supaya tak terlalu kerap panggil server
-  AC.timer = setTimeout(function(){ fetchNames(q); }, 280);
+  if (w.length < 1) { acClose(); return; }
+  AC.timer = setTimeout(function(){ fetchNames(w); }, 250);
 }
 
 // JSONP: cara BACA balasan Apps Script tanpa masalah CORS
@@ -572,18 +577,14 @@ function showSuggest(names, q) {
   var box = document.getElementById('acList');
   AC.items = names; AC.hi = -1;
   if (!names.length) {
-    box.innerHTML = '<div class="ac-note">Tiada nama sepadan dalam rekod</div>';
+    box.innerHTML = '<div class="ac-note">Tiada perkataan sepadan dalam rekod</div>';
     box.classList.add('open');
     return;
   }
-  var qUp = q.toUpperCase();
+  var qLen = q.length;
   box.innerHTML = names.map(function(n, i) {
-    var up = n.toUpperCase();
-    var pos = up.indexOf(qUp);
-    var disp = n;
-    if (pos >= 0) {
-      disp = n.slice(0,pos) + '<b>' + n.slice(pos, pos+q.length) + '</b>' + n.slice(pos+q.length);
-    }
+    // padanan "bermula dengan" -> bold di hadapan
+    var disp = '<b>' + n.slice(0, qLen) + '</b>' + n.slice(qLen);
     return '<div class="ac-item" data-i="' + i + '" onmousedown="acPick(' + i + ')">' +
            '<span>' + disp + '</span><span class="ac-tag">&#8629; Tab</span></div>';
   }).join('');
@@ -610,9 +611,15 @@ function acHighlight(n) {
 function acPick(i) {
   if (i < 0 || i >= AC.items.length) return;
   var el = document.getElementById('fNama');
-  el.value = AC.items[i].toUpperCase();
+  var word = AC.items[i].toUpperCase();
+
+  // Ganti HANYA perkataan terakhir, kekalkan perkataan sebelumnya
+  var parts = el.value.split(/\s+/);
+  parts[parts.length - 1] = word;
+  el.value = parts.join(' ') + ' ';     // tambah ruang untuk perkataan seterusnya
+
   acClose();
-  document.getElementById('fIc').focus();   // terus ke medan IC
+  el.focus();                           // kekal di medan Nama — teruskan taip perkataan lain
 }
 
 function acKeydown(e) {
