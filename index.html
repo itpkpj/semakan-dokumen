@@ -112,6 +112,26 @@ input#fNama, input#fNamaPsng { text-transform: uppercase; }
 .ic-hint.ok   { color: var(--accent); }
 input.ic-bad  { border-color: var(--danger) !important; }
 
+/* AUTOSUGGEST NAMA */
+.ac-wrap { position: relative; }
+.ac-list {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 50;
+  background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--r);
+  box-shadow: 0 10px 28px rgba(0,0,0,.14); max-height: 230px; overflow-y: auto;
+  display: none; -webkit-overflow-scrolling: touch;
+}
+.ac-list.open { display: block; }
+.ac-item {
+  padding: 10px 13px; font-size: 14px; cursor: pointer; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px; line-height: 1.3;
+}
+.ac-item:last-child { border-bottom: none; }
+.ac-item:hover, .ac-item.hi { background: var(--accent-lt); }
+.ac-item.hi { box-shadow: inset 3px 0 0 var(--accent); }
+.ac-item b { color: var(--accent); font-weight: 700; }
+.ac-tag { margin-left: auto; font-size: 10px; font-family: 'DM Mono', monospace; color: var(--text3); white-space: nowrap; }
+.ac-note { padding: 9px 13px; font-size: 11px; color: var(--text3); text-align: center; }
+
 /* BUTTONS */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -273,7 +293,10 @@ input.ic-bad  { border-color: var(--danger) !important; }
       <div class="frow frow1">
         <div class="field">
           <label class="fl">Nama Penerima <span class="req">*</span></label>
-          <input type="text" id="fNama" placeholder="NAMA PENUH PEMOHON" autocomplete="off" oninput="upperNama(this)">
+          <div class="ac-wrap">
+            <input type="text" id="fNama" placeholder="NAMA PENUH PEMOHON" autocomplete="off" oninput="onNamaInput(this)" onkeydown="acKeydown(event)" onblur="acBlur()">
+            <div class="ac-list" id="acList"></div>
+          </div>
         </div>
       </div>
       <div class="frow">
@@ -359,7 +382,8 @@ input.ic-bad  { border-color: var(--danger) !important; }
       <div class="succ-ico" id="succIco">&#9989;</div>
       <h2 id="succTtl">Berjaya Dihantar</h2>
       <p id="succMsg"></p>
-      <button class="btn btn-g btn-full" onclick="resetAll()">&#65291; Rekod Pemohon Baharu</button>
+      <button class="btn btn-g btn-full" onclick="resetAll()">&#65291; Rekod Baharu (jenis sama)</button>
+      <p style="font-size:12px;color:var(--text3);margin-top:10px">Untuk tukar jenis inisiatif, pilih option di atas selepas ini.</p>
     </div>
   </div>
 </div>
@@ -503,6 +527,107 @@ function upperNama(el) {
   try { el.setSelectionRange(pos, pos); } catch(e){}
 }
 
+/* ======== AUTOSUGGEST NAMA (dari Google Sheet, JSONP) ======== */
+var AC = { items: [], hi: -1, timer: null, seq: 0 };
+
+function onNamaInput(el) {
+  upperNama(el);                       // kekal auto huruf besar
+  var q = el.value.trim();
+  clearTimeout(AC.timer);
+  if (q.length < 2) { acClose(); return; }
+  // debounce supaya tak terlalu kerap panggil server
+  AC.timer = setTimeout(function(){ fetchNames(q); }, 280);
+}
+
+// JSONP: cara BACA balasan Apps Script tanpa masalah CORS
+function fetchNames(q) {
+  if (!ST.depId || ST.depId === 'LETAK_DEPLOYMENT_ID_ANDA_DI_SINI') return;
+  var mySeq = ++AC.seq;
+  var cbName = 'pkjCb_' + mySeq;
+  var script = document.createElement('script');
+  var timeout = setTimeout(function(){ cleanup(); }, 8000);
+
+  function cleanup() {
+    clearTimeout(timeout);
+    try { delete window[cbName]; } catch(e){ window[cbName] = undefined; }
+    if (script.parentNode) script.parentNode.removeChild(script);
+  }
+
+  window[cbName] = function(resp) {
+    cleanup();
+    if (mySeq !== AC.seq) return;      // abai balasan lama (pengguna dah taip lagi)
+    var names = (resp && resp.names) ? resp.names : [];
+    showSuggest(names, q);
+  };
+
+  var url = 'https://script.google.com/macros/s/' + ST.depId + '/exec'
+          + '?mode=names&q=' + encodeURIComponent(q)
+          + '&callback=' + cbName;
+  script.src = url;
+  script.onerror = function(){ cleanup(); };
+  document.body.appendChild(script);
+}
+
+function showSuggest(names, q) {
+  var box = document.getElementById('acList');
+  AC.items = names; AC.hi = -1;
+  if (!names.length) {
+    box.innerHTML = '<div class="ac-note">Tiada nama sepadan dalam rekod</div>';
+    box.classList.add('open');
+    return;
+  }
+  var qUp = q.toUpperCase();
+  box.innerHTML = names.map(function(n, i) {
+    var up = n.toUpperCase();
+    var pos = up.indexOf(qUp);
+    var disp = n;
+    if (pos >= 0) {
+      disp = n.slice(0,pos) + '<b>' + n.slice(pos, pos+q.length) + '</b>' + n.slice(pos+q.length);
+    }
+    return '<div class="ac-item" data-i="' + i + '" onmousedown="acPick(' + i + ')">' +
+           '<span>' + disp + '</span><span class="ac-tag">&#8629; Tab</span></div>';
+  }).join('');
+  box.classList.add('open');
+}
+
+function acClose() {
+  document.getElementById('acList').classList.remove('open');
+  AC.items = []; AC.hi = -1;
+}
+function acBlur() { setTimeout(acClose, 150); }  // lambat sikit supaya klik sempat daftar
+
+function acHighlight(n) {
+  var box = document.getElementById('acList');
+  var kids = box.querySelectorAll('.ac-item');
+  if (!kids.length) return;
+  if (n < 0) n = kids.length - 1;
+  if (n >= kids.length) n = 0;
+  AC.hi = n;
+  kids.forEach(function(k, i){ k.classList.toggle('hi', i === n); });
+  kids[n].scrollIntoView({ block: 'nearest' });
+}
+
+function acPick(i) {
+  if (i < 0 || i >= AC.items.length) return;
+  var el = document.getElementById('fNama');
+  el.value = AC.items[i].toUpperCase();
+  acClose();
+  document.getElementById('fIc').focus();   // terus ke medan IC
+}
+
+function acKeydown(e) {
+  var open = document.getElementById('acList').classList.contains('open');
+  if (!open || !AC.items.length) return;
+  if (e.key === 'ArrowDown')      { e.preventDefault(); acHighlight(AC.hi + 1); }
+  else if (e.key === 'ArrowUp')   { e.preventDefault(); acHighlight(AC.hi - 1); }
+  else if (e.key === 'Tab' || e.key === 'Enter') {
+    if (AC.hi >= 0) { e.preventDefault(); acPick(AC.hi); }
+    else if (AC.items.length === 1) { e.preventDefault(); acPick(0); }
+    else acClose();
+  }
+  else if (e.key === 'Escape')    { acClose(); }
+}
+
 /* ======== DAERAH / MUKIM DROPDOWN ======== */
 function buildDaerah() {
   const sel = document.getElementById('fDaerah');
@@ -608,9 +733,9 @@ async function doSubmit(tidakLayak) {
   }
 }
 
-/* ======== RESET ======== */
+/* ======== RESET — kosongkan medan tetapi KEKAL jenis inisiatif yang sama ======== */
 function resetAll() {
-  ST.jenis = '';
+  // Kosongkan medan sahaja; ST.jenis TIDAK diubah -> borang kekal jenis sama
   ['fNama','fIc','fNamaPsng','fIcPsng','fEmel','fTel','fHarga','fCatatan'].forEach(id => document.getElementById(id).value = '');
   ['icHint','icPsngHint'].forEach(id => { var h=document.getElementById(id); h.textContent=''; h.className='ic-hint'; });
   document.getElementById('fIc').classList.remove('ic-bad');
@@ -618,10 +743,13 @@ function resetAll() {
   document.getElementById('fTarikh').value = '2026-05-21';
   document.getElementById('fDaerah').value = '';
   document.getElementById('fMukim').innerHTML = '<option value="">-- Pilih Mukim --</option>';
-  document.querySelectorAll('.jk').forEach(c => c.classList.remove('sel'));
-  document.getElementById('formCard').style.display = 'none';
-  document.getElementById('abar').style.display = 'none';
+  acClose();
+
+  // Kembali ke skrin borang (jenis sama), sedia untuk rekod baharu
   showS(1);
+  document.getElementById('formCard').style.display = 'block';
+  document.getElementById('abar').style.display = 'flex';
+  setTimeout(function(){ document.getElementById('fNama').focus(); }, 150);
 }
 
 /* ======== UTIL ======== */
