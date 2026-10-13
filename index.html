@@ -471,7 +471,13 @@ function saveNewDep() {
   ST.depId = depId;
   closeModal();
   vibrate([20,30,20]);
-  toast('✅ ID sementara digunakan (peranti ini sahaja)');
+
+  // Muat turun senarai nama (penerima + pasangan) selepas ID ditetapkan
+  toast('⏳ Memuat turun senarai nama... (1-5 saat)');
+  loadWords(function(ok, n) {
+    if (ok) toast('✅ ID disimpan · ' + n + ' perkataan nama dimuatkan');
+    else    toast('⚠️ ID disimpan tetapi gagal muat senarai nama');
+  });
 }
 
 /* ======== JENIS ======== */
@@ -536,20 +542,33 @@ function lastWord(val) {
   return parts[parts.length - 1] || '';
 }
 
-// Muat turun SEMUA perkataan sekali (masa borang dibuka) -> simpan dalam ingatan
-function loadWords() {
-  if (!ST.depId || ST.depId === 'LETAK_DEPLOYMENT_ID_ANDA_DI_SINI') return;
-  var cbName = 'pkjWords';
+// Muat turun SEMUA perkataan (nama penerima + pasangan) -> simpan dalam ingatan.
+// onDone(ok, count) dipanggil bila siap/gagal supaya UI boleh papar status.
+function loadWords(onDone) {
+  if (!ST.depId || ST.depId === 'LETAK_DEPLOYMENT_ID_ANDA_DI_SINI') {
+    if (onDone) onDone(false, 0);
+    return;
+  }
+  AC.loaded = false;
+  var cbName = 'pkjWords_' + Date.now();
   var script = document.createElement('script');
+  var timeout = setTimeout(function(){ finish(false, 0); }, 15000);
+
+  function finish(ok, n) {
+    clearTimeout(timeout);
+    try { delete window[cbName]; } catch(e){ window[cbName] = undefined; }
+    if (script.parentNode) script.parentNode.removeChild(script);
+    if (onDone) onDone(ok, n);
+  }
+
   window[cbName] = function(resp) {
     AC.words = (resp && resp.words) ? resp.words : [];
     AC.loaded = true;
-    try { delete window[cbName]; } catch(e){ window[cbName] = undefined; }
-    if (script.parentNode) script.parentNode.removeChild(script);
+    finish(true, AC.words.length);
   };
   script.src = 'https://script.google.com/macros/s/' + ST.depId + '/exec'
              + '?mode=allwords&callback=' + cbName;
-  script.onerror = function(){ if (script.parentNode) script.parentNode.removeChild(script); };
+  script.onerror = function(){ finish(false, 0); };
   document.body.appendChild(script);
 }
 
@@ -557,6 +576,16 @@ function onNamaInput(el) {
   upperNama(el);
   var w = lastWord(el.value).toUpperCase();
   if (w.length < 1) { acClose(); return; }
+
+  // Senarai nama belum dimuatkan -> ingatkan pengguna tetapkan ID dulu
+  if (!AC.loaded) {
+    var box = document.getElementById('acList');
+    box.innerHTML = '<div class="ac-note">Senarai nama belum dimuat. Tekan &#9881; dan masukkan Deployment ID dahulu.</div>';
+    box.classList.add('open');
+    AC.items = []; AC.hi = -1;
+    return;
+  }
+
   // Tapis tempatan — SERTA-MERTA, tiada panggilan server
   var hits = [];
   for (var i = 0; i < AC.words.length && hits.length < 10; i++) {
