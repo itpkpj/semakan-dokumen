@@ -756,13 +756,19 @@ async function doSubmit(tidakLayak) {
     const url = 'https://script.google.com/macros/s/' + ST.depId + '/exec?' + new URLSearchParams(d).toString();
     await fetch(url, { method:'GET', mode:'no-cors' });
 
-    // Tambah perkataan nama baharu ke cache tempatan (tak perlu muat semula server)
-    if (d.nama) {
-      d.nama.toUpperCase().split(/\s+/).forEach(function(w){
+    // (a) Tambah segera ke cache tempatan supaya suggest terus ada tanpa tunggu
+    [d.nama, d.namaPsng].forEach(function(nm){
+      if (!nm) return;
+      nm.toUpperCase().split(/\s+/).forEach(function(w){
         if (w && AC.words.indexOf(w) < 0) AC.words.push(w);
       });
-      AC.words.sort();
-    }
+    });
+    AC.words.sort();
+
+    // (b) Muat semula senarai PENUH dari Google Sheet di latar belakang
+    //     supaya cache selari dgn sheet (termasuk rekod pengguna lain).
+    //     Jeda sedikit supaya baris baharu sempat ditulis dulu.
+    setTimeout(function(){ loadWords(function(){ /* senyap */ }); }, 1200);
 
     vibrate([30,60,30]);
     var nama = d.nama || 'pemohon';
