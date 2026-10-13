@@ -130,6 +130,9 @@ input.ic-bad  { border-color: var(--danger) !important; }
 .ac-item.hi { box-shadow: inset 3px 0 0 var(--accent); }
 .ac-item b { color: var(--accent); font-weight: 700; }
 .ac-tag { margin-left: auto; font-size: 10px; font-family: 'DM Mono', monospace; color: var(--text3); white-space: nowrap; }
+.ac-num { flex-shrink: 0; width: 20px; height: 20px; border-radius: 5px; background: var(--surface2); color: var(--text2); font-size: 11px; font-weight: 700; font-family: 'DM Mono', monospace; display: flex; align-items: center; justify-content: center; }
+.ac-item.hi .ac-num { background: var(--accent); color: #fff; }
+.ac-num-x { background: transparent; }
 .ac-note { padding: 9px 13px; font-size: 11px; color: var(--text3); text-align: center; }
 
 /* BUTTONS */
@@ -612,8 +615,10 @@ function showSuggest(names, q, listId) {
   var qLen = q.length;
   box.innerHTML = names.map(function(n, i) {
     var disp = '<b>' + n.slice(0, qLen) + '</b>' + n.slice(qLen);
+    // nombor 1-9 untuk 9 item pertama
+    var numTag = (i < 9) ? '<span class="ac-num">' + (i+1) + '</span>' : '<span class="ac-num ac-num-x"></span>';
     return '<div class="ac-item" data-i="' + i + '" onmousedown="acPick(' + i + ')">' +
-           '<span>' + disp + '</span><span class="ac-tag">&#8629; Tab</span></div>';
+           numTag + '<span>' + disp + '</span><span class="ac-tag">&#8629;</span></div>';
   }).join('');
   box.classList.add('open');
 }
@@ -656,6 +661,13 @@ function acKeydown(e, inputId, listId) {
   var box = document.getElementById(listId);
   var open = box && box.classList.contains('open');
   if (!open || !AC.items.length) return;
+
+  // Tekan nombor 1-9 -> terus pilih item berkenaan
+  if (e.key >= '1' && e.key <= '9') {
+    var idx = parseInt(e.key, 10) - 1;
+    if (idx < AC.items.length) { e.preventDefault(); acPick(idx); return; }
+  }
+
   if (e.key === 'ArrowDown')      { e.preventDefault(); acHighlight(AC.hi + 1); }
   else if (e.key === 'ArrowUp')   { e.preventDefault(); acHighlight(AC.hi - 1); }
   else if (e.key === 'Tab' || e.key === 'Enter') {
