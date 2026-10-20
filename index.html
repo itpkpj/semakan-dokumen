@@ -389,7 +389,7 @@ input.ic-bad  { border-color: var(--danger) !important; }
         <div class="field">
           <label class="fl">DUN Kawasan Taman / Projek</label>
           <div class="ac-wrap">
-            <input type="text" id="fDunTaman" placeholder="cth: KOTA ISKANDAR" autocomplete="off" oninput="onDunInput(this,'acListDunT')" onkeydown="acKeydown(event,'fDunTaman','acListDunT')" onblur="acBlur('acListDunT')">
+            <input type="text" id="fDunTaman" placeholder="Pilih (ikut Daerah/Mukim)" autocomplete="off" oninput="onDunTamanInput(this)" onfocus="onDunTamanInput(this)" onkeydown="acKeydown(event,'fDunTaman','acListDunT')" onblur="acBlur('acListDunT')">
             <div class="ac-list" id="acListDunT"></div>
           </div>
         </div>
@@ -656,6 +656,7 @@ function loadWords(onDone) {
     AC.loaded = true;
     loadTaman();                 // muat juga senarai Nama Taman/Projek
     loadRef();                   // muat peta rujukan projek -> Mukim/Daerah
+    loadDunMap();                // muat peta DUN belajar dari rekod
     finish(true, AC.words.length);
   };
   script.src = 'https://script.google.com/macros/s/' + ST.depId + '/exec'
@@ -723,6 +724,40 @@ function onDunInput(el, listId) {
   hits = hits.slice(0, 10);
   AC.whole = true;               // DUN = nilai penuh (ganti seluruh kotak)
   showSuggest(hits, q, listId);
+}
+
+/* ======== DUN KAWASAN TAMAN: senarai bertapis ikut Daerah/Mukim ========
+   Keutamaan: DUN yang pernah dipakai utk Mukim sama -> Daerah sama -> baki 56 DUN.
+*/
+function onDunTamanInput(el) {
+  upperNama(el);
+  AC.inputId = el.id; AC.listId = 'acListDunT';
+  var q = el.value.trim().toUpperCase();
+
+  var daerah = (document.getElementById('fDaerah').value || '').trim().toUpperCase();
+  var mukim  = (document.getElementById('fMukim').value  || '').trim().toUpperCase();
+
+  // Bina senarai keutamaan (tanpa duplikat)
+  var pri = [], seen = {};
+  function tambah(arr){ (arr||[]).forEach(function(d){ if(d && !seen[d]){ seen[d]=true; pri.push(d); } }); }
+  tambah(DUNMAP.byMukim[mukim]);     // paling berkaitan: DUN dalam mukim ini
+  tambah(DUNMAP.byDaerah[daerah]);   // kemudian: DUN dalam daerah ini
+  // baki 56 DUN (ikut abjad)
+  var baki = DUN_JOHOR.filter(function(d){ return !seen[d]; });
+
+  var hits;
+  if (q.length < 1) {
+    // belum taip: tunjuk yang berkaitan dahulu (maks 10)
+    hits = pri.concat(baki).slice(0, 10);
+  } else {
+    // dah taip: tapis — berkaitan yang padan dahulu, kemudian baki yang padan
+    var pMatch = pri.filter(function(d){ return d.indexOf(q) >= 0; });
+    var bMatch = baki.filter(function(d){ return d.indexOf(q) >= 0; });
+    hits = pMatch.concat(bMatch).slice(0, 10);
+  }
+
+  AC.whole = true;
+  showSuggest(hits, q, 'acListDunT');
 }
 
 /* ======== TAMAN: suggest dari cache Google Sheet ======== */
@@ -1047,6 +1082,22 @@ function batalEdit() {
 /* ======== RUJUKAN PROJEK (upload Excel -> peta Mukim/Daerah) ======== */
 // REF.map: { "NAMA PROJEK": {mukim, daerah} }  REF.list: senarai projek
 var REF = { map: {}, list: [], pending: null };
+var DUNMAP = { byDaerah: {}, byMukim: {} };   // peta DUN belajar dari rekod
+
+// Muat turun peta DUN mengikut daerah/mukim
+function loadDunMap() {
+  if (!ST.depId || ST.depId === 'LETAK_DEPLOYMENT_ID_ANDA_DI_SINI') return;
+  var cbName = 'pkjDun_' + Date.now();
+  var script = document.createElement('script');
+  window[cbName] = function(resp) {
+    if (resp && resp.dunmap) DUNMAP = resp.dunmap;
+    try { delete window[cbName]; } catch(e){ window[cbName] = undefined; }
+    if (script.parentNode) script.parentNode.removeChild(script);
+  };
+  script.src = 'https://script.google.com/macros/s/' + ST.depId + '/exec?mode=dunmap&callback=' + cbName;
+  script.onerror = function(){ if (script.parentNode) script.parentNode.removeChild(script); };
+  document.body.appendChild(script);
+}
 
 // Bila fail dipilih -> baca Excel di browser
 function onRefFile(input) {
