@@ -1050,12 +1050,22 @@ function onRefFile(input) {
   reader.onload = function(ev) {
     try {
       var wb = XLSX.read(new Uint8Array(ev.target.result), { type:'array' });
-      var ws = wb.Sheets[wb.SheetNames[0]];
-      var rows = XLSX.utils.sheet_to_json(ws, { header:1, blankrows:false });
-      var parsed = parseRefRows(rows);
-      if (!parsed.length) { status.textContent = '⚠️ Tiada data sah dijumpai dalam fail.'; return; }
-      REF.pending = parsed;
-      status.textContent = '✓ ' + parsed.length + ' projek dibaca. Pilih cara simpan:';
+      // Baca SEMUA sheet dalam fail, gabung + buang duplikat projek
+      var seen = {}, gabung = [];
+      var nSheet = 0;
+      wb.SheetNames.forEach(function(nm){
+        var ws = wb.Sheets[nm];
+        if (!ws) return;
+        var rows = XLSX.utils.sheet_to_json(ws, { header:1, blankrows:false });
+        var parsed = parseRefRows(rows);
+        if (parsed.length) nSheet++;
+        parsed.forEach(function(it){
+          if (it.p && !seen[it.p]) { seen[it.p] = true; gabung.push(it); }
+        });
+      });
+      if (!gabung.length) { status.textContent = '⚠️ Tiada data sah dijumpai dalam mana-mana sheet.'; return; }
+      REF.pending = gabung;
+      status.textContent = '✓ ' + gabung.length + ' projek dibaca dari ' + nSheet + ' sheet. Pilih cara simpan:';
       document.getElementById('refActions').style.display = 'flex';
     } catch(err) {
       status.textContent = '⚠️ Gagal baca fail. Pastikan format Excel/CSV betul.';
