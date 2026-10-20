@@ -387,7 +387,7 @@ input.ic-bad  { border-color: var(--danger) !important; }
           <input type="number" id="fHarga" placeholder="cth: 250000" inputmode="numeric">
         </div>
         <div class="field">
-          <label class="fl">DUN Kawasan Taman / Projek</label>
+          <label class="fl">DUN Kawasan Taman / Projek <span id="dunTamanAuto" class="auto-tag"></span></label>
           <div class="ac-wrap">
             <input type="text" id="fDunTaman" placeholder="Pilih (ikut Daerah/Mukim)" autocomplete="off" oninput="onDunTamanInput(this)" onfocus="onDunTamanInput(this)" onkeydown="acKeydown(event,'fDunTaman','acListDunT')" onblur="acBlur('acListDunT')">
             <div class="ac-list" id="acListDunT"></div>
@@ -483,7 +483,7 @@ input.ic-bad  { border-color: var(--danger) !important; }
     <div class="modal-title" style="font-size:15px">&#128193; Rujukan Projek (Mukim &amp; Daerah)</div>
     <div class="alert al-g" style="margin-bottom:12px">
       <span>&#8505;&#65039;</span>
-      <div>Upload fail Excel: lajur <strong>NAMA PROJEK, MUKIM, DAERAH</strong>. Bila pilih Nama Projek nanti, Mukim &amp; Daerah diisi automatik (masih boleh edit).</div>
+      <div>Upload fail Excel: lajur <strong>NAMA PROJEK, MUKIM, DAERAH, DUN</strong> (DUN opsional). Bila pilih Nama Projek nanti, Mukim, Daerah &amp; DUN diisi automatik (masih boleh edit).</div>
     </div>
     <input type="file" id="refFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="onRefFile(this)">
     <button class="btn btn-o btn-full" onclick="document.getElementById('refFile').click()">&#8682; Pilih Fail Excel Rujukan</button>
@@ -531,6 +531,120 @@ const DUN_JOHOR = [
   "JOHOR JAYA","PERMAS","LARKIN","STULANG","PERLING","KEMPAS","SKUDAI","KOTA ISKANDAR",
   "BUKIT PERMAI","BUKIT BATU","SENAI","BENUT","PULAI SEBATANG","PEKAN NANAS","KUKUP"
 ];
+
+/* ======== PEMETAAN MUKIM -> DUN (anggaran, boleh betul manual) ========
+   Satu mukim boleh merentasi beberapa DUN, jadi disenaraikan semua yang
+   berkaitan. Keutamaan ikut susunan. Guna HURUF BESAR untuk padanan.      */
+const MUKIM_DUN = {
+  // Daerah Johor Bahru
+  "PULAI":            ["PERLING","KEMPAS","SKUDAI","KOTA ISKANDAR"],
+  "TEBRAU":           ["TIRAM","PUTERI WANGSA","JOHOR JAYA"],
+  "PLENTONG":         ["PERMAS","JOHOR JAYA","TIRAM"],
+  "SUNGAI TIRAM":     ["TIRAM","PUTERI WANGSA"],
+  "BANDAR JOHOR BAHRU":["LARKIN","STULANG"],
+  "TANJUNG KUPANG":   ["KOTA ISKANDAR","SKUDAI"],
+  "JELUTONG":         ["KOTA ISKANDAR","KEMPAS"],
+  // Daerah Kulai
+  "KULAI":            ["BUKIT PERMAI","BUKIT BATU"],
+  "BANDAR KULAI":     ["BUKIT PERMAI"],
+  "SENAI":            ["SENAI"],
+  "SEDENAK":          ["BUKIT BATU","SENAI"],
+  "BUKIT BATU":       ["BUKIT BATU"],
+  // Daerah Pontian
+  "PONTIAN":          ["PULAI SEBATANG","PEKAN NANAS"],
+  "BENUT":            ["BENUT"],
+  "AYER BALOI":       ["BENUT","PEKAN NANAS"],
+  "AIR MASIN":        ["KUKUP","PULAI SEBATANG"],
+  "API-API":          ["KUKUP"],
+  "JERAM BATU":       ["KUKUP","BENUT"],
+  "PENGKALAN RAJA":   ["PEKAN NANAS"],
+  "RIMBA TERJUN":     ["KUKUP","PULAI SEBATANG"],
+  "SERKAT":           ["KUKUP"],
+  "SUNGAI KARANG":    ["BENUT"],
+  "SUNGAI PINGGAN":   ["BENUT"],
+  // Daerah Kota Tinggi
+  "KOTA TINGGI":      ["JOHOR LAMA","SEDILI","PANTI"],
+  "ULU SUNGAI JOHOR": ["PANTI"],
+  "ULU SUNGAI SEDILI BESAR":["SEDILI"],
+  "JOHOR LAMA":       ["JOHOR LAMA"],
+  "KAMBAU":           ["JOHOR LAMA","PENAWAR"],
+  "PANTAI TIMUR":     ["TANJUNG SURAT","PENAWAR"],
+  "PENGERANG":        ["PENAWAR","TANJUNG SURAT"],
+  "SEDILI BESAR":     ["SEDILI"],
+  "SEDILI KECIL":     ["SEDILI"],
+  "TANJUNG SURAT":    ["TANJUNG SURAT"],
+  // Daerah Batu Pahat
+  "BAGAN":            ["SEMERAH","PENGGARAM"],
+  "CHAAH BAHRU":      ["SEMARANG"],
+  "KAMPUNG BAHRU":    ["PENGGARAM"],
+  "LINAU":            ["SEMERAH"],
+  "LUBOK":            ["SEMARANG","YONG PENG"],
+  "MINYAK BEKU":      ["PENGGARAM","SENGGARANG"],
+  "PESERAI":          ["PENGGARAM","PARIT YAANI"],
+  "SRI GADING":       ["PARIT YAANI","PARIT RAJA"],
+  "SRI MEDAN":        ["SRI MEDAN"],
+  "SIMPANG KANAN":    ["SENGGARANG","RENGIT"],
+  "SIMPANG KIRI":     ["PARIT RAJA","PARIT YAANI"],
+  "SUNGAI KLUANG":    ["RENGIT","SENGGARANG"],
+  "SUNGAI PUNGGOR":   ["RENGIT"],
+  "TANJUNG SEMBRONG": ["SEMARANG","YONG PENG"],
+  // Daerah Kluang
+  "KLUANG":           ["MENGKIBOL","MAHKOTA"],
+  "ULU BENUT":        ["MAHKOTA"],
+  "KAHANG":           ["KAHANG"],
+  "LAYANG-LAYANG":    ["LAYANG-LAYANG"],
+  "MACHAP":           ["MACHAP"],
+  "NIYOR":            ["MAHKOTA","PALOH"],
+  "PALOH":            ["PALOH"],
+  "RENGGAM":          ["MACHAP","LAYANG-LAYANG"],
+  // Daerah Muar
+  "BANDAR MAHARANI":  ["MAHARANI","BENTAYAN"],
+  "AYER HITAM":       ["SUNGAI BALANG"],
+  "BUKIT KEPONG":     ["BUKIT KEPONG"],
+  "JALAN BAKRI":      ["BENTAYAN","BUKIT NANING"],
+  "JORAK":            ["BUKIT PASIR","BUKIT KEPONG"],
+  "LENGA":            ["BUKIT KEPONG"],
+  "PARIT BAKAR":      ["MAHARANI","SIMPANG JERAM"],
+  "PARIT JAWA":       ["SUNGAI BALANG","SIMPANG JERAM"],
+  "SRI MENANTI":      ["BUKIT NANING"],
+  "SUNGAI BALANG":    ["SUNGAI BALANG"],
+  "SUNGAI RAYA":      ["BUKIT PASIR"],
+  "SUNGAI TERAP":     ["BUKIT NANING","BUKIT PASIR"],
+  // Daerah Tangkak
+  "TANGKAK":          ["TANGKAK"],
+  "GRISEK":           ["GAMBIR"],
+  "SEROM":            ["SEROM"],
+  "BUKIT SERAMPANG":  ["GAMBIR","SEROM"],
+  "KESANG":           ["TANGKAK"],
+  "KUNDANG":          ["GAMBIR"],
+  // Daerah Segamat
+  "SUNGAI SEGAMAT":   ["BULOH KASAP","JEMENTAH"],
+  "BEKOK":            ["BEKOK"],
+  "BULOH KASAP":      ["BULOH KASAP"],
+  "CHAAH":            ["BEKOK","TENANG"],
+  "GEMAS":            ["JEMENTAH","PEMANIS"],
+  "GEMEREH":          ["PEMANIS","JEMENTAH"],
+  "JABI":             ["KEMELAH"],
+  "JEMENTAH":         ["JEMENTAH"],
+  "LABIS":            ["TENANG","BEKOK"],
+  "POGOH":            ["KEMELAH","PEMANIS"],
+  "SERMIN":           ["KEMELAH"],
+  // Daerah Mersing
+  "MERSING":          ["TENGGAROH","ENDAU"],
+  "JEMALUANG":        ["TENGGAROH"],
+  "LENGGOR":          ["TENGGAROH","PASIR RAJA"],
+  "PADANG ENDAU":     ["ENDAU"],
+  "PENYABONG":        ["TENGGAROH"],
+  "PULAU AUR":        ["TENGGAROH"],
+  "PULAU BABI":       ["TENGGAROH"],
+  "PULAU PEMANGGIL":  ["TENGGAROH"],
+  "PULAU SIBU":       ["TENGGAROH"],
+  "PULAU TINGGI":     ["TENGGAROH"],
+  "SEMBRONG":         ["KAHANG"],
+  "TENGGAROH":        ["TENGGAROH"],
+  "TENGLU":           ["TENGGAROH"],
+  "TRIANG":           ["ENDAU"]
+};
 
 const ST = { depId: DEPLOYMENT_ID, jenis:'' };
 
@@ -732,16 +846,22 @@ function onDunInput(el, listId) {
 function onDunTamanInput(el) {
   upperNama(el);
   AC.inputId = el.id; AC.listId = 'acListDunT';
+  var dunTag = document.getElementById('dunTamanAuto');
+  if (dunTag) dunTag.textContent = '';   // pengguna edit sendiri -> buang lencana auto
   var q = el.value.trim().toUpperCase();
 
   var daerah = (document.getElementById('fDaerah').value || '').trim().toUpperCase();
   var mukim  = (document.getElementById('fMukim').value  || '').trim().toUpperCase();
 
-  // Bina senarai keutamaan (tanpa duplikat)
+  // Bina senarai keutamaan (tanpa duplikat), ikut turutan:
+  //  1) DUN dalam MUKIM ini (jadual tetap MUKIM_DUN)
+  //  2) DUN yang pernah dipakai utk mukim ini (belajar dari rekod)
+  //  3) DUN yang pernah dipakai utk daerah ini (belajar dari rekod)
   var pri = [], seen = {};
   function tambah(arr){ (arr||[]).forEach(function(d){ if(d && !seen[d]){ seen[d]=true; pri.push(d); } }); }
-  tambah(DUNMAP.byMukim[mukim]);     // paling berkaitan: DUN dalam mukim ini
-  tambah(DUNMAP.byDaerah[daerah]);   // kemudian: DUN dalam daerah ini
+  tambah(MUKIM_DUN[mukim]);          // jadul tetap: DUN dalam mukim ini
+  tambah(DUNMAP.byMukim[mukim]);     // belajar: DUN dalam mukim ini
+  tambah(DUNMAP.byDaerah[daerah]);   // belajar: DUN dalam daerah ini
   // baki 56 DUN (ikut abjad)
   var baki = DUN_JOHOR.filter(function(d){ return !seen[d]; });
 
@@ -861,12 +981,20 @@ function autoFillLokasi(projek) {
   var ref = REF.map[projek];
   var dTag = document.getElementById('daerahAuto');
   var mTag = document.getElementById('mukimAuto');
+  var dunTag = document.getElementById('dunTamanAuto');
   if (ref) {
     if (ref.daerah) { document.getElementById('fDaerah').value = ref.daerah; dTag.textContent = 'auto'; }
     if (ref.mukim)  { document.getElementById('fMukim').value  = ref.mukim;  mTag.textContent = 'auto'; }
+    if (ref.dun) {
+      document.getElementById('fDunTaman').value = ref.dun; dunTag.textContent = 'auto';
+    } else {
+      // Tiada DUN dlm rujukan -> kalau mukim ada HANYA SATU DUN, auto-isi; jika banyak, biar pilih
+      var cadangan = MUKIM_DUN[(ref.mukim||'').toUpperCase()] || [];
+      if (cadangan.length === 1) { document.getElementById('fDunTaman').value = cadangan[0]; dunTag.textContent = 'auto?'; }
+      else { dunTag.textContent = ''; }
+    }
   } else {
-    // tiada rekod -> biar kosong untuk diisi manual
-    dTag.textContent = ''; mTag.textContent = '';
+    dTag.textContent = ''; mTag.textContent = ''; dunTag.textContent = '';
   }
 }
 
@@ -1147,7 +1275,8 @@ function parseRefRows(rows) {
   var cP = header.findIndex(function(h){ return h.indexOf('PROJEK') >= 0; });
   var cM = header.findIndex(function(h){ return h.indexOf('MUKIM') >= 0; });
   var cD = header.findIndex(function(h){ return h.indexOf('DAERAH') >= 0; });
-  if (cP < 0) { cP = 0; cM = 1; cD = 2; }   // fallback: susunan tetap
+  var cDun = header.findIndex(function(h){ return h.indexOf('DUN') >= 0; });   // opsional
+  if (cP < 0) { cP = 0; cM = 1; cD = 2; cDun = 3; }   // fallback: susunan tetap
 
   var out = [];
   for (var r = hIdx + 1; r < rows.length; r++) {
@@ -1157,7 +1286,8 @@ function parseRefRows(rows) {
     out.push({
       p: p,
       m: String(row[cM] || '').trim().toUpperCase(),
-      d: String(row[cD] || '').trim().toUpperCase()
+      d: String(row[cD] || '').trim().toUpperCase(),
+      dun: (cDun >= 0 ? String(row[cDun] || '').trim().toUpperCase() : '')
     });
   }
   return out;
@@ -1168,7 +1298,7 @@ function applyRef(arr) {
   REF.map = {}; REF.list = [];
   arr.forEach(function(it){
     if (!it.p) return;
-    REF.map[it.p] = { mukim: it.m || '', daerah: it.d || '' };
+    REF.map[it.p] = { mukim: it.m || '', daerah: it.d || '', dun: it.dun || '' };
     REF.list.push(it.p);
   });
   REF.list.sort();
@@ -1388,6 +1518,7 @@ function resetAll() {
   document.getElementById('fTarikh').value = defaultTarikh();
   document.getElementById('daerahAuto').textContent = '';
   document.getElementById('mukimAuto').textContent = '';
+  document.getElementById('dunTamanAuto').textContent = '';
   ['acList','acListPsng','acListDunP','acListDunS','acListTaman','acListDunT','acListDaerah','acListMukim'].forEach(function(id){ acClose(id); });
 
   // Kembali ke skrin borang (jenis sama), sedia untuk rekod baharu
