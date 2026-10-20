@@ -731,10 +731,18 @@ function onTamanInput(el) {
   AC.inputId = el.id; AC.listId = 'acListTaman';
   var q = el.value.trim().toUpperCase();
   if (q.length < 1) { acClose('acListTaman'); return; }
+
+  // Gabung sumber: rekod Sheet (AC.taman) + fail Rujukan Projek (REF.list)
+  var pool = {};
+  (AC.taman || []).forEach(function(t){ if (t) pool[t] = true; });
+  (REF.list || []).forEach(function(t){ if (t) pool[t] = true; });
+
   var hits = [];
-  for (var i = 0; i < AC.taman.length && hits.length < 10; i++) {
-    if (AC.taman[i].indexOf(q) >= 0) hits.push(AC.taman[i]);
-  }
+  // keutamaan: bermula dengan carian dahulu, kemudian mengandungi
+  for (var key in pool) if (key.indexOf(q) === 0) hits.push(key);
+  for (var key2 in pool) if (key2.indexOf(q) > 0 && hits.indexOf(key2) < 0) hits.push(key2);
+  hits = hits.slice(0, 10);
+
   AC.whole = true;               // Taman = nilai penuh
   showSuggest(hits, q, 'acListTaman');
 }
