@@ -1474,33 +1474,13 @@ async function doSubmit(tidakLayak) {
     resetAll();
   }
 
-  if (mengemaskini) {
-    // KEMAS KINI guna JSONP supaya kita BOLEH sahkan server betul-betul update.
-    var cbName = 'pkjSave_' + Date.now();
-    var script = document.createElement('script');
-    var done = false;
-    var to = setTimeout(function(){
-      if (done) return; done = true; cleanup();
-      document.getElementById('abar').style.display = 'flex';
-      toast('⚠️ Tiada respons. Pastikan Apps Script sudah deploy versi terkini.');
-    }, 12000);
-    function cleanup(){ clearTimeout(to); try{ delete window[cbName]; }catch(e){ window[cbName]=undefined; } if (script.parentNode) script.parentNode.removeChild(script); }
-    window[cbName] = function(resp){
-      if (done) return; done = true; cleanup();
-      if (resp && resp.ok) selepasBerjaya();
-      else { document.getElementById('abar').style.display='flex'; toast('⚠️ Gagal kemas kini: ' + ((resp&&resp.error)||'tidak diketahui')); }
-    };
-    d.callback = cbName;
-    script.src = 'https://script.google.com/macros/s/' + ST.depId + '/exec?' + new URLSearchParams(d).toString();
-    script.onerror = function(){ if(done) return; done=true; cleanup(); document.getElementById('abar').style.display='flex'; toast('⚠️ Ralat rangkaian semasa kemas kini.'); };
-    document.body.appendChild(script);
-    return;
-  }
-
-  // HANTAR BARU guna no-cors (tak perlu baca balasan)
+  // KEMAS KINI & HANTAR BARU: guna POST + no-cors (stabil, tiada had panjang URL).
+  // POST hantar semua medan dlm body (FormData), jadi Catatan panjang / banyak
+  // medan tak memecahkan permintaan seperti GET/JSONP.
   try {
-    const url = 'https://script.google.com/macros/s/' + ST.depId + '/exec?' + new URLSearchParams(d).toString();
-    await fetch(url, { method:'GET', mode:'no-cors' });
+    var fd = new FormData();
+    for (var key in d) { if (d[key] != null) fd.append(key, d[key]); }
+    await fetch('https://script.google.com/macros/s/' + ST.depId + '/exec', { method:'POST', body:fd, mode:'no-cors' });
     selepasBerjaya();
   } catch(err) {
     document.getElementById('abar').style.display = 'flex';
