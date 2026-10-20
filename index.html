@@ -262,6 +262,22 @@ input.ic-bad  { border-color: var(--danger) !important; }
 
 <!-- SCREEN 1: JENIS + FORM -->
 <div class="screen active" id="s1">
+
+  <!-- CARI / KEMAS KINI REKOD -->
+  <div class="card">
+    <div class="card-ttl">&#128269; Cari Pemohon (Kemas Kini)</div>
+    <div class="ac-wrap">
+      <input type="text" id="fCari" placeholder="Taip Nama atau No. KP pemohon..." autocomplete="off" oninput="onCariInput(this)" onkeydown="cariKeydown(event)">
+      <div class="ac-list" id="cariList"></div>
+    </div>
+    <div id="editBanner" style="display:none" class="alert al-y" style="margin-top:10px">
+      <span>&#9999;&#65039;</span>
+      <div>Mod <strong>KEMAS KINI</strong> &mdash; <span id="editInfo"></span>.
+        <a href="#" onclick="batalEdit();return false" style="color:var(--danger);font-weight:600;margin-left:4px">Batal</a>
+      </div>
+    </div>
+  </div>
+
   <div class="card">
     <div class="card-ttl">&#128196; Jenis Inisiatif</div>
     <div class="jenis-grid">
@@ -813,12 +829,15 @@ function onLokasiInput(el, kind, listId) {
   var q = el.value.trim().toUpperCase();
   if (q.length < 1) { acClose(listId); return; }
 
-  // sumber cadangan: nilai unik dari peta rujukan
+  // sumber cadangan: peta rujukan projek + senarai SPR tetap
   var pool = {};
   for (var p in REF.map) {
     var v = (kind === 'daerah') ? REF.map[p].daerah : REF.map[p].mukim;
     if (v) pool[v] = true;
   }
+  var fixed = (kind === 'daerah') ? DAERAH_LIST : MUKIM_LIST;
+  for (var f = 0; f < fixed.length; f++) pool[fixed[f]] = true;
+
   var hits = [];
   for (var key in pool) if (key.indexOf(q) >= 0) hits.push(key);
   hits.sort(); hits = hits.slice(0, 10);
@@ -846,6 +865,148 @@ function acKeydown(e, inputId, listId) {
     else acClose(listId);
   }
   else if (e.key === 'Escape')    { acClose(listId); }
+}
+
+/* ======== CARI & KEMAS KINI REKOD PEMOHON ======== */
+var EDIT = { active: false, sheet: '', row: 0 };     // keadaan mod kemas kini
+var CARI = { items: [], hi: -1, timer: null, seq: 0 };
+
+function onCariInput(el) {
+  var q = el.value.trim();
+  clearTimeout(CARI.timer);
+  if (q.length < 2) { cariClose(); return; }
+  if (!ST.depId || ST.depId === 'LETAK_DEPLOYMENT_ID_ANDA_DI_SINI') {
+    showCariNote('Tetapkan Deployment ID dahulu (tekan &#9881;).'); return;
+  }
+  showCariNote('Mencari...');
+  CARI.timer = setTimeout(function(){ fetchCari(q); }, 350);
+}
+
+// JSONP: cari rekod di Google Sheet
+function fetchCari(q) {
+  var mySeq = ++CARI.seq;
+  var cbName = 'pkjCari_' + mySeq;
+  var script = document.createElement('script');
+  var timeout = setTimeout(function(){ cleanup(); }, 10000);
+  function cleanup() {
+    clearTimeout(timeout);
+    try { delete window[cbName]; } catch(e){ window[cbName] = undefined; }
+    if (script.parentNode) script.parentNode.removeChild(script);
+  }
+  window[cbName] = function(resp) {
+    cleanup();
+    if (mySeq !== CARI.seq) return;
+    showCariResults((resp && resp.hasil) ? resp.hasil : []);
+  };
+  script.src = 'https://script.google.com/macros/s/' + ST.depId + '/exec'
+             + '?mode=search&q=' + encodeURIComponent(q) + '&callback=' + cbName;
+  script.onerror = function(){ cleanup(); showCariNote('Ralat mencari.'); };
+  document.body.appendChild(script);
+}
+
+function showCariNote(msg) {
+  var box = document.getElementById('cariList');
+  box.innerHTML = '<div class="ac-note">' + msg + '</div>';
+  box.classList.add('open');
+  CARI.items = []; CARI.hi = -1;
+}
+
+function showCariResults(list) {
+  var box = document.getElementById('cariList');
+  CARI.items = list; CARI.hi = -1;
+  if (!list.length) { showCariNote('Tiada rekod sepadan.'); return; }
+  box.innerHTML = list.map(function(o, i) {
+    var num = (i < 9) ? '<span class="ac-num">' + (i+1) + '</span>' : '<span class="ac-num ac-num-x"></span>';
+    var jenis = o._tl ? ('TL · ' + (o.jenis||'')) : o._sheet;
+    return '<div class="ac-item" data-i="' + i + '" onmousedown="pilihRekod(' + i + ')">' +
+      num + '<span><strong>' + (o.nama||'') + '</strong>' +
+      '<span style="display:block;font-size:11px;color:var(--text3)">' + (o.ic||'') + ' · ' + jenis + '</span></span>' +
+      '<span class="ac-tag">&#8629;</span></div>';
+  }).join('');
+  box.classList.add('open');
+}
+
+function cariKeydown(e) {
+  var box = document.getElementById('cariList');
+  if (!box.classList.contains('open') || !CARI.items.length) return;
+  if (e.key >= '1' && e.key <= '9') {
+    var idx = parseInt(e.key,10) - 1;
+    if (idx < CARI.items.length) { e.preventDefault(); pilihRekod(idx); return; }
+  }
+  if (e.key === 'ArrowDown')    { e.preventDefault(); cariHi(CARI.hi + 1); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); cariHi(CARI.hi - 1); }
+  else if (e.key === 'Enter')   { if (CARI.hi >= 0){ e.preventDefault(); pilihRekod(CARI.hi); } }
+  else if (e.key === 'Escape')  { cariClose(); }
+}
+function cariHi(n) {
+  var kids = document.getElementById('cariList').querySelectorAll('.ac-item');
+  if (!kids.length) return;
+  if (n < 0) n = kids.length - 1; if (n >= kids.length) n = 0;
+  CARI.hi = n;
+  kids.forEach(function(k,i){ k.classList.toggle('hi', i===n); });
+  kids[n].scrollIntoView({ block:'nearest' });
+}
+function cariClose() {
+  document.getElementById('cariList').classList.remove('open');
+  CARI.items = []; CARI.hi = -1;
+}
+
+// Pilih rekod -> muat ke borang + masuk mod kemas kini
+function pilihRekod(i) {
+  if (i < 0 || i >= CARI.items.length) return;
+  var o = CARI.items[i];
+  cariClose();
+  document.getElementById('fCari').value = '';
+
+  // Pilih jenis (dari sheet / jenis TL)
+  var jenis = o._tl ? String(o.jenis||'').toUpperCase() : o._sheet;
+  if (['BBR','BMR','BSR'].indexOf(jenis) < 0) jenis = 'BBR';
+  var card = document.querySelector('.jk.' + jenis.toLowerCase());
+  if (card) pickJenis(jenis, card);
+
+  // Isi semua medan
+  document.getElementById('fNama').value       = o.nama || '';
+  document.getElementById('fIc').value         = o.ic || '';
+  document.getElementById('fDunPemohon').value = o.dunPemohon || '';
+  document.getElementById('fTel').value        = o.tel || '';
+  document.getElementById('fEmel').value       = o.emel || '';
+  document.getElementById('fNamaPsng').value   = o.namaPsng || '';
+  document.getElementById('fIcPsng').value     = o.icPsng || '';
+  document.getElementById('fDunPsng').value    = o.dunPsng || '';
+  document.getElementById('fTaman').value      = o.taman || '';
+  document.getElementById('fHarga').value      = o.harga || '';
+  document.getElementById('fDaerah').value     = o.daerah || '';
+  document.getElementById('fMukim').value      = o.mukim || '';
+  document.getElementById('fDunTaman').value   = o.dunTaman || '';
+  if (o.tarikh) document.getElementById('fTarikh').value = isoFromDisplay(o.tarikh);
+  document.getElementById('fCatatan').value    = o.catatan || '';
+
+  // Masuk mod kemas kini
+  EDIT.active = true; EDIT.sheet = o._sheet; EDIT.row = o._row;
+  document.getElementById('editBanner').style.display = 'flex';
+  document.getElementById('editInfo').textContent =
+    (o.nama || 'rekod') + ' (' + o._sheet + ', baris ' + o._row + ')';
+  // tukar teks butang hantar
+  var bh = document.getElementById('btnHantar');
+  if (bh) bh.innerHTML = 'Kemas Kini &#10003;';
+  vibrate(15);
+  setTimeout(function(){ document.getElementById('formCard').scrollIntoView({behavior:'smooth',block:'start'}); }, 100);
+}
+
+// Tukar "21/05/2026" -> "2026-05-21" untuk input date
+function isoFromDisplay(s) {
+  var m = String(s||'').match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})$/);
+  if (m) return m[3] + '-' + ('0'+m[2]).slice(-2) + '-' + ('0'+m[1]).slice(-2);
+  return '';
+}
+
+function batalEdit() {
+  EDIT.active = false; EDIT.sheet = ''; EDIT.row = 0;
+  document.getElementById('editBanner').style.display = 'none';
+  var bh = document.getElementById('btnHantar');
+  if (bh) bh.innerHTML = 'Hantar (Layak) &#10003;';
+  resetAll();
+  toast('Mod kemas kini dibatalkan');
 }
 
 /* ======== RUJUKAN PROJEK (upload Excel -> peta Mukim/Daerah) ======== */
@@ -879,12 +1040,13 @@ function onRefFile(input) {
 // Tukar baris mentah -> [{p,m,d}]. Kenal pasti lajur ikut header.
 function parseRefRows(rows) {
   if (!rows || !rows.length) return [];
-  // cari baris header (ada perkataan PROJEK)
-  var hIdx = 0;
-  for (var i = 0; i < Math.min(rows.length, 10); i++) {
+  // cari baris header: ada PROJEK DAN (MUKIM atau DAERAH) — elak salah ambil baris tajuk
+  var hIdx = -1;
+  for (var i = 0; i < Math.min(rows.length, 15); i++) {
     var joined = (rows[i] || []).join('|').toUpperCase();
-    if (joined.indexOf('PROJEK') >= 0) { hIdx = i; break; }
+    if (joined.indexOf('PROJEK') >= 0 && (joined.indexOf('MUKIM') >= 0 || joined.indexOf('DAERAH') >= 0)) { hIdx = i; break; }
   }
+  if (hIdx < 0) hIdx = 0;   // fallback: anggap baris pertama header
   var header = (rows[hIdx] || []).map(function(x){ return String(x||'').trim().toUpperCase(); });
   var cP = header.findIndex(function(h){ return h.indexOf('PROJEK') >= 0; });
   var cM = header.findIndex(function(h){ return h.indexOf('MUKIM') >= 0; });
@@ -967,27 +1129,16 @@ function loadRef() {
   document.body.appendChild(script);
 }
 
-/* ======== DAERAH / MUKIM DROPDOWN ======== */
-function buildDaerah() {
-  const sel = document.getElementById('fDaerah');
-  if (sel.options.length > 1) return;
-  Object.keys(DAERAH_MUKIM).sort().forEach(d => {
-    const o = document.createElement('option');
-    o.value = d; o.textContent = d;
-    sel.appendChild(o);
+/* ======== SENARAI RATA DAERAH & MUKIM (sumber cadangan tetap, SPR) ======== */
+var DAERAH_LIST = Object.keys(DAERAH_MUKIM).map(function(d){ return d.toUpperCase(); }).sort();
+var MUKIM_LIST = (function(){
+  var set = {};
+  Object.keys(DAERAH_MUKIM).forEach(function(d){
+    DAERAH_MUKIM[d].forEach(function(m){ set[m.toUpperCase()] = true; });
   });
-}
-function loadMukim() {
-  const d = document.getElementById('fDaerah').value;
-  const sel = document.getElementById('fMukim');
-  sel.innerHTML = '<option value="">-- Pilih Mukim --</option>';
-  if (!d || !DAERAH_MUKIM[d]) return;
-  DAERAH_MUKIM[d].slice().sort().forEach(m => {
-    const o = document.createElement('option');
-    o.value = m; o.textContent = m;
-    sel.appendChild(o);
-  });
-}
+  return Object.keys(set).sort();
+})();
+function buildDaerah() { /* tiada dropdown lagi — Daerah/Mukim kini input bebas */ }
 
 /* ======== FORM HELPERS ======== */
 const v = id => document.getElementById(id).value.trim();
@@ -1054,8 +1205,15 @@ async function doSubmit(tidakLayak) {
 
   d.sheet = tidakLayak ? 'TIDAK LAYAK' : ST.jenis;
 
+  // Mod KEMAS KINI: sertakan sheet asal + nombor baris untuk timpa
+  var mengemaskini = EDIT.active;
+  if (mengemaskini) {
+    d.editSheet = EDIT.sheet;
+    d.editRow   = EDIT.row;
+  }
+
   document.getElementById('abar').style.display = 'none';
-  toast('Menghantar data...');
+  toast(mengemaskini ? 'Mengemas kini rekod...' : 'Menghantar data...');
 
   try {
     const url = 'https://script.google.com/macros/s/' + ST.depId + '/exec?' + new URLSearchParams(d).toString();
@@ -1077,9 +1235,18 @@ async function doSubmit(tidakLayak) {
 
     vibrate([30,60,30]);
     var nama = d.nama || 'pemohon';
-    toast(tidakLayak
-      ? '⛔ ' + nama + ' → TIDAK LAYAK (' + ST.jenis + ')'
-      : '✅ ' + nama + ' → ' + ST.jenis + ' berjaya dihantar');
+    if (mengemaskini) {
+      toast('✅ ' + nama + ' → rekod dikemas kini');
+    } else {
+      toast(tidakLayak
+        ? '⛔ ' + nama + ' → TIDAK LAYAK (' + ST.jenis + ')'
+        : '✅ ' + nama + ' → ' + ST.jenis + ' berjaya dihantar');
+    }
+    // Keluar mod edit selepas simpan
+    EDIT.active = false; EDIT.sheet = ''; EDIT.row = 0;
+    document.getElementById('editBanner').style.display = 'none';
+    var bh0 = document.getElementById('btnHantar');
+    if (bh0) bh0.innerHTML = 'Hantar (Layak) &#10003;';
     resetAll();   // terus kembali ke borang kosong (jenis sama), sedia rekod baru
   } catch(err) {
     document.getElementById('abar').style.display = 'flex';
@@ -1090,14 +1257,14 @@ async function doSubmit(tidakLayak) {
 /* ======== RESET — kosongkan medan tetapi KEKAL jenis inisiatif yang sama ======== */
 function resetAll() {
   // Kosongkan medan sahaja; ST.jenis TIDAK diubah -> borang kekal jenis sama
-  ['fNama','fIc','fDunPemohon','fTel','fEmel','fNamaPsng','fIcPsng','fDunPsng','fTaman','fHarga','fDunTaman','fCatatan'].forEach(id => document.getElementById(id).value = '');
+  ['fNama','fIc','fDunPemohon','fTel','fEmel','fNamaPsng','fIcPsng','fDunPsng','fTaman','fHarga','fDaerah','fMukim','fDunTaman','fCatatan'].forEach(id => document.getElementById(id).value = '');
   ['icHint','icPsngHint'].forEach(id => { var h=document.getElementById(id); h.textContent=''; h.className='ic-hint'; });
   document.getElementById('fIc').classList.remove('ic-bad');
   document.getElementById('fIcPsng').classList.remove('ic-bad');
   document.getElementById('fTarikh').value = '2026-05-21';
-  document.getElementById('fDaerah').value = '';
-  document.getElementById('fMukim').innerHTML = '<option value="">-- Pilih Mukim --</option>';
-  ['acList','acListPsng','acListDunP','acListDunS','acListTaman','acListDunT'].forEach(function(id){ acClose(id); });
+  document.getElementById('daerahAuto').textContent = '';
+  document.getElementById('mukimAuto').textContent = '';
+  ['acList','acListPsng','acListDunP','acListDunS','acListTaman','acListDunT','acListDaerah','acListMukim'].forEach(function(id){ acClose(id); });
 
   // Kembali ke skrin borang (jenis sama), sedia untuk rekod baharu
   showS(1);
