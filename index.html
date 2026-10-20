@@ -1238,7 +1238,7 @@ function onRefFile(input) {
     try {
       var wb = XLSX.read(new Uint8Array(ev.target.result), { type:'array' });
       // Baca SEMUA sheet dalam fail, gabung + buang duplikat projek
-      var seen = {}, gabung = [];
+      var map = {};    // projek -> {p,m,d,dun}, gabung silang-sheet
       var nSheet = 0;
       wb.SheetNames.forEach(function(nm){
         var ws = wb.Sheets[nm];
@@ -1247,12 +1247,33 @@ function onRefFile(input) {
         var parsed = parseRefRows(rows);
         if (parsed.length) nSheet++;
         parsed.forEach(function(it){
-          if (it.p && !seen[it.p]) { seen[it.p] = true; gabung.push(it); }
+          if (!it.p) return;
+          if (!map[it.p]) { map[it.p] = { p:it.p, m:it.m||'', d:it.d||'', dun:it.dun||'' }; }
+          else {
+            // isi medan KOSONG dari sheet lain (gabung silang-sheet)
+            if (!map[it.p].m && it.m)   map[it.p].m = it.m;
+            if (!map[it.p].d && it.d)   map[it.p].d = it.d;
+            if (!map[it.p].dun && it.dun) map[it.p].dun = it.dun;
+          }
         });
       });
+
+      // Auto-isi DAERAH dari MUKIM bila daerah kosong (guna peta tetap)
+      var isiDaerah = 0;
+      for (var pk in map) {
+        if (!map[pk].d && map[pk].m) {
+          var dr = MUKIM_DAERAH[normMukim(map[pk].m)];
+          if (dr) { map[pk].d = dr; isiDaerah++; }
+        }
+      }
+
+      var gabung = Object.keys(map).map(function(k){ return map[k]; });
       if (!gabung.length) { status.textContent = '⚠️ Tiada data sah dijumpai dalam mana-mana sheet.'; return; }
+      var takDaerah = gabung.filter(function(x){ return !x.d; }).length;
       REF.pending = gabung;
-      status.textContent = '✓ ' + gabung.length + ' projek dibaca dari ' + nSheet + ' sheet. Pilih cara simpan:';
+      status.textContent = '✓ ' + gabung.length + ' projek dari ' + nSheet + ' sheet'
+        + (isiDaerah ? ' · ' + isiDaerah + ' daerah auto-isi' : '')
+        + (takDaerah ? ' · ' + takDaerah + ' tiada daerah' : '') + '. Pilih cara simpan:';
       document.getElementById('refActions').style.display = 'flex';
     } catch(err) {
       status.textContent = '⚠️ Gagal baca fail. Pastikan format Excel/CSV betul.';
@@ -1363,6 +1384,27 @@ var MUKIM_LIST = (function(){
     DAERAH_MUKIM[d].forEach(function(m){ set[m.toUpperCase()] = true; });
   });
   return Object.keys(set).sort();
+})();
+// Normalkan ejaan mukim supaya padanan lebih longgar
+// (SG -> SUNGAI, AYER -> AIR, buang "MUKIM"/"BANDAR"/"PEKAN", dll)
+function normMukim(s) {
+  s = String(s || '').toUpperCase().trim();
+  s = s.replace(/[.,]/g, ' ');
+  s = s.replace(/\bMUKIM\b/g, ' ').replace(/\bBANDAR\b/g, ' ').replace(/\bPEKAN\b/g, ' ');
+  s = s.replace(/\bSG\b/g, 'SUNGAI').replace(/\bSG\s/g, 'SUNGAI ');
+  s = s.replace(/\bAYER\b/g, 'AIR');
+  s = s.replace(/\bKECHIL\b/g, 'KECIL');
+  s = s.replace(/\bSEMBERONG\b/g, 'SEMBRONG');
+  s = s.replace(/\s+/g, ' ').trim();
+  return s;
+}
+// Peta MUKIM (dinormalkan) -> DAERAH
+var MUKIM_DAERAH = (function(){
+  var map = {};
+  Object.keys(DAERAH_MUKIM).forEach(function(d){
+    DAERAH_MUKIM[d].forEach(function(m){ map[normMukim(m)] = d.toUpperCase(); });
+  });
+  return map;
 })();
 function buildDaerah() { /* tiada dropdown lagi — Daerah/Mukim kini input bebas */ }
 
