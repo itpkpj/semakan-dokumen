@@ -326,26 +326,52 @@ input.ic-bad  { border-color: var(--danger) !important; }
           <input type="text" id="fIcPsng" placeholder="000000-00-0000" inputmode="numeric" autocomplete="off" maxlength="14" oninput="formatIC(this,'icPsngHint')">
           <div class="ic-hint" id="icPsngHint"></div>
         </div>
+        <div class="field">
+          <label class="fl">DUN Mengundi Pasangan</label>
+          <div class="ac-wrap">
+            <input type="text" id="fDunPsng" placeholder="Jika berkahwin" autocomplete="off" oninput="onDunInput(this,'acListDunS')" onkeydown="acKeydown(event,'fDunPsng','acListDunS')" onblur="acBlur('acListDunS')">
+            <div class="ac-list" id="acListDunS"></div>
+          </div>
+        </div>
       </div>
       <div class="frow">
         <div class="field">
           <label class="fl">Emel <span class="req">*</span></label>
-          <input type="text" id="fEmel" placeholder="nama@gmail.com" inputmode="email" autocomplete="email">
+          <input type="text" id="fEmel" placeholder="nama (tekan Tab = +@gmail.com)" inputmode="email" autocomplete="email" onkeydown="emelKeydown(event)">
         </div>
         <div class="field">
-          <label class="fl">Tarikh Penerimaan Kaunter <span class="req">*</span></label>
-          <input type="date" id="fTarikh" value="2026-05-21">
+          <label class="fl">DUN Mengundi Pemohon</label>
+          <div class="ac-wrap">
+            <input type="text" id="fDunPemohon" placeholder="cth: TIRAM" autocomplete="off" oninput="onDunInput(this,'acListDunP')" onkeydown="acKeydown(event,'fDunPemohon','acListDunP')" onblur="acBlur('acListDunP')">
+            <div class="ac-list" id="acListDunP"></div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- B: Maklumat Harta -->
+    <!-- B: Maklumat Harta / Rumah -->
     <div class="fsec">
       <div class="fsec-ttl" id="ttlB">B. Maklumat Harta</div>
       <div class="frow frow1">
         <div class="field">
+          <label class="fl" id="tamanLbl">Nama Taman / Projek</label>
+          <div class="ac-wrap">
+            <input type="text" id="fTaman" placeholder="cth: ECO-BOTANI 3" autocomplete="off" oninput="onTamanInput(this)" onkeydown="acKeydown(event,'fTaman','acListTaman')" onblur="acBlur('acListTaman')">
+            <div class="ac-list" id="acListTaman"></div>
+          </div>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="field">
           <label class="fl" id="hargaLbl">Harga Rumah (RM) <span class="req">*</span></label>
           <input type="number" id="fHarga" placeholder="cth: 250000" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label class="fl">DUN Kawasan Taman / Projek</label>
+          <div class="ac-wrap">
+            <input type="text" id="fDunTaman" placeholder="cth: KOTA ISKANDAR" autocomplete="off" oninput="onDunInput(this,'acListDunT')" onkeydown="acKeydown(event,'fDunTaman','acListDunT')" onblur="acBlur('acListDunT')">
+            <div class="ac-list" id="acListDunT"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -448,6 +474,17 @@ const DAERAH_MUKIM = {
 };
 
 /* ======== STATE ======== */
+/* ======== SENARAI 56 DUN JOHOR (terkini) ======== */
+const DUN_JOHOR = [
+  "BULOH KASAP","JEMENTAH","PEMANIS","KEMELAH","TENANG","BEKOK","BUKIT KEPONG","BUKIT PASIR",
+  "GAMBIR","TANGKAK","SEROM","BENTAYAN","SIMPANG JERAM","BUKIT NANING","MAHARANI","SUNGAI BALANG",
+  "SEMERAH","SRI MEDAN","YONG PENG","SEMARANG","PARIT YAANI","PARIT RAJA","PENGGARAM","SENGGARANG",
+  "RENGIT","MACHAP","LAYANG-LAYANG","MENGKIBOL","MAHKOTA","PALOH","KAHANG","ENDAU","TENGGAROH",
+  "PANTI","PASIR RAJA","SEDILI","JOHOR LAMA","PENAWAR","TANJUNG SURAT","TIRAM","PUTERI WANGSA",
+  "JOHOR JAYA","PERMAS","LARKIN","STULANG","PERLING","KEMPAS","SKUDAI","KOTA ISKANDAR",
+  "BUKIT PERMAI","BUKIT BATU","SENAI","BENUT","PULAI SEBATANG","PEKAN NANAS","KUKUP"
+];
+
 const ST = { depId: DEPLOYMENT_ID, jenis:'' };
 
 /* ======== NAVIGATION ======== */
@@ -540,7 +577,7 @@ function upperNama(el) {
 }
 
 /* ======== AUTOSUGGEST NAMA — cache tempatan, tapis SERTA-MERTA ======== */
-var AC = { items: [], hi: -1, words: [], loaded: false, inputId: 'fNama', listId: 'acList' };
+var AC = { items: [], hi: -1, words: [], taman: [], loaded: false, whole: false, inputId: 'fNama', listId: 'acList' };
 
 // Ambil perkataan TERAKHIR yang sedang ditaip (selepas ruang terakhir)
 function lastWord(val) {
@@ -570,11 +607,28 @@ function loadWords(onDone) {
   window[cbName] = function(resp) {
     AC.words = (resp && resp.words) ? resp.words : [];
     AC.loaded = true;
+    loadTaman();                 // muat juga senarai Nama Taman/Projek
     finish(true, AC.words.length);
   };
   script.src = 'https://script.google.com/macros/s/' + ST.depId + '/exec'
              + '?mode=allwords&callback=' + cbName;
   script.onerror = function(){ finish(false, 0); };
+  document.body.appendChild(script);
+}
+
+// Muat turun senarai Nama Taman/Projek (untuk suggest medan Taman)
+function loadTaman() {
+  if (!ST.depId || ST.depId === 'LETAK_DEPLOYMENT_ID_ANDA_DI_SINI') return;
+  var cbName = 'pkjTaman_' + Date.now();
+  var script = document.createElement('script');
+  window[cbName] = function(resp) {
+    AC.taman = (resp && resp.taman) ? resp.taman : [];
+    try { delete window[cbName]; } catch(e){ window[cbName] = undefined; }
+    if (script.parentNode) script.parentNode.removeChild(script);
+  };
+  script.src = 'https://script.google.com/macros/s/' + ST.depId + '/exec'
+             + '?mode=alltaman&callback=' + cbName;
+  script.onerror = function(){ if (script.parentNode) script.parentNode.removeChild(script); };
   document.body.appendChild(script);
 }
 
@@ -601,7 +655,54 @@ function onNamaInput(el, listId) {
   for (var i = 0; i < AC.words.length && hits.length < 10; i++) {
     if (AC.words[i].indexOf(w) === 0) hits.push(AC.words[i]);
   }
+  AC.whole = false;              // nama = perkataan demi perkataan
   showSuggest(hits, w, listId);
+}
+
+/* ======== DUN: suggest dari senarai tetap 56 DUN Johor ======== */
+function onDunInput(el, listId) {
+  upperNama(el);
+  AC.inputId = el.id; AC.listId = listId;
+  var q = el.value.trim().toUpperCase();
+  if (q.length < 1) { acClose(listId); return; }
+  var hits = [];
+  // keutamaan: yang BERMULA dengan carian dahulu, kemudian yang MENGANDUNGI
+  for (var i = 0; i < DUN_JOHOR.length; i++) if (DUN_JOHOR[i].indexOf(q) === 0) hits.push(DUN_JOHOR[i]);
+  for (var j = 0; j < DUN_JOHOR.length; j++) {
+    var d = DUN_JOHOR[j];
+    if (d.indexOf(q) > 0 && hits.indexOf(d) < 0) hits.push(d);
+  }
+  hits = hits.slice(0, 10);
+  AC.whole = true;               // DUN = nilai penuh (ganti seluruh kotak)
+  showSuggest(hits, q, listId);
+}
+
+/* ======== TAMAN: suggest dari cache Google Sheet ======== */
+function onTamanInput(el) {
+  upperNama(el);
+  AC.inputId = el.id; AC.listId = 'acListTaman';
+  var q = el.value.trim().toUpperCase();
+  if (q.length < 1) { acClose('acListTaman'); return; }
+  var hits = [];
+  for (var i = 0; i < AC.taman.length && hits.length < 10; i++) {
+    if (AC.taman[i].indexOf(q) >= 0) hits.push(AC.taman[i]);
+  }
+  AC.whole = true;               // Taman = nilai penuh
+  showSuggest(hits, q, 'acListTaman');
+}
+
+/* ======== EMEL: tekan Tab -> auto tambah @gmail.com ======== */
+function emelKeydown(e) {
+  if (e.key !== 'Tab' || e.shiftKey) return;
+  var el = e.target;
+  var v = el.value.trim();
+  if (v && v.indexOf('@') < 0) {   // belum ada @ -> lengkapkan dengan @gmail.com
+    e.preventDefault();
+    el.value = v + '@gmail.com';
+    // gerak fokus ke medan seterusnya secara manual (sebab Tab dihalang)
+    var nx = document.getElementById('fDunPemohon');
+    if (nx) nx.focus();
+  }
 }
 
 function showSuggest(names, q, listId) {
@@ -647,13 +748,18 @@ function acPick(i) {
   var el = document.getElementById(AC.inputId);
   var word = AC.items[i].toUpperCase();
 
-  // Ganti HANYA perkataan terakhir, kekalkan perkataan sebelumnya
-  var parts = el.value.split(/\s+/);
-  parts[parts.length - 1] = word;
-  el.value = parts.join(' ') + ' ';
+  if (AC.whole) {
+    // DUN / Taman: ganti SELURUH nilai (pilihan penuh)
+    el.value = word;
+  } else {
+    // Nama: ganti HANYA perkataan terakhir, kekalkan yang sebelumnya
+    var parts = el.value.split(/\s+/);
+    parts[parts.length - 1] = word;
+    el.value = parts.join(' ') + ' ';
+  }
 
   acClose(AC.listId);
-  el.focus();                 // kekal di medan sama — teruskan taip perkataan lain
+  el.focus();
 }
 
 function acKeydown(e, inputId, listId) {
@@ -712,18 +818,22 @@ function fmtDate(iso) {
 
 function getForm() {
   return {
-    jenis: ST.jenis,
-    nama:     v('fNama'),
-    ic:       v('fIc'),
-    namaPsng: v('fNamaPsng'),
-    icPsng:   v('fIcPsng'),
-    tarikh:   fmtDate(v('fTarikh')),
-    emel:     v('fEmel'),
-    tel:      v('fTel'),
-    harga:    v('fHarga'),
-    daerah:   v('fDaerah'),
-    mukim:    v('fMukim'),
-    catatan:  v('fCatatan')
+    jenis:      ST.jenis,
+    nama:       v('fNama'),
+    ic:         v('fIc'),
+    dunPemohon: v('fDunPemohon'),
+    tel:        v('fTel'),
+    emel:       v('fEmel'),
+    namaPsng:   v('fNamaPsng'),
+    icPsng:     v('fIcPsng'),
+    dunPsng:    v('fDunPsng'),
+    taman:      v('fTaman'),
+    harga:      v('fHarga'),
+    daerah:     v('fDaerah'),
+    mukim:      v('fMukim'),
+    dunTaman:   v('fDunTaman'),
+    tarikh:     fmtDate(v('fTarikh')),
+    catatan:    v('fCatatan')
   };
 }
 
@@ -797,14 +907,14 @@ async function doSubmit(tidakLayak) {
 /* ======== RESET — kosongkan medan tetapi KEKAL jenis inisiatif yang sama ======== */
 function resetAll() {
   // Kosongkan medan sahaja; ST.jenis TIDAK diubah -> borang kekal jenis sama
-  ['fNama','fIc','fNamaPsng','fIcPsng','fEmel','fTel','fHarga','fCatatan'].forEach(id => document.getElementById(id).value = '');
+  ['fNama','fIc','fDunPemohon','fTel','fEmel','fNamaPsng','fIcPsng','fDunPsng','fTaman','fHarga','fDunTaman','fCatatan'].forEach(id => document.getElementById(id).value = '');
   ['icHint','icPsngHint'].forEach(id => { var h=document.getElementById(id); h.textContent=''; h.className='ic-hint'; });
   document.getElementById('fIc').classList.remove('ic-bad');
   document.getElementById('fIcPsng').classList.remove('ic-bad');
   document.getElementById('fTarikh').value = '2026-05-21';
   document.getElementById('fDaerah').value = '';
   document.getElementById('fMukim').innerHTML = '<option value="">-- Pilih Mukim --</option>';
-  acClose('acList'); acClose('acListPsng');
+  ['acList','acListPsng','acListDunP','acListDunS','acListTaman','acListDunT'].forEach(function(id){ acClose(id); });
 
   // Kembali ke skrin borang (jenis sama), sedia untuk rekod baharu
   showS(1);
