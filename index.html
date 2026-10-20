@@ -416,9 +416,15 @@ input.ic-bad  { border-color: var(--danger) !important; }
       </div>
     </div>
 
-    <!-- Catatan -->
+    <!-- Tarikh & Catatan -->
     <div class="fsec">
-      <div class="fsec-ttl">Catatan</div>
+      <div class="fsec-ttl">Tarikh &amp; Catatan</div>
+      <div class="frow frow1">
+        <div class="field">
+          <label class="fl">Tarikh Penerimaan Kaunter <span class="req">*</span></label>
+          <input type="date" id="fTarikh" value="2026-05-21">
+        </div>
+      </div>
       <div class="frow frow1">
         <div class="field">
           <label class="fl" id="catatanLbl">Catatan</label>
@@ -1141,7 +1147,7 @@ var MUKIM_LIST = (function(){
 function buildDaerah() { /* tiada dropdown lagi — Daerah/Mukim kini input bebas */ }
 
 /* ======== FORM HELPERS ======== */
-const v = id => document.getElementById(id).value.trim();
+const v = id => { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
 
 // Tukar "2026-05-21" -> "21/05/2026" untuk paparan Sheet
 function fmtDate(iso) {
@@ -1215,11 +1221,10 @@ async function doSubmit(tidakLayak) {
   document.getElementById('abar').style.display = 'none';
   toast(mengemaskini ? 'Mengemas kini rekod...' : 'Menghantar data...');
 
-  try {
-    const url = 'https://script.google.com/macros/s/' + ST.depId + '/exec?' + new URLSearchParams(d).toString();
-    await fetch(url, { method:'GET', mode:'no-cors' });
+  var nama = d.nama || 'pemohon';
 
-    // (a) Tambah segera ke cache tempatan supaya suggest terus ada tanpa tunggu
+  function selepasBerjaya() {
+    // Tambah perkataan nama ke cache & muat semula senarai di latar belakang
     [d.nama, d.namaPsng].forEach(function(nm){
       if (!nm) return;
       nm.toUpperCase().split(/\s+/).forEach(function(w){
@@ -1227,27 +1232,48 @@ async function doSubmit(tidakLayak) {
       });
     });
     AC.words.sort();
-
-    // (b) Muat semula senarai PENUH dari Google Sheet di latar belakang
-    //     supaya cache selari dgn sheet (termasuk rekod pengguna lain).
-    //     Jeda sedikit supaya baris baharu sempat ditulis dulu.
-    setTimeout(function(){ loadWords(function(){ /* senyap */ }); }, 1200);
+    setTimeout(function(){ loadWords(function(){}); }, 1200);
 
     vibrate([30,60,30]);
-    var nama = d.nama || 'pemohon';
-    if (mengemaskini) {
-      toast('✅ ' + nama + ' → rekod dikemas kini');
-    } else {
-      toast(tidakLayak
-        ? '⛔ ' + nama + ' → TIDAK LAYAK (' + ST.jenis + ')'
-        : '✅ ' + nama + ' → ' + ST.jenis + ' berjaya dihantar');
-    }
-    // Keluar mod edit selepas simpan
+    if (mengemaskini)      toast('✅ ' + nama + ' → rekod dikemas kini');
+    else if (tidakLayak)   toast('⛔ ' + nama + ' → TIDAK LAYAK (' + ST.jenis + ')');
+    else                   toast('✅ ' + nama + ' → ' + ST.jenis + ' berjaya dihantar');
+
     EDIT.active = false; EDIT.sheet = ''; EDIT.row = 0;
     document.getElementById('editBanner').style.display = 'none';
     var bh0 = document.getElementById('btnHantar');
     if (bh0) bh0.innerHTML = 'Hantar (Layak) &#10003;';
-    resetAll();   // terus kembali ke borang kosong (jenis sama), sedia rekod baru
+    resetAll();
+  }
+
+  if (mengemaskini) {
+    // KEMAS KINI guna JSONP supaya kita BOLEH sahkan server betul-betul update.
+    var cbName = 'pkjSave_' + Date.now();
+    var script = document.createElement('script');
+    var done = false;
+    var to = setTimeout(function(){
+      if (done) return; done = true; cleanup();
+      document.getElementById('abar').style.display = 'flex';
+      toast('⚠️ Tiada respons. Pastikan Apps Script sudah deploy versi terkini.');
+    }, 12000);
+    function cleanup(){ clearTimeout(to); try{ delete window[cbName]; }catch(e){ window[cbName]=undefined; } if (script.parentNode) script.parentNode.removeChild(script); }
+    window[cbName] = function(resp){
+      if (done) return; done = true; cleanup();
+      if (resp && resp.ok) selepasBerjaya();
+      else { document.getElementById('abar').style.display='flex'; toast('⚠️ Gagal kemas kini: ' + ((resp&&resp.error)||'tidak diketahui')); }
+    };
+    d.callback = cbName;
+    script.src = 'https://script.google.com/macros/s/' + ST.depId + '/exec?' + new URLSearchParams(d).toString();
+    script.onerror = function(){ if(done) return; done=true; cleanup(); document.getElementById('abar').style.display='flex'; toast('⚠️ Ralat rangkaian semasa kemas kini.'); };
+    document.body.appendChild(script);
+    return;
+  }
+
+  // HANTAR BARU guna no-cors (tak perlu baca balasan)
+  try {
+    const url = 'https://script.google.com/macros/s/' + ST.depId + '/exec?' + new URLSearchParams(d).toString();
+    await fetch(url, { method:'GET', mode:'no-cors' });
+    selepasBerjaya();
   } catch(err) {
     document.getElementById('abar').style.display = 'flex';
     toast('Ralat pengiriman. Semak sambungan internet.');
