@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Key-In PKJ">
 <title>Sistem Key-In PKJ</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
 
@@ -133,6 +134,8 @@ input.ic-bad  { border-color: var(--danger) !important; }
 .ac-num { flex-shrink: 0; width: 20px; height: 20px; border-radius: 5px; background: var(--surface2); color: var(--text2); font-size: 11px; font-weight: 700; font-family: 'DM Mono', monospace; display: flex; align-items: center; justify-content: center; }
 .ac-item.hi .ac-num { background: var(--accent); color: #fff; }
 .ac-num-x { background: transparent; }
+.auto-tag { font-size: 9px; font-weight: 700; color: var(--accent); background: var(--accent-lt); padding: 1px 6px; border-radius: 4px; margin-left: 4px; font-family: 'DM Mono', monospace; }
+.auto-tag:empty { display: none; }
 .ac-note { padding: 9px 13px; font-size: 11px; color: var(--text3); text-align: center; }
 
 /* BUTTONS */
@@ -378,17 +381,21 @@ input.ic-bad  { border-color: var(--danger) !important; }
 
     <!-- Lokasi -->
     <div class="fsec">
-      <div class="fsec-ttl">Lokasi <span style="font-weight:400;text-transform:none;letter-spacing:0">(rujukan SPR)</span></div>
+      <div class="fsec-ttl">Lokasi <span style="font-weight:400;text-transform:none;letter-spacing:0">(auto dari projek &middot; boleh edit)</span></div>
       <div class="frow">
         <div class="field">
-          <label class="fl">Daerah</label>
-          <select id="fDaerah" onchange="loadMukim()">
-            <option value="">-- Pilih Daerah --</option>
-          </select>
+          <label class="fl">Daerah <span id="daerahAuto" class="auto-tag"></span></label>
+          <div class="ac-wrap">
+            <input type="text" id="fDaerah" placeholder="cth: JOHOR BAHRU" autocomplete="off" oninput="onLokasiInput(this,'daerah','acListDaerah')" onkeydown="acKeydown(event,'fDaerah','acListDaerah')" onblur="acBlur('acListDaerah')">
+            <div class="ac-list" id="acListDaerah"></div>
+          </div>
         </div>
         <div class="field">
-          <label class="fl">Mukim</label>
-          <select id="fMukim"><option value="">-- Pilih Mukim --</option></select>
+          <label class="fl">Mukim <span id="mukimAuto" class="auto-tag"></span></label>
+          <div class="ac-wrap">
+            <input type="text" id="fMukim" placeholder="cth: PULAI" autocomplete="off" oninput="onLokasiInput(this,'mukim','acListMukim')" onkeydown="acKeydown(event,'fMukim','acListMukim')" onblur="acBlur('acListMukim')">
+            <div class="ac-list" id="acListMukim"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -446,6 +453,23 @@ input.ic-bad  { border-color: var(--danger) !important; }
       <button class="btn btn-o" style="flex:1" onclick="closeModal()">Batal</button>
       <button class="btn btn-g" style="flex:1.5" onclick="saveNewDep()">Guna ID Ini &#10003;</button>
     </div>
+
+    <div class="divider"></div>
+
+    <!-- UPLOAD RUJUKAN PROJEK -->
+    <div class="modal-title" style="font-size:15px">&#128193; Rujukan Projek (Mukim &amp; Daerah)</div>
+    <div class="alert al-g" style="margin-bottom:12px">
+      <span>&#8505;&#65039;</span>
+      <div>Upload fail Excel: lajur <strong>NAMA PROJEK, MUKIM, DAERAH</strong>. Bila pilih Nama Projek nanti, Mukim &amp; Daerah diisi automatik (masih boleh edit).</div>
+    </div>
+    <input type="file" id="refFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="onRefFile(this)">
+    <button class="btn btn-o btn-full" onclick="document.getElementById('refFile').click()">&#8682; Pilih Fail Excel Rujukan</button>
+    <div id="refStatus" style="font-size:12px;color:var(--text3);margin-top:8px;min-height:16px;text-align:center"></div>
+    <div id="refActions" style="display:none;gap:10px;margin-top:10px">
+      <button class="btn btn-o" style="flex:1" onclick="useRefLocal()">Guna di peranti ini</button>
+      <button class="btn btn-g" style="flex:1.3" onclick="uploadRefToSheet()">Simpan ke Sheet (kongsi)</button>
+    </div>
+    <div id="refCount" style="font-size:11px;color:var(--accent);margin-top:8px;text-align:center;font-family:'DM Mono',monospace"></div>
   </div>
 </div>
 
@@ -608,6 +632,7 @@ function loadWords(onDone) {
     AC.words = (resp && resp.words) ? resp.words : [];
     AC.loaded = true;
     loadTaman();                 // muat juga senarai Nama Taman/Projek
+    loadRef();                   // muat peta rujukan projek -> Mukim/Daerah
     finish(true, AC.words.length);
   };
   script.src = 'https://script.google.com/macros/s/' + ST.depId + '/exec'
@@ -749,7 +774,7 @@ function acPick(i) {
   var word = AC.items[i].toUpperCase();
 
   if (AC.whole) {
-    // DUN / Taman: ganti SELURUH nilai (pilihan penuh)
+    // DUN / Taman / Daerah / Mukim: ganti SELURUH nilai (pilihan penuh)
     el.value = word;
   } else {
     // Nama: ganti HANYA perkataan terakhir, kekalkan yang sebelumnya
@@ -758,8 +783,47 @@ function acPick(i) {
     el.value = parts.join(' ') + ' ';
   }
 
+  // Jika medan Nama Projek dipilih -> auto-isi Mukim & Daerah dari rujukan
+  if (el.id === 'fTaman') autoFillLokasi(el.value.trim().toUpperCase());
+
   acClose(AC.listId);
   el.focus();
+}
+
+// Auto-isi Mukim & Daerah berdasarkan Nama Projek (dari peta rujukan)
+function autoFillLokasi(projek) {
+  var ref = REF.map[projek];
+  var dTag = document.getElementById('daerahAuto');
+  var mTag = document.getElementById('mukimAuto');
+  if (ref) {
+    if (ref.daerah) { document.getElementById('fDaerah').value = ref.daerah; dTag.textContent = 'auto'; }
+    if (ref.mukim)  { document.getElementById('fMukim').value  = ref.mukim;  mTag.textContent = 'auto'; }
+  } else {
+    // tiada rekod -> biar kosong untuk diisi manual
+    dTag.textContent = ''; mTag.textContent = '';
+  }
+}
+
+// Daerah / Mukim: suggest + boleh taip bebas
+function onLokasiInput(el, kind, listId) {
+  upperNama(el);
+  AC.inputId = el.id; AC.listId = listId;
+  // pengguna edit sendiri -> buang lencana "auto"
+  document.getElementById(kind === 'daerah' ? 'daerahAuto' : 'mukimAuto').textContent = '';
+  var q = el.value.trim().toUpperCase();
+  if (q.length < 1) { acClose(listId); return; }
+
+  // sumber cadangan: nilai unik dari peta rujukan
+  var pool = {};
+  for (var p in REF.map) {
+    var v = (kind === 'daerah') ? REF.map[p].daerah : REF.map[p].mukim;
+    if (v) pool[v] = true;
+  }
+  var hits = [];
+  for (var key in pool) if (key.indexOf(q) >= 0) hits.push(key);
+  hits.sort(); hits = hits.slice(0, 10);
+  AC.whole = true;
+  showSuggest(hits, q, listId);
 }
 
 function acKeydown(e, inputId, listId) {
@@ -782,6 +846,125 @@ function acKeydown(e, inputId, listId) {
     else acClose(listId);
   }
   else if (e.key === 'Escape')    { acClose(listId); }
+}
+
+/* ======== RUJUKAN PROJEK (upload Excel -> peta Mukim/Daerah) ======== */
+// REF.map: { "NAMA PROJEK": {mukim, daerah} }  REF.list: senarai projek
+var REF = { map: {}, list: [], pending: null };
+
+// Bila fail dipilih -> baca Excel di browser
+function onRefFile(input) {
+  var file = input.files && input.files[0];
+  if (!file) return;
+  var status = document.getElementById('refStatus');
+  status.textContent = 'Membaca fail...';
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      var wb = XLSX.read(new Uint8Array(ev.target.result), { type:'array' });
+      var ws = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(ws, { header:1, blankrows:false });
+      var parsed = parseRefRows(rows);
+      if (!parsed.length) { status.textContent = '⚠️ Tiada data sah dijumpai dalam fail.'; return; }
+      REF.pending = parsed;
+      status.textContent = '✓ ' + parsed.length + ' projek dibaca. Pilih cara simpan:';
+      document.getElementById('refActions').style.display = 'flex';
+    } catch(err) {
+      status.textContent = '⚠️ Gagal baca fail. Pastikan format Excel/CSV betul.';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// Tukar baris mentah -> [{p,m,d}]. Kenal pasti lajur ikut header.
+function parseRefRows(rows) {
+  if (!rows || !rows.length) return [];
+  // cari baris header (ada perkataan PROJEK)
+  var hIdx = 0;
+  for (var i = 0; i < Math.min(rows.length, 10); i++) {
+    var joined = (rows[i] || []).join('|').toUpperCase();
+    if (joined.indexOf('PROJEK') >= 0) { hIdx = i; break; }
+  }
+  var header = (rows[hIdx] || []).map(function(x){ return String(x||'').trim().toUpperCase(); });
+  var cP = header.findIndex(function(h){ return h.indexOf('PROJEK') >= 0; });
+  var cM = header.findIndex(function(h){ return h.indexOf('MUKIM') >= 0; });
+  var cD = header.findIndex(function(h){ return h.indexOf('DAERAH') >= 0; });
+  if (cP < 0) { cP = 0; cM = 1; cD = 2; }   // fallback: susunan tetap
+
+  var out = [];
+  for (var r = hIdx + 1; r < rows.length; r++) {
+    var row = rows[r] || [];
+    var p = String(row[cP] || '').trim().toUpperCase();
+    if (!p) continue;
+    out.push({
+      p: p,
+      m: String(row[cM] || '').trim().toUpperCase(),
+      d: String(row[cD] || '').trim().toUpperCase()
+    });
+  }
+  return out;
+}
+
+// Bina REF.map & REF.list dari array [{p,m,d}]
+function applyRef(arr) {
+  REF.map = {}; REF.list = [];
+  arr.forEach(function(it){
+    if (!it.p) return;
+    REF.map[it.p] = { mukim: it.m || '', daerah: it.d || '' };
+    REF.list.push(it.p);
+  });
+  REF.list.sort();
+  // Gabung projek rujukan ke senarai suggest Taman
+  REF.list.forEach(function(p){ if (AC.taman.indexOf(p) < 0) AC.taman.push(p); });
+  AC.taman.sort();
+}
+
+// Guna rujukan di peranti ini sahaja (tidak disimpan ke Sheet)
+function useRefLocal() {
+  if (!REF.pending) return;
+  applyRef(REF.pending);
+  document.getElementById('refCount').textContent = REF.list.length + ' projek aktif (peranti ini)';
+  toast('✅ Rujukan projek dimuatkan (peranti ini)');
+}
+
+// Simpan rujukan ke Google Sheet (tab RUJUKAN) supaya dikongsi semua pengguna
+function uploadRefToSheet() {
+  if (!REF.pending) return;
+  if (!ST.depId || ST.depId === 'LETAK_DEPLOYMENT_ID_ANDA_DI_SINI') {
+    toast('Tetapkan Deployment ID dahulu'); return;
+  }
+  applyRef(REF.pending);
+  document.getElementById('refStatus').textContent = '⏳ Menyimpan ke Google Sheet...';
+
+  // Hantar sebagai POST (elak had panjang URL untuk data besar)
+  var rowsJson = JSON.stringify(REF.pending);
+  var fd = new FormData();
+  fd.append('mode', 'uploadref');
+  fd.append('rows', rowsJson);
+  fetch('https://script.google.com/macros/s/' + ST.depId + '/exec', { method:'POST', body:fd, mode:'no-cors' })
+    .then(function(){
+      document.getElementById('refStatus').textContent = '✓ Dihantar ke Sheet.';
+      document.getElementById('refCount').textContent = REF.list.length + ' projek disimpan ke Sheet (kongsi)';
+      toast('✅ Rujukan disimpan ke Sheet & aktif');
+    })
+    .catch(function(){
+      document.getElementById('refStatus').textContent = '⚠️ Gagal hantar. Rujukan tetap aktif di peranti ini.';
+    });
+}
+
+// Muat turun peta rujukan dari Sheet (dipanggil masa set ID)
+function loadRef() {
+  if (!ST.depId || ST.depId === 'LETAK_DEPLOYMENT_ID_ANDA_DI_SINI') return;
+  var cbName = 'pkjRef_' + Date.now();
+  var script = document.createElement('script');
+  window[cbName] = function(resp) {
+    if (resp && resp.ref && resp.ref.length) applyRef(resp.ref);
+    try { delete window[cbName]; } catch(e){ window[cbName] = undefined; }
+    if (script.parentNode) script.parentNode.removeChild(script);
+  };
+  script.src = 'https://script.google.com/macros/s/' + ST.depId + '/exec?mode=refdata&callback=' + cbName;
+  script.onerror = function(){ if (script.parentNode) script.parentNode.removeChild(script); };
+  document.body.appendChild(script);
 }
 
 /* ======== DAERAH / MUKIM DROPDOWN ======== */
