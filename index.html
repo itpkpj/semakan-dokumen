@@ -1183,9 +1183,10 @@ function acKeydown(e, inputId, listId) {
   if (e.key === 'ArrowDown')      { e.preventDefault(); acHighlight(AC.hi + 1); }
   else if (e.key === 'ArrowUp')   { e.preventDefault(); acHighlight(AC.hi - 1); }
   else if (e.key === 'Tab' || e.key === 'Enter') {
+    // Hanya pilih dari senarai jika pengguna SENGAJA pilih (guna arrow dulu).
+    // Kalau tak, biar nilai yang ditaip kekal (benarkan input manual bebas).
     if (AC.hi >= 0) { e.preventDefault(); acPick(AC.hi); }
-    else if (AC.items.length === 1) { e.preventDefault(); acPick(0); }
-    else acClose(listId);
+    else acClose(listId);   // terima apa yang ditaip
   }
   else if (e.key === 'Escape')    { acClose(listId); }
 }
