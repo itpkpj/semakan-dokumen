@@ -137,6 +137,15 @@ input.ic-bad  { border-color: var(--danger) !important; }
 .ac-num-x { background: transparent; }
 .auto-tag { font-size: 9px; font-weight: 700; color: var(--accent); background: var(--accent-lt); padding: 1px 6px; border-radius: 4px; margin-left: 4px; font-family: 'DM Mono', monospace; }
 .auto-tag:empty { display: none; }
+
+/* STATUS GEO / DUN */
+.geo-status { margin-top: 10px; padding: 10px 12px; border-radius: var(--r); font-size: 12px; line-height: 1.5; font-family: 'DM Sans', sans-serif; }
+.geo-status[data-jenis="proses"] { background: var(--surface2); color: var(--text2); }
+.geo-status[data-jenis="auto"]   { background: var(--accent-lt); color: #0E4030; border: 1px solid #b0d8cc; }
+.geo-status[data-jenis="semak"]  { background: var(--warn-lt); color: var(--warn); border: 1px solid #e8c96a; }
+.geo-status[data-jenis="manual"],
+.geo-status[data-jenis="ralat"]  { background: var(--danger-lt); color: var(--danger); border: 1px solid #e8b0ab; }
+.geo-status a { color: inherit; text-decoration: underline; font-weight: 600; }
 .ac-note { padding: 9px 13px; font-size: 11px; color: var(--text3); text-align: center; }
 
 /* BUTTONS */
@@ -376,7 +385,7 @@ input.ic-bad  { border-color: var(--danger) !important; }
         <div class="field">
           <label class="fl" id="tamanLbl">Nama Taman / Projek</label>
           <div class="ac-wrap">
-            <input type="text" id="fTaman" placeholder="cth: ECO-BOTANI 3" autocomplete="off" oninput="onTamanInput(this)" onkeydown="acKeydown(event,'fTaman','acListTaman')" onblur="acBlur('acListTaman')">
+            <input type="text" id="fTaman" placeholder="cth: ECO-BOTANI 3" autocomplete="off" oninput="onTamanInput(this)" onkeydown="acKeydown(event,'fTaman','acListTaman')" onblur="acBlur('acListTaman'); setTimeout(lokasiTaman, 200)">
             <div class="ac-list" id="acListTaman"></div>
           </div>
         </div>
@@ -415,6 +424,15 @@ input.ic-bad  { border-color: var(--danger) !important; }
           </div>
         </div>
       </div>
+
+      <!-- Status semakan lokasi / DUN (auto dari geocoding) -->
+      <div id="geoStatus" class="geo-status" style="display:none"></div>
+      <!-- Medan GEO tersembunyi (dihantar ke Sheet) -->
+      <input type="hidden" id="fLat">
+      <input type="hidden" id="fLng">
+      <input type="hidden" id="fDunGeo">
+      <input type="hidden" id="fParlimen">
+      <input type="hidden" id="fGeoStatus">
     </div>
 
     <!-- Tarikh & Catatan -->
@@ -902,6 +920,133 @@ function onTamanInput(el) {
   showSuggest(hits, q, 'acListTaman');
 }
 
+/* ======== GEOCODING + SEMAK DUN (sempadan GeoJSON) ======== */
+var DUN_GEO = null;
+var dunReady = fetch('johor_dun.geojson').then(function(r){ return r.json(); })
+  .then(function(g){ DUN_GEO = g; }).catch(function(){ DUN_GEO = null; });
+
+// point-in-polygon (ray casting)
+function _inRing(x, y, r) {
+  var c = false;
+  for (var i = 0, j = r.length - 1; i < r.length; j = i++) {
+    var xi = r[i][0], yi = r[i][1], xj = r[j][0], yj = r[j][1];
+    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) c = !c;
+  }
+  return c;
+}
+// jarak (m) titik ke sempadan DUN terdekat
+function _distToEdge(lng, lat, f) {
+  var k = 111320, kx = k * Math.cos((lat * Math.PI) / 180), best = Infinity;
+  var polys = f.geometry.coordinates;
+  for (var a = 0; a < polys.length; a++) for (var b = 0; b < polys[a].length; b++) {
+    var r = polys[a][b];
+    for (var i = 1; i < r.length; i++) {
+      var ax = (r[i-1][0]-lng)*kx, ay = (r[i-1][1]-lat)*k;
+      var bx = (r[i][0]-lng)*kx,   by = (r[i][1]-lat)*k;
+      var dx = bx-ax, dy = by-ay, L = dx*dx+dy*dy;
+      var t = L ? Math.max(0, Math.min(1, -(ax*dx+ay*dy)/L)) : 0;
+      best = Math.min(best, Math.hypot(ax+t*dx, ay+t*dy));
+    }
+  }
+  return best;
+}
+function cariDUN(lat, lng) {
+  if (!DUN_GEO) return null;
+  for (var n = 0; n < DUN_GEO.features.length; n++) {
+    var f = DUN_GEO.features[n];
+    var polys = f.geometry.coordinates;
+    for (var a = 0; a < polys.length; a++) {
+      var poly = polys[a];
+      var dalam = _inRing(lng, lat, poly[0]);
+      if (dalam) {
+        // semak lubang (holes)
+        var dlmLubang = false;
+        for (var hh = 1; hh < poly.length; hh++) if (_inRing(lng, lat, poly[hh])) dlmLubang = true;
+        if (!dlmLubang) {
+          var out = {}; for (var kk in f.properties) out[kk] = f.properties[kk];
+          out.jarakSempadan = Math.round(_distToEdge(lng, lat, f));
+          return out;
+        }
+      }
+    }
+  }
+  return null;
+}
+
+// Geocode via JSONP (Apps Script action=geocode)
+function geocodeJSONP(nama, mukim, daerah) {
+  return new Promise(function(resolve){
+    if (!ST.depId || ST.depId === 'LETAK_DEPLOYMENT_ID_ANDA_DI_SINI') { resolve(null); return; }
+    var cb = 'pkjGeo_' + Date.now();
+    var s = document.createElement('script');
+    var to = setTimeout(function(){ cleanup(); resolve(null); }, 12000);
+    function cleanup(){ clearTimeout(to); try{ delete window[cb]; }catch(e){ window[cb]=undefined; } if (s.parentNode) s.parentNode.removeChild(s); }
+    window[cb] = function(resp){ cleanup(); resolve(resp); };
+    s.src = 'https://script.google.com/macros/s/' + ST.depId + '/exec'
+          + '?action=geocode&taman=' + encodeURIComponent(nama)
+          + '&mukim=' + encodeURIComponent(mukim)
+          + '&daerah=' + encodeURIComponent(daerah)
+          + '&callback=' + cb;
+    s.onerror = function(){ cleanup(); resolve(null); };
+    document.body.appendChild(s);
+  });
+}
+
+function setGeo(id, v){ var el = document.getElementById(id); if (el) el.value = v; }
+function geoStatus(txt, jenis){
+  var el = document.getElementById('geoStatus');
+  if (el) { el.innerHTML = txt; el.dataset.jenis = jenis; el.style.display = 'block'; }
+  setGeo('fGeoStatus', jenis);
+}
+
+// Dipanggil selepas taman dipilih / blur
+var _geoSeq = 0;
+async function lokasiTaman() {
+  var nama = (document.getElementById('fTaman').value || '').trim();
+  if (!nama) return;
+  var mukim  = (document.getElementById('fMukim').value  || '').trim();
+  var daerah = (document.getElementById('fDaerah').value || '').trim();
+  var mySeq = ++_geoSeq;
+
+  geoStatus('Mencari lokasi…', 'proses');
+  var g = await geocodeJSONP(nama, mukim, daerah);
+  if (mySeq !== _geoSeq) return;   // abai hasil lama
+
+  if (!g) { geoStatus('Ralat sambungan geocoding. Lokasi boleh diisi manual.', 'ralat'); return; }
+  if (!g.ok || !g.dalamJohor) {
+    geoStatus('Lokasi tidak ditemui dalam Johor. Sila semak / isi manual.', 'manual');
+    setGeo('fDunGeo',''); setGeo('fParlimen','');
+    return;
+  }
+
+  await dunReady;
+  setGeo('fLat', g.lat.toFixed(6));
+  setGeo('fLng', g.lng.toFixed(6));
+  if (g.daerahGoogle && !daerah) { setGeo('fDaerah', g.daerahGoogle); document.getElementById('daerahAuto').textContent='auto'; }
+
+  var dun = cariDUN(g.lat, g.lng);
+  if (!dun) { geoStatus('Koordinat di luar sempadan DUN. Sila semak.', 'manual'); setGeo('fDunGeo',''); setGeo('fParlimen',''); return; }
+
+  setGeo('fDunGeo', dun.kod + ' ' + dun.dun);
+  setGeo('fParlimen', dun.parlimen);
+
+  var anggaran = (g.ketepatan === 'APPROXIMATE' || g.ketepatan === 'GEOMETRIC_CENTER');
+  var tepiSempadan = dun.jarakSempadan < 300;
+  var peta = 'https://www.google.com/maps?q=' + g.lat + ',' + g.lng;
+
+  // GEO ialah sumber UTAMA DUN -> sentiasa tindih DUN Kawasan Taman dari koordinat sebenar
+  if (anggaran || tepiSempadan) {
+    var sebab = (anggaran ? 'lokasi anggaran' : '') + (anggaran && tepiSempadan ? '; ' : '') + (tepiSempadan ? dun.jarakSempadan + ' m dari sempadan DUN' : '');
+    geoStatus('<strong>' + dun.kod + ' ' + dun.dun + '</strong> — ⚠️ PERLU SEMAK: ' + sebab + '. <a href="' + peta + '" target="_blank">Sahkan di peta</a>', 'semak');
+    document.getElementById('fDunTaman').value = dun.dun;
+    document.getElementById('dunTamanAuto').textContent = 'geo?';   // perlu semak
+  } else {
+    geoStatus('<strong>' + dun.kod + ' ' + dun.dun + '</strong> ✓ (' + (g.alamat||'') + ')', 'auto');
+    document.getElementById('fDunTaman').value = dun.dun;
+    document.getElementById('dunTamanAuto').textContent = 'geo';    // disahkan dari koordinat
+  }
+}
+
 /* ======== EMEL: tekan Tab -> auto tambah @gmail.com ======== */
 function emelKeydown(e) {
   if (e.key !== 'Tab' || e.shiftKey) return;
@@ -970,7 +1115,7 @@ function acPick(i) {
   }
 
   // Jika medan Nama Projek dipilih -> auto-isi Mukim & Daerah dari rujukan
-  if (el.id === 'fTaman') autoFillLokasi(el.value.trim().toUpperCase());
+  if (el.id === 'fTaman') { autoFillLokasi(el.value.trim().toUpperCase()); setTimeout(lokasiTaman, 150); }
 
   acClose(AC.listId);
   el.focus();
@@ -1443,7 +1588,13 @@ function getForm() {
     mukim:      v('fMukim'),
     dunTaman:   v('fDunTaman'),
     tarikh:     fmtDate(v('fTarikh')),
-    catatan:    v('fCatatan')
+    catatan:    v('fCatatan'),
+    // Medan GEO (auto dari geocoding)
+    lat:        v('fLat'),
+    lng:        v('fLng'),
+    dunGeo:     v('fDunGeo'),
+    parlimen:   v('fParlimen'),
+    geoStatus:  v('fGeoStatus')
   };
 }
 
@@ -1541,6 +1692,9 @@ function resetAll() {
   document.getElementById('daerahAuto').textContent = '';
   document.getElementById('mukimAuto').textContent = '';
   document.getElementById('dunTamanAuto').textContent = '';
+  // Kosongkan medan GEO + sembunyi status
+  ['fLat','fLng','fDunGeo','fParlimen','fGeoStatus'].forEach(function(id){ var e=document.getElementById(id); if(e) e.value=''; });
+  var gs = document.getElementById('geoStatus'); if (gs) { gs.style.display='none'; gs.innerHTML=''; gs.removeAttribute('data-jenis'); }
   ['acList','acListPsng','acListDunP','acListDunS','acListTaman','acListDunT','acListDaerah','acListMukim'].forEach(function(id){ acClose(id); });
 
   // Kembali ke skrin borang (jenis sama), sedia untuk rekod baharu
