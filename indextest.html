@@ -782,7 +782,8 @@ function semakSPR(sasaran) {
 
   // Buka SPR sebagai TAB biasa (ada bar bookmark supaya bookmarklet boleh diklik).
   // window.opener kekal untuk tab yang dibuka dgn window.open -> postMessage berjalan.
-  SPR.popup = window.open('https://mysprsemak.spr.gov.my/semakan/daftarPemilih', '_blank');
+  // IC + sasaran dihantar dalam URL (#hash) -> bookmarklet baca terus, tak perlu clipboard
+  SPR.popup = window.open('https://mysprsemak.spr.gov.my/semakan/daftarPemilih#pkj=' + icDigitsStr + '&t=' + sasaran, '_blank');
   toast('SPR dibuka di tab baru. Klik bookmarklet di tab SPR.');
 
   // Tunjuk butang sandaran "Tampal data SPR" (jika postMessage gagal)
@@ -812,7 +813,8 @@ window.addEventListener('message', function(ev){
 });
 
 function terimaDataSPR(d) {
-  var sasaran = SPR.sasaran;
+  // Utamakan sasaran yang dibawa oleh bookmarklet (tepat utk tab SPR tersebut)
+  var sasaran = d.sasaran || SPR.sasaran;
   try { sasaran = sasaran || localStorage.getItem('pkj_spr_target'); } catch(e){}
   var kePasangan = (sasaran === 'icPsng');
 
