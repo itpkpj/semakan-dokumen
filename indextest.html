@@ -343,7 +343,6 @@ input.ic-bad  { border-color: var(--danger) !important; }
           <input type="text" id="fIc" placeholder="000000-00-0000" inputmode="numeric" autocomplete="off" maxlength="14" oninput="formatIC(this,'icHint')">
           <div class="ic-hint" id="icHint"></div>
           <button type="button" id="btnSprIc" class="btn-spr" style="display:none" onclick="semakSPR('ic')">&#128269; Semak di SPR (Pemohon)</button>
-          <button type="button" id="btnTampalIc" class="btn-spr btn-tampal" style="display:none" onclick="tampalDataSPR()">&#128203; Tampal data SPR &rarr; Pemohon</button>
         </div>
         <div class="field">
           <label class="fl">No. Telefon <span class="req">*</span></label>
@@ -363,7 +362,6 @@ input.ic-bad  { border-color: var(--danger) !important; }
           <input type="text" id="fIcPsng" placeholder="000000-00-0000" inputmode="numeric" autocomplete="off" maxlength="14" oninput="formatIC(this,'icPsngHint')">
           <div class="ic-hint" id="icPsngHint"></div>
           <button type="button" id="btnSprIcPsng" class="btn-spr" style="display:none" onclick="semakSPR('icPsng')">&#128269; Semak di SPR (Pasangan)</button>
-          <button type="button" id="btnTampalIcPsng" class="btn-spr btn-tampal" style="display:none" onclick="tampalDataSPR()">&#128203; Tampal data SPR &rarr; Pasangan</button>
         </div>
         <div class="field">
           <label class="fl">DUN Mengundi Pasangan</label>
@@ -763,68 +761,52 @@ function formatIC(el, hintId) {
 // Kira bilangan digit dalam satu IC
 function icDigits(val) { return String(val).replace(/\D/g, '').length; }
 
-/* ======== SEMAK SPR (bookmarklet) ======== */
-var SPR = { sasaran: null };   // 'ic' (pemohon) atau 'icPsng' (pasangan)
+/* ======== SEMAK SPR (popup + postMessage) ========
+   Aliran: tekan Semak SPR -> popup SPR buka (IC disimpan utk auto-isi oleh
+   bookmarklet) -> operator taip captcha & Semak -> klik bookmarklet sekali
+   -> bookmarklet hantar data ke borang via window.opener.postMessage -> masuk auto. */
+var SPR = { sasaran: null, popup: null };
 
-// Buka tab SPR + ingat medan sasaran. IC diisi auto jika boleh.
 function semakSPR(sasaran) {
   SPR.sasaran = sasaran;
   var icVal = document.getElementById(sasaran === 'icPsng' ? 'fIcPsng' : 'fIc').value;
   var icDigitsStr = icVal.replace(/\D/g, '');
+
+  // Simpan IC supaya bookmarklet boleh auto-isi di halaman SPR
   try { localStorage.setItem('pkj_spr_target', sasaran); } catch(e){}
   try { localStorage.setItem('pkj_spr_ic', icDigitsStr); } catch(e){}
-
-  // Buka laman SPR dalam tab baru. (IC tak boleh auto-isi merentas domain,
-  // jadi kita salin ke clipboard supaya operator tampal sekali di SPR.)
+  // Juga salin ke clipboard sebagai sandaran (kalau operator nak tampal manual)
   try { navigator.clipboard && navigator.clipboard.writeText(icDigitsStr); } catch(e){}
-  toast('No. KP disalin. Tampal di SPR, selesai captcha & semak.');
-  window.open('https://mysprsemak.spr.gov.my/semakan/daftarPemilih', '_blank');
 
-  // Tunjuk butang "Tampal data SPR" untuk medan berkenaan
-  var tId = (sasaran === 'icPsng') ? 'btnTampalIcPsng' : 'btnTampalIc';
-  var tb = document.getElementById(tId);
-  if (tb) tb.style.display = 'block';
+  // Buka SPR sebagai POPUP supaya window.opener wujud untuk postMessage
+  SPR.popup = window.open('https://mysprsemak.spr.gov.my/semakan/daftarPemilih',
+                          'pkjSprPopup', 'width=1100,height=800');
+  toast('SPR dibuka. Klik bookmarklet "Isi IC" → selesai captcha → Semak → klik bookmarklet "Hantar".');
 }
 
-// Proses data SPR dari clipboard (JSON yang disalin bookmarklet)
-function prosesDataSPR(jsonText) {
-  var d;
-  try { d = JSON.parse(jsonText); } catch(e){ return false; }
-  if (!d || d._pkj !== 'spr') return false;
+// Terima data dari bookmarklet (postMessage dari tetingkap SPR)
+window.addEventListener('message', function(ev){
+  var d = ev.data;
+  if (!d || d._pkj !== 'spr') return;   // abai mesej lain
+  terimaDataSPR(d);
+});
 
+function terimaDataSPR(d) {
   var sasaran = SPR.sasaran;
   try { sasaran = sasaran || localStorage.getItem('pkj_spr_target'); } catch(e){}
   var kePasangan = (sasaran === 'icPsng');
 
-  // Isi Nama + DUN ke medan yang betul
   if (kePasangan) {
     if (d.nama) document.getElementById('fNamaPsng').value = d.nama;
-    if (d.dun)  { document.getElementById('fDunPsng').value = d.dun; }
+    if (d.dun)  document.getElementById('fDunPsng').value = d.dun;
   } else {
     if (d.nama) document.getElementById('fNama').value = d.nama;
     if (d.dun)  document.getElementById('fDunPemohon').value = d.dun;
   }
-  // Tanda masa supaya tak proses data lama berulang
-  SPR._lastMasa = d.masa;
-  toast('✅ SPR: ' + d.nama + ' · ' + d.dun + ' (' + (kePasangan?'Pasangan':'Pemohon') + ')');
+  toast('✅ SPR: ' + (d.nama||'') + ' · ' + (d.dun||'') + ' (' + (kePasangan?'Pasangan':'Pemohon') + ')');
   vibrate([20,40,20]);
-  return true;
-}
-
-// Tampal data SPR dari clipboard (operator tekan butang "Tampal data SPR").
-// TIADA auto-baca -> elak popup kebenaran clipboard berulang.
-function tampalDataSPR() {
-  if (!navigator.clipboard || !navigator.clipboard.readText) {
-    toast('Browser tidak benarkan baca clipboard di sini. Guna versi https (GitHub Pages).');
-    return;
-  }
-  navigator.clipboard.readText().then(function(txt){
-    if (txt && txt.indexOf('"_pkj"') >= 0) {
-      if (!prosesDataSPR(txt)) toast('Data SPR tidak sah dalam clipboard.');
-    } else {
-      toast('Tiada data SPR. Klik bookmarklet di halaman SPR dahulu.');
-    }
-  }).catch(function(){ toast('Clipboard disekat. Tekan "Allow" bila diminta.'); });
+  // Tutup popup SPR kalau masih terbuka
+  try { if (SPR.popup && !SPR.popup.closed) SPR.popup.close(); } catch(e){}
 }
 
 /* ======== NAMA AUTO UPPERCASE ======== */
