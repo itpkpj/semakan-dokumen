@@ -343,6 +343,7 @@ input.ic-bad  { border-color: var(--danger) !important; }
           <input type="text" id="fIc" placeholder="000000-00-0000" inputmode="numeric" autocomplete="off" maxlength="14" oninput="formatIC(this,'icHint')">
           <div class="ic-hint" id="icHint"></div>
           <button type="button" id="btnSprIc" class="btn-spr" style="display:none" onclick="semakSPR('ic')">&#128269; Semak di SPR (Pemohon)</button>
+          <button type="button" id="btnTampalIc" class="btn-spr btn-tampal" style="display:none" onclick="tampalDataSPR()">&#128203; Tampal data SPR &rarr; Pemohon</button>
         </div>
         <div class="field">
           <label class="fl">No. Telefon <span class="req">*</span></label>
@@ -362,6 +363,7 @@ input.ic-bad  { border-color: var(--danger) !important; }
           <input type="text" id="fIcPsng" placeholder="000000-00-0000" inputmode="numeric" autocomplete="off" maxlength="14" oninput="formatIC(this,'icPsngHint')">
           <div class="ic-hint" id="icPsngHint"></div>
           <button type="button" id="btnSprIcPsng" class="btn-spr" style="display:none" onclick="semakSPR('icPsng')">&#128269; Semak di SPR (Pasangan)</button>
+          <button type="button" id="btnTampalIcPsng" class="btn-spr btn-tampal" style="display:none" onclick="tampalDataSPR()">&#128203; Tampal data SPR &rarr; Pasangan</button>
         </div>
         <div class="field">
           <label class="fl">DUN Mengundi Pasangan</label>
@@ -778,10 +780,28 @@ function semakSPR(sasaran) {
   // Juga salin ke clipboard sebagai sandaran (kalau operator nak tampal manual)
   try { navigator.clipboard && navigator.clipboard.writeText(icDigitsStr); } catch(e){}
 
-  // Buka SPR sebagai POPUP supaya window.opener wujud untuk postMessage
-  SPR.popup = window.open('https://mysprsemak.spr.gov.my/semakan/daftarPemilih',
-                          'pkjSprPopup', 'width=1100,height=800');
-  toast('SPR dibuka. Klik bookmarklet "Isi IC" → selesai captcha → Semak → klik bookmarklet "Hantar".');
+  // Buka SPR sebagai TAB biasa (ada bar bookmark supaya bookmarklet boleh diklik).
+  // window.opener kekal untuk tab yang dibuka dgn window.open -> postMessage berjalan.
+  SPR.popup = window.open('https://mysprsemak.spr.gov.my/semakan/daftarPemilih', '_blank');
+  toast('SPR dibuka di tab baru. Klik bookmarklet di tab SPR.');
+
+  // Tunjuk butang sandaran "Tampal data SPR" (jika postMessage gagal)
+  var tId = (sasaran === 'icPsng') ? 'btnTampalIcPsng' : 'btnTampalIc';
+  var tb = document.getElementById(tId);
+  if (tb) tb.style.display = 'block';
+}
+
+// Sandaran: tampal data SPR dari clipboard (jika postMessage tak sampai)
+function tampalDataSPR() {
+  if (!navigator.clipboard || !navigator.clipboard.readText) {
+    toast('Browser tak benarkan baca clipboard di sini.'); return;
+  }
+  navigator.clipboard.readText().then(function(txt){
+    if (txt && txt.indexOf('"_pkj"') >= 0) {
+      var d; try { d = JSON.parse(txt); } catch(e){ toast('Data SPR tak sah.'); return; }
+      if (d && d._pkj === 'spr') terimaDataSPR(d);
+    } else { toast('Tiada data SPR. Klik bookmarklet di tab SPR dahulu.'); }
+  }).catch(function(){ toast('Clipboard disekat. Tekan "Allow" bila diminta.'); });
 }
 
 // Terima data dari bookmarklet (postMessage dari tetingkap SPR)
