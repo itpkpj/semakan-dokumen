@@ -265,6 +265,7 @@ input.ic-bad  { border-color: var(--danger) !important; }
 .dup-item.danger { border-left-color:var(--danger); background:var(--danger-lt); }
 .dup-item .dn { font-weight:600; }
 .dup-item .dm { font-family:'DM Mono',monospace; font-size:11px; color:var(--text2); }
+.dup-src { font-size:12px; font-weight:700; color:var(--accent); margin:12px 0 2px; padding-top:8px; border-top:1px dashed var(--border); }
 .dup-lbl { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text3); margin:10px 0 6px; }
 .dup-foot { display:flex; gap:10px; padding:12px 18px 18px; border-top:1px solid var(--border); }
 .dup-foot .btn { flex:1; }
@@ -359,6 +360,7 @@ input.ic-bad  { border-color: var(--danger) !important; }
         &#8682; <strong>Pilih / seret fail Excel</strong><br><span>boleh pilih banyak fail sekali gus &middot; boleh tambah lagi kemudian</span>
       </div>
       <div id="xlFileInfo" style="font-size:12px;color:var(--text3);margin-top:8px;text-align:center;min-height:16px"></div>
+      <div id="xlLiveInfo" style="font-size:12px;color:var(--accent);text-align:center"></div>
       <div id="xlList"></div>
       <div id="xlCfg" style="display:none">
         <label style="display:flex;gap:8px;align-items:center;font-size:13px;margin:12px 0 0;cursor:pointer">
@@ -1803,12 +1805,59 @@ function dupFields(role){
   return role === 'P' ? { n:v('fNama'), ic:v('fIc'), lbl:'Pemohon', hint:'dupHintP' }
                       : { n:v('fNamaPsng'), ic:v('fIcPsng'), lbl:'Pasangan', hint:'dupHintS' };
 }
+/* ---- INDEKS FAIL SEMAKAN EXCEL (untuk semakan semasa key-in) ---- */
+var XLIDX = { byIc:{}, byNama:{}, n:0 };
+function xlBuildIndex(){
+  XLIDX = { byIc:{}, byNama:{}, n:0 };
+  (typeof XL !== 'undefined' ? XL.files : []).forEach(function(f){
+    f.sheets.forEach(function(s){
+      if (!s.on) return;
+      for (var r = s.hdr + 1; r < s.rows.length; r++) {
+        var row = s.rows[r] || [];
+        [['P', s.cN, s.cI], ['S', s.cNP, s.cIP]].forEach(function(c){
+          if (c[1] < 0 && c[2] < 0) return;
+          var n = c[1] >= 0 ? String(row[c[1]] == null ? '' : row[c[1]]).trim().toUpperCase() : '';
+          var raw = c[2] >= 0 ? row[c[2]] : '';
+          var ic = normIc(typeof raw === 'number' ? Math.round(raw) : raw);
+          if (!n && !ic) return;
+          var e = { n:n, ic:ic, sheet:f.name + ' › ' + s.name, row:r+1, role:c[0], jenis:'', xl:true };
+          var nn = normNama(n);
+          if (nn) (XLIDX.byNama[nn] = XLIDX.byNama[nn] || []).push(e);
+          if (ic.length === 12) (XLIDX.byIc[ic] = XLIDX.byIc[ic] || []).push(e);
+          XLIDX.n++;
+        });
+      }
+    });
+  });
+  var lbl = document.getElementById('xlLiveInfo');
+  if (lbl) lbl.innerHTML = XLIDX.n ? '&#9889; ' + XLIDX.n + ' nama/IC dari fail ini <strong>turut disemak secara langsung</strong> semasa key-in borang.' : '';
+}
+function checkXl(nama, ic){
+  var nn = normNama(nama), ii = normIc(ic);
+  var icH = ii.length === 12 ? (XLIDX.byIc[ii] || []) : [];
+  var nmH = nn ? (XLIDX.byNama[nn] || []) : [];
+  var exact    = nn ? icH.filter(function(e){ return normNama(e.n) === nn; }) : [];
+  var icOnly   = icH.filter(function(e){ return exact.indexOf(e) < 0; });
+  var namaOnly = nmH.filter(function(e){ return exact.indexOf(e) < 0; });
+  var status = exact.length ? 'EXACT' : (icOnly.length && namaOnly.length) ? 'BOTH' : icOnly.length ? 'IC' : namaOnly.length ? 'NAMA' : 'TIADA';
+  return { exact:exact, icOnly:icOnly, namaOnly:namaOnly, status:status };
+}
+var DUP_RANK = { EXACT:4, BOTH:3, IC:2, NAMA:1, TIADA:0 };
+var DUP_NONE = { exact:[], icOnly:[], namaOnly:[], status:'TIADA' };
+// Gabung hasil Google Sheet (gs) + fail Excel (xl) -> status paling teruk
+function dupBoth(nama, ic, ikutEdit){
+  var gs = DUP.loaded ? checkPerson(nama, ic, ikutEdit) : DUP_NONE;
+  var xl = XLIDX.n ? checkXl(nama, ic) : DUP_NONE;
+  return { gs:gs, xl:xl, status: DUP_RANK[gs.status] >= DUP_RANK[xl.status] ? gs.status : xl.status };
+}
+
 function setDupHint(role, r){
   var h = document.getElementById(dupFields(role).hint);
   if (!h) return;
   if (!r || r.status === 'TIADA') { h.textContent = ''; h.className = 'ic-hint'; return; }
   var t = { EXACT:'⛔ NAMA & IC TELAH WUJUD', BOTH:'⚠️ Nama & IC wujud (rekod berlainan)', IC:'⚠️ No. KP telah wujud', NAMA:'⚠️ Nama telah wujud' }[r.status];
-  h.textContent = t + ' — klik untuk butiran';
+  var src = [r.gs.status !== 'TIADA' ? 'Sheet' : '', r.xl.status !== 'TIADA' ? 'fail Excel' : ''].filter(String).join(' + ');
+  h.textContent = t + ' (' + src + ') — klik untuk butiran';
   h.className = 'ic-hint ' + (r.status === 'EXACT' ? 'dupd' : 'dupw');
 }
 function popupPerson(role, r){
@@ -1818,20 +1867,21 @@ function popupPerson(role, r){
   var body = '<p>' + (exact
       ? '<strong style="color:var(--danger)">Nama dan No. KP ini sepadan TEPAT dengan rekod sedia ada.</strong> Kemungkinan besar permohonan berulang.'
       : 'Sila semak sama ada ini orang yang sama.') + '</p>'
-    + '<div class="dm" style="margin-bottom:6px">Dimasukkan: <strong>' + esc(f.n||'-') + '</strong> · ' + esc(f.ic||'-') + '</div>'
-    + dupResultHtml(r);
+    + '<div class="dm" style="margin-bottom:6px">Dimasukkan: <strong>' + esc(f.n||'-') + '</strong> · ' + esc(f.ic||'-') + '</div>';
+  if (r.gs.status !== 'TIADA') body += '<div class="dup-src">&#128202; Dalam Google Sheet</div>' + dupResultHtml(r.gs);
+  if (r.xl.status !== 'TIADA') body += '<div class="dup-src">&#128203; Dalam fail Semakan Senarai Excel</div>' + dupResultHtml(r.xl);
   openPopup(exact ? 'danger' : 'warn', title, body);
 }
 function liveDup(role){
-  if (!DUP.loaded) return;
+  if (!DUP.loaded && !XLIDX.n) return;
   var f = dupFields(role);
   var icOk = icDigits(f.ic) === 12;
   if (!f.n && !icOk) { setDupHint(role, null); return; }
-  var r = checkPerson(f.n, icOk ? f.ic : '', true);
+  var r = dupBoth(f.n, icOk ? f.ic : '', true);
   DUP.last[role] = r;
   setDupHint(role, r);
   if (r.status === 'TIADA') return;
-  var key = r.status + '|' + normNama(f.n) + '|' + normIc(f.ic);
+  var key = r.gs.status + '|' + r.xl.status + '|' + normNama(f.n) + '|' + normIc(f.ic);
   if (DUP.shown[role] === key) return;   // elak popup berulang untuk nilai sama
   DUP.shown[role] = key;
   popupPerson(role, r);
@@ -1882,7 +1932,7 @@ function xlAddFiles(fileList){
       } catch(err) { bad.push(file.name); }
       if (--left === 0) {
         info.textContent = '✓ ' + ok + ' fail ditambah' + (bad.length ? ' · ⚠️ gagal: ' + bad.join(', ') : '') + ' · jumlah ' + XL.files.length + ' fail';
-        xlRenderList();
+        xlRenderList(); xlBuildIndex();
       }
     };
     reader.readAsArrayBuffer(file);
@@ -1953,16 +2003,17 @@ function xlRenderList(){
     return h + '</div>';
   }).join('');
 }
-function xlToggleSheet(fid, si, on){ var f = xlF(fid); if (!f) return; f.sheets[si].on = on; xlRenderList(); }
+function xlToggleSheet(fid, si, on){ var f = xlF(fid); if (!f) return; f.sheets[si].on = on; xlRenderList(); xlBuildIndex(); }
 function xlSetS(fid, si, key, val){
   var f = xlF(fid); if (!f) return;
   var s = f.sheets[si];
   if (key === 'hdr') { s.hdr = Math.max(0, (parseInt(val,10)||1) - 1); xlGuessCols(s); xlRenderList(); }
   else { s[key] = parseInt(val,10); s.results = []; }
+  xlBuildIndex();
 }
 function xlRemove(id){
   XL.files = XL.files.filter(function(f){ return f.id !== id; });
-  xlRenderList();
+  xlRenderList(); xlBuildIndex();
   if (XL.results.length) { xlCombine(); xlSummary(); xlFillFileFilter(); xlRender(); }
   if (!XL.files.length) document.getElementById('xlResult').style.display = 'none';
 }
@@ -1970,7 +2021,7 @@ function xlClearAll(){
   XL.files = []; XL.results = [];
   document.getElementById('xlFileInfo').textContent = '';
   document.getElementById('xlResult').style.display = 'none';
-  xlRenderList();
+  xlRenderList(); xlBuildIndex();
 }
 function xlEachOn(fn){ XL.files.forEach(function(f){ f.sheets.forEach(function(s){ if (s.on) fn(f, s); }); }); }
 
@@ -2185,7 +2236,7 @@ function xlExport(){
    Tiada isu CORS: bookmarklet berjalan DI DALAM halaman SPR.
 ================================================================ */
 // TUKAR jika alamat halaman semakan SPR berbeza (salin dari address bar SPR)
-const SPR_URL = 'https://mysprsemak.spr.gov.my/';
+const SPR_URL = 'https://mysprsemak.spr.gov.my/semakan';
 var SPR = { win:null, req:null };
 
 const SPR_MAP = {
@@ -2370,13 +2421,16 @@ async function doSubmit(tidakLayak, force) {
   if (d.icPsng && icDigits(d.icPsng) !== 12) { toast('No. KP Pasangan tidak lengkap — perlu 12 digit'); return; }
 
   // SEMAKAN DUPLIKAT sebelum hantar: jika EXACT (nama + IC) -> minta pengesahan
-  if (!force && DUP.loaded) {
-    var rP = checkPerson(d.nama, d.ic, true);
-    var rS = (d.namaPsng || d.icPsng) ? checkPerson(d.namaPsng, d.icPsng, true) : null;
+  if (!force && (DUP.loaded || XLIDX.n)) {
+    var rP = dupBoth(d.nama, d.ic, true);
+    var rS = (d.namaPsng || d.icPsng) ? dupBoth(d.namaPsng, d.icPsng, true) : null;
     if (rP.status === 'EXACT' || (rS && rS.status === 'EXACT')) {
       var body = '<p><strong style="color:var(--danger)">Rekod dengan Nama &amp; No. KP yang sama sudah wujud.</strong> Teruskan hanya jika pasti ini bukan permohonan berulang.</p>';
-      if (rP.status === 'EXACT') body += '<div class="dup-lbl">Pemohon</div>' + dupItemsHtml(rP.exact, 'danger');
-      if (rS && rS.status === 'EXACT') body += '<div class="dup-lbl">Pasangan</div>' + dupItemsHtml(rS.exact, 'danger');
+      [['Pemohon', rP], ['Pasangan', rS]].forEach(function(p){
+        if (!p[1] || p[1].status !== 'EXACT') return;
+        if (p[1].gs.exact.length) body += '<div class="dup-lbl">' + p[0] + ' · Google Sheet</div>' + dupItemsHtml(p[1].gs.exact, 'danger');
+        if (p[1].xl.exact.length) body += '<div class="dup-lbl">' + p[0] + ' · fail Semakan Excel</div>' + dupItemsHtml(p[1].xl.exact, 'danger');
+      });
       openPopup('danger', '⛔ NAMA &amp; IC TELAH WUJUD', body, [
         { label:'Batal', cls:'btn-o' },
         { label:'Teruskan Hantar', cls:'btn-r', fn:function(){ doSubmit(tidakLayak, true); } }
