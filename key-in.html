@@ -279,6 +279,14 @@ input.ic-bad  { border-color: var(--danger) !important; }
 .chip.w { background:var(--warn-lt); color:var(--warn); }
 .chip.g { background:var(--accent-lt); color:var(--accent); }
 .chip.n { background:var(--surface2); color:var(--text2); }
+.xl-drop { border:2px dashed var(--border); border-radius:var(--r); padding:18px; text-align:center; cursor:pointer; font-size:14px; background:var(--surface2); transition:all .15s; }
+.xl-drop span { font-size:11px; color:var(--text3); }
+.xl-drop.over, .xl-drop:hover { border-color:var(--accent); background:var(--accent-lt); }
+.xl-file { border:1.5px solid var(--border); border-radius:var(--r); padding:12px; margin-top:10px; }
+.xl-file-hd { display:flex; align-items:center; gap:8px; }
+.xl-fname { font-weight:600; font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+.xl-x { margin-left:6px; border:none; background:var(--danger-lt); color:var(--danger); width:28px; height:28px; border-radius:8px; cursor:pointer; font-weight:700; flex-shrink:0; }
+.chip.x { background:#EEE8FA; color:#5B3FA8; }
 .xl-tbl-wrap { max-height:360px; overflow:auto; border:1px solid var(--border); border-radius:var(--r); -webkit-overflow-scrolling:touch; }
 .xl-tbl { width:100%; border-collapse:collapse; font-size:12px; }
 .xl-tbl th { position:sticky; top:0; background:var(--surface2); text-align:left; padding:7px 8px; font-size:11px; white-space:nowrap; }
@@ -328,35 +336,41 @@ input.ic-bad  { border-color: var(--danger) !important; }
     </div>
   </div>
 
-  <!-- SEMAKAN SENARAI EXCEL (Nama / IC) vs GOOGLE SHEET -->
+  <!-- SEMAKAN SENARAI EXCEL (MULTI FAIL) vs GOOGLE SHEET -->
   <div class="card">
     <div class="card-ttl" style="cursor:pointer;margin-bottom:0" onclick="toggleXl()">&#128203; Semakan Senarai Excel (Nama / No. KP) <span id="xlArrow" style="margin-left:auto">&#9662;</span></div>
     <div id="xlBody" style="display:none;margin-top:14px">
       <div class="alert al-g">
         <span>&#8505;&#65039;</span>
-        <div>Upload senarai Excel, pilih lajur <strong>Nama</strong> dan/atau <strong>No. KP</strong>. Setiap baris disemak terus dengan rekod <strong>Google Sheet</strong> (BBR, BMR, BSR, TIDAK LAYAK &mdash; pemohon &amp; pasangan).</div>
+        <div>Upload <strong>satu atau lebih</strong> fail Excel/CSV. Bagi setiap fail, pilih sheet &amp; lajur <strong>Nama</strong> dan/atau <strong>No. KP</strong>. Semua fail disemak serentak dengan rekod <strong>Google Sheet</strong> (BBR, BMR, BSR, TIDAK LAYAK &mdash; pemohon &amp; pasangan).</div>
       </div>
-      <input type="file" id="xlFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="onXlFile(this)">
-      <button class="btn btn-o btn-full" onclick="document.getElementById('xlFile').click()">&#8682; Pilih Fail Excel Semakan</button>
+      <input type="file" id="xlFile" accept=".xlsx,.xls,.csv" multiple style="display:none" onchange="onXlFiles(this)">
+      <div id="xlDrop" class="xl-drop" onclick="document.getElementById('xlFile').click()"
+           ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')"
+           ondrop="event.preventDefault();this.classList.remove('over');xlAddFiles(event.dataTransfer.files)">
+        &#8682; <strong>Pilih / seret fail Excel</strong><br><span>boleh pilih banyak fail sekali gus &middot; boleh tambah lagi kemudian</span>
+      </div>
       <div id="xlFileInfo" style="font-size:12px;color:var(--text3);margin-top:8px;text-align:center;min-height:16px"></div>
+      <div id="xlList"></div>
       <div id="xlCfg" style="display:none">
-        <div class="xl-row">
-          <div class="field"><label class="fl">Sheet</label><select id="xlSheet" onchange="xlPickSheet()"></select></div>
-          <div class="field"><label class="fl">Baris Header</label><input type="number" id="xlHdr" min="1" value="1" onchange="xlBuildCols()"></div>
+        <label style="display:flex;gap:8px;align-items:center;font-size:13px;margin:12px 0 0;cursor:pointer">
+          <input type="checkbox" id="xlCross" checked style="width:18px;height:18px"> Semak juga pertindihan <strong>antara fail</strong> yang diupload
+        </label>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn btn-o" style="flex:.6" onclick="xlClearAll()">&#128465; Kosongkan</button>
+          <button class="btn btn-g" style="flex:1.4" onclick="xlSemakSemua()">&#128269; Semak Semua dengan Google Sheet</button>
         </div>
-        <div class="xl-row">
-          <div class="field"><label class="fl">Lajur NAMA</label><select id="xlColNama"></select></div>
-          <div class="field"><label class="fl">Lajur NO. KP</label><select id="xlColIc"></select></div>
-        </div>
-        <button class="btn btn-g btn-full" style="margin-top:12px" onclick="xlSemak()">&#128269; Semak dengan Google Sheet</button>
       </div>
       <div id="xlResult" style="display:none">
         <div class="xl-sum" id="xlSum"></div>
-        <div style="display:flex;gap:8px;margin-bottom:8px">
-          <select id="xlFilter" onchange="xlRender()" style="flex:1">
+        <div id="xlPerFile" style="margin-bottom:10px"></div>
+        <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+          <select id="xlFilterFile" onchange="xlRender()" style="flex:1;min-width:140px"></select>
+          <select id="xlFilter" onchange="xlRender()" style="flex:1;min-width:140px">
             <option value="all">Papar semua</option>
             <option value="found">Wujud sahaja (semua jenis)</option>
             <option value="EXACT">Nama &amp; IC exact sahaja</option>
+            <option value="CROSS">Bertindih antara fail</option>
             <option value="TIADA">Tiada dalam rekod</option>
           </select>
           <button class="btn btn-o btn-sm" onclick="xlExport()">&#11015; Excel</button>
@@ -1798,8 +1812,9 @@ function liveDup(role){
 }
 function reopenDup(role){ var r = DUP.last[role]; if (r && r.status !== 'TIADA') popupPerson(role, r); }
 
-/* ---- SEMAKAN SENARAI EXCEL ---- */
-var XL = { wb:null, rows:[], hdr:0, results:[], fileName:'' };
+/* ---- SEMAKAN SENARAI EXCEL (MULTI FAIL) ---- */
+// XL.files: [{ id, name, base, wb, sheet, rows, hdr, cN, cI, nCol, header, results }]
+var XL = { files:[], seq:0, results:[] };
 var XL_LBL = {
   EXACT:{ t:'⛔ NAMA & IC WUJUD', x:'NAMA & IC WUJUD (EXACT)', c:'d' },
   BOTH: { t:'⚠️ NAMA & IC (rekod lain)', x:'NAMA & IC WUJUD (REKOD BERLAINAN)', c:'w' },
@@ -1813,163 +1828,271 @@ function toggleXl(){
   document.getElementById('xlArrow').innerHTML = open ? '&#9652;' : '&#9662;';
 }
 function colLetter(i){ var s=''; i++; while(i>0){ var m=(i-1)%26; s=String.fromCharCode(65+m)+s; i=Math.floor((i-1)/26); } return s; }
+function xlF(id){ for (var i=0;i<XL.files.length;i++) if (XL.files[i].id===id) return XL.files[i]; return null; }
 
-function onXlFile(input){
-  var file = input.files && input.files[0];
-  if (!file) return;
-  XL.fileName = file.name.replace(/\.[^.]+$/,'');
-  var info = document.getElementById('xlFileInfo');
-  info.textContent = 'Membaca fail...';
-  var reader = new FileReader();
-  reader.onload = function(ev){
-    try {
-      XL.wb = XLSX.read(new Uint8Array(ev.target.result), { type:'array' });
-      var sel = document.getElementById('xlSheet');
-      sel.innerHTML = XL.wb.SheetNames.map(function(n){ return '<option>' + esc(n) + '</option>'; }).join('');
-      document.getElementById('xlCfg').style.display = 'block';
-      document.getElementById('xlResult').style.display = 'none';
-      xlPickSheet();
-      info.textContent = '✓ ' + file.name;
-    } catch(err) { info.textContent = '⚠️ Gagal baca fail. Pastikan format Excel/CSV betul.'; }
-    input.value = '';
-  };
-  reader.readAsArrayBuffer(file);
+function onXlFiles(input){ xlAddFiles(input.files); input.value=''; }
+function xlAddFiles(fileList){
+  var files = Array.prototype.slice.call(fileList || []);
+  if (!files.length) return;
+  var info = document.getElementById('xlFileInfo'), left = files.length, ok = 0, bad = [];
+  info.textContent = 'Membaca ' + files.length + ' fail...';
+  files.forEach(function(file){
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      try {
+        var wb = XLSX.read(new Uint8Array(ev.target.result), { type:'array' });
+        var f = { id: ++XL.seq, name:file.name, base:file.name.replace(/\.[^.]+$/,''), wb:wb, sheet:wb.SheetNames[0], results:[] };
+        xlLoadSheet(f);
+        XL.files.push(f); ok++;
+      } catch(err) { bad.push(file.name); }
+      if (--left === 0) {
+        info.textContent = '✓ ' + ok + ' fail ditambah' + (bad.length ? ' · ⚠️ gagal: ' + bad.join(', ') : '') + ' · jumlah ' + XL.files.length + ' fail';
+        xlRenderList();
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
 }
-function xlPickSheet(){
-  var ws = XL.wb.Sheets[document.getElementById('xlSheet').value];
-  XL.rows = XLSX.utils.sheet_to_json(ws, { header:1, blankrows:false, defval:'' });
-  // cari baris header: ada NAMA / KP / IC / PENGENALAN dalam 15 baris pertama
-  var h = 0;
-  for (var i = 0; i < Math.min(XL.rows.length, 15); i++) {
-    var j = (XL.rows[i]||[]).join('|').toUpperCase();
-    if (/NAMA|PENGENALAN|\bKP\b|\bIC\b|MYKAD/.test(j)) { h = i; break; }
+// Muat sheet + teka baris header & lajur
+function xlLoadSheet(f){
+  f.rows = XLSX.utils.sheet_to_json(f.wb.Sheets[f.sheet], { header:1, blankrows:false, defval:'' });
+  f.hdr = 0;
+  for (var i = 0; i < Math.min(f.rows.length, 15); i++) {
+    var j = (f.rows[i]||[]).join('|').toUpperCase();
+    if (/NAMA|PENGENALAN|\bKP\b|\bIC\b|MYKAD/.test(j)) { f.hdr = i; break; }
   }
-  document.getElementById('xlHdr').value = h + 1;
-  xlBuildCols();
+  xlGuessCols(f);
 }
-function xlBuildCols(){
-  XL.hdr = Math.max(0, (parseInt(document.getElementById('xlHdr').value,10) || 1) - 1);
-  var header = XL.rows[XL.hdr] || [];
-  var nCol = 0;
-  XL.rows.forEach(function(r){ if (r.length > nCol) nCol = r.length; });
-  var opts = '<option value="-1">— Tiada —</option>', gN = -1, gI = -1;
-  for (var c = 0; c < nCol; c++) {
-    var t = String(header[c] == null ? '' : header[c]).trim();
-    var T = t.toUpperCase();
-    opts += '<option value="' + c + '">' + colLetter(c) + (t ? ' — ' + esc(t) : '') + '</option>';
-    if (gN < 0 && /NAMA/.test(T) && !/PASANGAN|TAMAN|PROJEK|BANK/.test(T)) gN = c;
-    if (gI < 0 && /PENGENALAN|\bKP\b|\bIC\b|MYKAD/.test(T) && !/PASANGAN/.test(T)) gI = c;
+function xlGuessCols(f){
+  f.header = f.rows[f.hdr] || [];
+  f.nCol = 0; f.rows.forEach(function(r){ if (r.length > f.nCol) f.nCol = r.length; });
+  f.cN = -1; f.cI = -1;
+  for (var c = 0; c < f.nCol; c++) {
+    var T = String(f.header[c] == null ? '' : f.header[c]).toUpperCase();
+    if (f.cN < 0 && /NAMA/.test(T) && !/PASANGAN|TAMAN|PROJEK|BANK/.test(T)) f.cN = c;
+    if (f.cI < 0 && /PENGENALAN|\bKP\b|\bIC\b|MYKAD/.test(T) && !/PASANGAN/.test(T)) f.cI = c;
   }
-  document.getElementById('xlColNama').innerHTML = opts;
-  document.getElementById('xlColIc').innerHTML = opts;
-  document.getElementById('xlColNama').value = gN;
-  document.getElementById('xlColIc').value = gI;
+  f.results = [];
+}
+function xlColOpts(f, sel){
+  var o = '<option value="-1"' + (sel<0?' selected':'') + '>— Tiada —</option>';
+  for (var c = 0; c < f.nCol; c++) {
+    var t = String(f.header[c] == null ? '' : f.header[c]).trim();
+    o += '<option value="' + c + '"' + (c===sel?' selected':'') + '>' + colLetter(c) + (t ? ' — ' + esc(t) : '') + '</option>';
+  }
+  return o;
+}
+function xlRenderList(){
+  var box = document.getElementById('xlList');
+  document.getElementById('xlCfg').style.display = XL.files.length ? 'block' : 'none';
+  box.innerHTML = XL.files.map(function(f, i){
+    var dataRows = Math.max(0, f.rows.length - f.hdr - 1);
+    var res = f.results.length ? xlFileChips(f) : '';
+    return '<div class="xl-file">'
+      + '<div class="xl-file-hd"><span class="ac-num">' + (i+1) + '</span><span class="xl-fname" title="' + esc(f.name) + '">' + esc(f.name) + '</span>'
+      + '<span class="ac-tag">' + dataRows + ' baris</span>'
+      + '<button class="xl-x" onclick="xlRemove(' + f.id + ')" title="Buang fail">&#10005;</button></div>'
+      + '<div class="xl-row">'
+      +   '<div class="field"><label class="fl">Sheet</label><select onchange="xlSet(' + f.id + ',\'sheet\',this.value)">'
+      +     f.wb.SheetNames.map(function(n){ return '<option' + (n===f.sheet?' selected':'') + '>' + esc(n) + '</option>'; }).join('') + '</select></div>'
+      +   '<div class="field"><label class="fl">Baris Header</label><input type="number" min="1" value="' + (f.hdr+1) + '" onchange="xlSet(' + f.id + ',\'hdr\',this.value)"></div>'
+      + '</div><div class="xl-row">'
+      +   '<div class="field"><label class="fl">Lajur NAMA</label><select onchange="xlSet(' + f.id + ',\'cN\',this.value)">' + xlColOpts(f, f.cN) + '</select></div>'
+      +   '<div class="field"><label class="fl">Lajur NO. KP</label><select onchange="xlSet(' + f.id + ',\'cI\',this.value)">' + xlColOpts(f, f.cI) + '</select></div>'
+      + '</div>' + (res ? '<div class="xl-sum" style="margin:10px 0 0">' + res + '</div>' : '')
+      + '</div>';
+  }).join('');
+}
+function xlSet(id, key, val){
+  var f = xlF(id); if (!f) return;
+  if (key === 'sheet') { f.sheet = val; xlLoadSheet(f); }
+  else if (key === 'hdr') { f.hdr = Math.max(0, (parseInt(val,10)||1) - 1); xlGuessCols(f); }
+  else { f[key] = parseInt(val,10); f.results = []; return; }   // tukar lajur: tak perlu lukis semula
+  xlRenderList();
+}
+function xlRemove(id){
+  XL.files = XL.files.filter(function(f){ return f.id !== id; });
+  xlRenderList();
+  if (XL.results.length) { xlCombine(); xlSummary(); xlRender(); }
+  if (!XL.files.length) document.getElementById('xlResult').style.display = 'none';
+}
+function xlClearAll(){
+  XL.files = []; XL.results = [];
+  document.getElementById('xlFileInfo').textContent = '';
+  document.getElementById('xlResult').style.display = 'none';
+  xlRenderList();
 }
 
-function xlSemak(){
-  var cN = parseInt(document.getElementById('xlColNama').value,10);
-  var cI = parseInt(document.getElementById('xlColIc').value,10);
-  if (cN < 0 && cI < 0) { toast('Pilih sekurang-kurangnya satu lajur (Nama atau No. KP)'); return; }
+function xlSemakSemua(){
+  if (!XL.files.length) { toast('Upload sekurang-kurangnya satu fail'); return; }
+  var tiadaLajur = XL.files.filter(function(f){ return f.cN < 0 && f.cI < 0; });
+  if (tiadaLajur.length) { toast('Pilih lajur Nama/No. KP untuk: ' + tiadaLajur.map(function(f){return f.name;}).join(', ')); return; }
   if (!ST.depId || ST.depId === 'LETAK_DEPLOYMENT_ID_ANDA_DI_SINI') { toast('Tetapkan Deployment ID dahulu'); return; }
   toast('⏳ Memuat rekod terkini dari Google Sheet...');
-  // Sentiasa muat semula -> semakan berdasarkan data TERKINI dalam Sheet
   loadDupIndex(function(ok){
     if (!ok) { toast('⚠️ Gagal muat rekod Google Sheet. Semak Deployment ID / redeploy Apps Script.'); return; }
-    XL.results = [];
-    for (var r = XL.hdr + 1; r < XL.rows.length; r++) {
-      var row = XL.rows[r] || [];
-      var nama = cN >= 0 ? String(row[cN] == null ? '' : row[cN]).trim().toUpperCase() : '';
-      var icRaw = cI >= 0 ? row[cI] : '';
-      var ic = normIc(typeof icRaw === 'number' ? Math.round(icRaw) : icRaw);
-      if (!nama && !ic) continue;
-      var res = checkPerson(nama, ic.length === 12 ? ic : '', false);
-      XL.results.push({ r:r, baris:r+1, nama:nama, ic:ic, icBad:(ic && ic.length !== 12), res:res });
-    }
+    XL.files.forEach(function(f){
+      f.results = [];
+      for (var r = f.hdr + 1; r < f.rows.length; r++) {
+        var row = f.rows[r] || [];
+        var nama = f.cN >= 0 ? String(row[f.cN] == null ? '' : row[f.cN]).trim().toUpperCase() : '';
+        var icRaw = f.cI >= 0 ? row[f.cI] : '';
+        var ic = normIc(typeof icRaw === 'number' ? Math.round(icRaw) : icRaw);
+        if (!nama && !ic) continue;
+        var res = checkPerson(nama, ic.length === 12 ? ic : '', false);
+        f.results.push({ fid:f.id, fname:f.name, r:r, baris:r+1, nama:nama, ic:ic, icBad:(ic && ic.length !== 12), res:res, cross:[] });
+      }
+    });
+    xlCombine();
     xlSummary();
+    xlFillFileFilter();
     document.getElementById('xlFilter').value = 'all';
     xlRender();
+    xlRenderList();
     document.getElementById('xlResult').style.display = 'block';
     xlPopup();
   });
 }
-function xlCount(st){ return XL.results.filter(function(x){ return x.res.status === st; }).length; }
+// Gabung semua hasil + kesan pertindihan ANTARA fail (IC sama, atau nama sama jika tiada IC)
+function xlCombine(){
+  XL.results = [];
+  XL.files.forEach(function(f){ f.results.forEach(function(x){ x.cross = []; XL.results.push(x); }); });
+  if (!document.getElementById('xlCross').checked || XL.files.length < 2) return;
+  var byKey = {};
+  XL.results.forEach(function(x){
+    var key = x.ic.length === 12 ? 'I' + x.ic : (x.nama ? 'N' + normNama(x.nama) : '');
+    if (key) (byKey[key] = byKey[key] || []).push(x);
+  });
+  Object.keys(byKey).forEach(function(k){
+    var g = byKey[k];
+    var fids = {}; g.forEach(function(x){ fids[x.fid] = 1; });
+    if (Object.keys(fids).length < 2) return;            // hanya kira jika merentas fail berbeza
+    g.forEach(function(x){
+      x.cross = g.filter(function(y){ return y.fid !== x.fid; }).map(function(y){ return y.fname + ' · baris ' + y.baris; });
+    });
+  });
+}
+function xlCountIn(list, st){ return list.filter(function(x){ return x.res.status === st; }).length; }
+function xlFileChips(f){
+  var L = f.results;
+  return '<span class="chip n">' + L.length + ' disemak</span>'
+    + '<span class="chip d">⛔ ' + xlCountIn(L,'EXACT') + '</span>'
+    + '<span class="chip w">⚠️ ' + (xlCountIn(L,'BOTH') + xlCountIn(L,'IC') + xlCountIn(L,'NAMA')) + '</span>'
+    + '<span class="chip g">✓ ' + xlCountIn(L,'TIADA') + '</span>'
+    + (L.some(function(x){ return x.cross.length; }) ? '<span class="chip x">⇄ ' + L.filter(function(x){ return x.cross.length; }).length + '</span>' : '');
+}
 function xlSummary(){
-  var n = XL.results.length;
-  var e = xlCount('EXACT'), w = xlCount('BOTH') + xlCount('IC') + xlCount('NAMA'), t = xlCount('TIADA');
-  var bad = XL.results.filter(function(x){ return x.icBad; }).length;
+  var L = XL.results;
+  var e = xlCountIn(L,'EXACT'), w = xlCountIn(L,'BOTH') + xlCountIn(L,'IC') + xlCountIn(L,'NAMA'), t = xlCountIn(L,'TIADA');
+  var cr = L.filter(function(x){ return x.cross.length; }).length;
+  var bad = L.filter(function(x){ return x.icBad; }).length;
   document.getElementById('xlSum').innerHTML =
-    '<span class="chip n">' + n + ' baris disemak</span>' +
+    '<span class="chip n">' + XL.files.length + ' fail · ' + L.length + ' baris</span>' +
     '<span class="chip d">⛔ ' + e + ' exact</span>' +
     '<span class="chip w">⚠️ ' + w + ' separa</span>' +
     '<span class="chip g">✓ ' + t + ' tiada</span>' +
+    (cr ? '<span class="chip x">⇄ ' + cr + ' bertindih antara fail</span>' : '') +
     (bad ? '<span class="chip n">' + bad + ' IC tak 12 digit</span>' : '');
+}
+function xlFillFileFilter(){
+  var s = document.getElementById('xlFilterFile');
+  s.innerHTML = '<option value="0">Semua fail (' + XL.files.length + ')</option>'
+    + XL.files.map(function(f, i){ return '<option value="' + f.id + '">' + (i+1) + '. ' + esc(f.name) + '</option>'; }).join('');
 }
 function xlFirstHit(res){ return res.exact[0] || res.icOnly[0] || res.namaOnly[0] || null; }
 function xlRender(){
   var f = document.getElementById('xlFilter').value;
+  var fid = parseInt(document.getElementById('xlFilterFile').value, 10) || 0;
   var list = XL.results.filter(function(x){
+    if (fid && x.fid !== fid) return false;
     if (f === 'all') return true;
-    if (f === 'found') return x.res.status !== 'TIADA';
+    if (f === 'found') return x.res.status !== 'TIADA' || x.cross.length;
+    if (f === 'CROSS') return x.cross.length > 0;
     return x.res.status === f;
   });
-  var MAX = 500;
-  var html = '<tr><th>Baris</th><th>Nama</th><th>No. KP</th><th>Status</th><th>Dijumpai di</th></tr>';
+  var MAX = 500, multi = XL.files.length > 1;
+  var html = '<tr>' + (multi ? '<th>Fail</th>' : '') + '<th>Baris</th><th>Nama</th><th>No. KP</th><th>Status</th><th>Dijumpai di</th></tr>';
   html += list.slice(0, MAX).map(function(x){
     var L = XL_LBL[x.res.status], hit = xlFirstHit(x.res);
     var all = x.res.exact.length + x.res.icOnly.length + x.res.namaOnly.length;
-    return '<tr class="st-' + x.res.status + '"><td class="mono">' + x.baris + '</td>'
+    var where = hit ? esc(dupWhere(hit)) + (all > 1 ? ' <b>+' + (all-1) + '</b>' : '') : '-';
+    if (x.cross.length) where += '<div style="color:#5B3FA8;margin-top:3px">⇄ ' + esc(x.cross.slice(0,2).join('; ')) + (x.cross.length > 2 ? ' +' + (x.cross.length-2) : '') + '</div>';
+    return '<tr class="st-' + x.res.status + '">' + (multi ? '<td style="font-size:11px;max-width:110px;word-break:break-word">' + esc(x.fname) + '</td>' : '')
+      + '<td class="mono">' + x.baris + '</td>'
       + '<td>' + esc(x.nama) + '</td>'
       + '<td class="mono">' + esc(fmtIcD(x.ic)) + (x.icBad ? ' <span style="color:var(--danger)">(!)</span>' : '') + '</td>'
       + '<td><span class="chip ' + L.c + '">' + L.t + '</span></td>'
-      + '<td style="font-size:11px">' + (hit ? esc(dupWhere(hit)) + (all > 1 ? ' <b>+' + (all-1) + '</b>' : '') : '-') + '</td></tr>';
+      + '<td style="font-size:11px">' + where + '</td></tr>';
   }).join('');
-  if (list.length > MAX) html += '<tr><td colspan="5" class="ac-note">Papar ' + MAX + ' daripada ' + list.length + ' baris. Muat turun Excel untuk senarai penuh.</td></tr>';
-  if (!list.length) html += '<tr><td colspan="5" class="ac-note">Tiada baris untuk tapisan ini.</td></tr>';
+  var cs = multi ? 6 : 5;
+  if (list.length > MAX) html += '<tr><td colspan="' + cs + '" class="ac-note">Papar ' + MAX + ' daripada ' + list.length + ' baris. Muat turun Excel untuk senarai penuh.</td></tr>';
+  if (!list.length) html += '<tr><td colspan="' + cs + '" class="ac-note">Tiada baris untuk tapisan ini.</td></tr>';
   document.getElementById('xlTbl').innerHTML = html;
 }
 function xlPopup(){
   var ex = XL.results.filter(function(x){ return x.res.status === 'EXACT'; });
   var sp = XL.results.filter(function(x){ return ['BOTH','IC','NAMA'].indexOf(x.res.status) >= 0; });
+  var cr = XL.results.filter(function(x){ return x.cross.length; });
+  var multi = XL.files.length > 1;
   function senarai(arr, cls){
     return arr.slice(0, 10).map(function(x){
       var hit = xlFirstHit(x.res);
-      return '<div class="dup-item ' + cls + '"><div class="dn">Baris ' + x.baris + ': ' + esc(x.nama || '(tiada nama)') + '</div>'
+      return '<div class="dup-item ' + cls + '"><div class="dn">' + (multi ? esc(x.fname) + ' · ' : '') + 'Baris ' + x.baris + ': ' + esc(x.nama || '(tiada nama)') + '</div>'
         + '<div class="dm">' + esc(fmtIcD(x.ic) || '-') + ' · ' + XL_LBL[x.res.status].t + '</div>'
         + (hit ? '<div class="dm">' + esc(dupWhere(hit)) + '</div>' : '') + '</div>';
     }).join('') + (arr.length > 10 ? '<div class="dm">+ ' + (arr.length-10) + ' lagi — lihat jadual.</div>' : '');
   }
+  var crNote = cr.length ? '<div class="dup-lbl">⇄ ' + cr.length + ' baris bertindih antara fail yang diupload</div>' : '';
   var lihat = { label:'Lihat yang wujud', cls:'btn-o', fn:function(){ document.getElementById('xlFilter').value='found'; xlRender(); } };
   if (ex.length) {
     openPopup('danger', '⛔ ' + ex.length + ' REKOD NAMA &amp; IC EXACT TELAH WUJUD',
       '<p><strong style="color:var(--danger)">Nama dan No. KP berikut sepadan tepat dengan rekod dalam Google Sheet.</strong></p>'
       + senarai(ex, 'danger')
-      + (sp.length ? '<div class="dup-lbl">+ ' + sp.length + ' padanan separa (nama / IC sahaja)</div>' : ''),
+      + (sp.length ? '<div class="dup-lbl">+ ' + sp.length + ' padanan separa (nama / IC sahaja)</div>' : '') + crNote,
       [lihat, { label:'Faham', cls:'btn-r' }]);
   } else if (sp.length) {
     openPopup('warn', '⚠️ ' + sp.length + ' nama / No. KP telah wujud',
-      '<p>Tiada padanan exact, tetapi rekod berikut sepadan pada nama <em>atau</em> No. KP sahaja.</p>' + senarai(sp, ''),
+      '<p>Tiada padanan exact, tetapi rekod berikut sepadan pada nama <em>atau</em> No. KP sahaja.</p>' + senarai(sp, '') + crNote,
       [lihat, { label:'Faham', cls:'btn-g' }]);
+  } else if (cr.length) {
+    openPopup('warn', '⇄ ' + cr.length + ' baris bertindih antara fail',
+      '<p>Tiada yang wujud dalam Google Sheet, tetapi ada nama/IC yang sama dalam lebih dari satu fail yang diupload.</p>',
+      [{ label:'Lihat', cls:'btn-o', fn:function(){ document.getElementById('xlFilter').value='CROSS'; xlRender(); } }, { label:'Faham', cls:'btn-g' }]);
   } else {
-    toast('✅ ' + XL.results.length + ' baris disemak — tiada yang wujud dalam rekod');
+    toast('✅ ' + XL.results.length + ' baris (' + XL.files.length + ' fail) disemak — tiada yang wujud');
   }
 }
+// Eksport: 1 workbook — sheet RINGKASAN + 1 sheet bagi setiap fail (data asal + lajur status)
 function xlExport(){
   if (!XL.results.length) return;
-  var byR = {}; XL.results.forEach(function(x){ byR[x.r] = x; });
-  var header = (XL.rows[XL.hdr] || []).slice();
-  var nCol = 0; XL.rows.forEach(function(r){ if (r.length > nCol) nCol = r.length; });
-  while (header.length < nCol) header.push('');
-  var aoa = [header.concat(['STATUS SEMAKAN', 'DIJUMPAI DI'])];
-  for (var r = XL.hdr + 1; r < XL.rows.length; r++) {
-    var row = (XL.rows[r] || []).slice(); while (row.length < nCol) row.push('');
-    var x = byR[r];
-    if (!x) { aoa.push(row.concat(['',''])); continue; }
-    var hits = x.res.exact.concat(x.res.icOnly, x.res.namaOnly).map(dupWhere).join(' | ');
-    aoa.push(row.concat([XL_LBL[x.res.status].x, hits]));
+  var wb = XLSX.utils.book_new(), used = {};
+  function sheetName(n){
+    var s = String(n).replace(/[\\\/\?\*\[\]:]/g,' ').slice(0, 28) || 'FAIL', b = s, k = 2;
+    while (used[s.toUpperCase()]) s = b.slice(0, 25) + ' (' + (k++) + ')';
+    used[s.toUpperCase()] = 1; return s;
   }
-  var wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), 'SEMAKAN');
-  XLSX.writeFile(wb, 'SEMAKAN_' + (XL.fileName || 'senarai') + '.xlsx');
+  var sum = [['FAIL','SHEET','BARIS DISEMAK','EXACT','NAMA & IC (REKOD LAIN)','IC SAHAJA','NAMA SAHAJA','TIADA','BERTINDIH ANTARA FAIL']];
+  XL.files.forEach(function(f){
+    var L = f.results;
+    sum.push([f.name, f.sheet, L.length, xlCountIn(L,'EXACT'), xlCountIn(L,'BOTH'), xlCountIn(L,'IC'), xlCountIn(L,'NAMA'), xlCountIn(L,'TIADA'),
+              L.filter(function(x){ return x.cross.length; }).length]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sum), sheetName('RINGKASAN'));
+  XL.files.forEach(function(f){
+    var byR = {}; f.results.forEach(function(x){ byR[x.r] = x; });
+    var header = (f.rows[f.hdr] || []).slice(); while (header.length < f.nCol) header.push('');
+    var aoa = [header.concat(['STATUS SEMAKAN', 'DIJUMPAI DI', 'BERTINDIH ANTARA FAIL'])];
+    for (var r = f.hdr + 1; r < f.rows.length; r++) {
+      var row = (f.rows[r] || []).slice(); while (row.length < f.nCol) row.push('');
+      var x = byR[r];
+      if (!x) { aoa.push(row.concat(['','',''])); continue; }
+      var hits = x.res.exact.concat(x.res.icOnly, x.res.namaOnly).map(dupWhere).join(' | ');
+      aoa.push(row.concat([XL_LBL[x.res.status].x, hits, x.cross.join(' | ')]));
+    }
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), sheetName(f.base));
+  });
+  var nm = XL.files.length === 1 ? XL.files[0].base : (XL.files.length + '_FAIL');
+  XLSX.writeFile(wb, 'SEMAKAN_' + nm + '.xlsx');
 }
 
 /* ================================================================
