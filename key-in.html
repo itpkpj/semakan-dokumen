@@ -582,11 +582,11 @@ input.ic-bad  { border-color: var(--danger) !important; }
 <div class="modal-bg" id="modal" onclick="closeModalOut(event)">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title">&#9881;&#65039; Tukar Deployment ID (sementara)</div>
+    <div class="modal-title">&#9881;&#65039; Deployment ID</div>
     <div class="cur-dep"><span>Deployment ID semasa:</span><span id="curDepTxt">&mdash;</span></div>
     <div class="alert al-y" style="margin-bottom:13px">
       <span>&#8505;&#65039;</span>
-      <div>ID ini dibenam dalam kod. Tukar di sini hanya untuk ujian sementara pada peranti ini.</div>
+      <div>ID disimpan dalam <strong>cache pelayar peranti ini</strong> (localStorage). Ia kekal walaupun halaman ditutup, dan akan <strong>terhapus</strong> jika cache/data laman dikosongkan atau ID ditukar di sini.</div>
     </div>
     <div style="margin-bottom:13px">
       <label class="fl" style="margin-bottom:6px">&#128273; Deployment ID Baru</label>
@@ -594,8 +594,9 @@ input.ic-bad  { border-color: var(--danger) !important; }
     </div>
     <div style="display:flex;gap:10px">
       <button class="btn btn-o" style="flex:1" onclick="closeModal()">Batal</button>
-      <button class="btn btn-g" style="flex:1.5" onclick="saveNewDep()">Guna ID Ini &#10003;</button>
+      <button class="btn btn-g" style="flex:1.5" onclick="saveNewDep()">Simpan ID &#10003;</button>
     </div>
+    <button class="btn btn-o btn-full btn-sm" style="margin-top:10px;color:var(--danger)" onclick="clearDep()">&#128465; Padam ID tersimpan dari peranti ini</button>
 
     <div class="divider"></div>
 
@@ -775,7 +776,15 @@ const MUKIM_DUN = {
   "TRIANG":           ["ENDAU"]
 };
 
-const ST = { depId: DEPLOYMENT_ID, jenis:'' };
+/* ======== DEPLOYMENT ID — DISIMPAN DALAM CACHE (localStorage) ========
+   Keutamaan: ID dalam cache peranti -> ID dibenam (DEPLOYMENT_ID) jika ada.
+   Terhapus bila pengguna clear cache / data laman, atau tekan "Padam ID".  */
+const DEP_KEY = 'pkj_dep';
+function depPlaceholder(id){ return !id || id === 'LETAK_DEPLOYMENT_ID_ANDA_DI_SINI'; }
+function depLoad(){ try { return (localStorage.getItem(DEP_KEY) || '').trim(); } catch(e){ return ''; } }
+function depSave(id){ try { localStorage.setItem(DEP_KEY, id); return true; } catch(e){ return false; } }
+function depClear(){ try { localStorage.removeItem(DEP_KEY); } catch(e){} }
+const ST = { depId: depLoad() || (depPlaceholder(DEPLOYMENT_ID) ? '' : DEPLOYMENT_ID), jenis:'' };
 
 /* ======== NAVIGATION ======== */
 function showS(n) {
@@ -790,8 +799,8 @@ function showS(n) {
 
 /* ======== SETTINGS MODAL (ujian sementara sahaja) ======== */
 function openSettings() {
-  const dep = ST.depId || '—';
-  document.getElementById('curDepTxt').textContent = dep.length > 18 ? dep.slice(0,10)+'...'+dep.slice(-8) : dep;
+  var src = depLoad() ? ' (cache peranti)' : (ST.depId ? ' (dibenam dalam kod)' : '');
+  document.getElementById('curDepTxt').textContent = ST.depId ? depMask(ST.depId) + src : '— tiada —';
   document.getElementById('newDepId').value = '';
   document.getElementById('modal').classList.add('open');
   setTimeout(() => document.getElementById('newDepId').focus(), 350);
@@ -799,19 +808,28 @@ function openSettings() {
 function closeModal()     { document.getElementById('modal').classList.remove('open'); }
 function closeModalOut(e) { if (e.target===document.getElementById('modal')) closeModal(); }
 function saveNewDep() {
-  const depId = document.getElementById('newDepId').value.trim();
+  const depId = document.getElementById('newDepId').value.trim().replace(/^.*\/s\/([^\/]+)\/exec.*$/, '$1');   // terima juga URL penuh /exec
   if (!depId) { toast('Tiada perubahan'); return; }
   ST.depId = depId;
+  var ok = depSave(depId);
   closeModal();
   vibrate([20,30,20]);
-
-  // Muat turun senarai nama (penerima + pasangan) selepas ID ditetapkan
-  toast('⏳ Memuat turun senarai nama... (1-5 saat)');
-  loadWords(function(ok, n) {
-    if (ok) toast('✅ ID disimpan · ' + n + ' perkataan nama dimuatkan');
-    else    toast('⚠️ ID disimpan tetapi gagal muat senarai nama');
+  // set semula cache data lama (ID baru = Sheet mungkin berbeza)
+  AC.loaded = false; AC.words = []; DUP.loaded = false; DUP.byIc = {}; DUP.byNama = {};
+  toast(ok ? '⏳ ID disimpan di peranti ini · memuat senarai nama...' : '⚠️ Cache disekat — ID hanya aktif sehingga halaman ditutup');
+  loadWords(function(ok2, n) {
+    if (ok2) toast('✅ ID disimpan · ' + n + ' perkataan nama dimuatkan');
+    else     toast('⚠️ ID disimpan tetapi gagal sambung — semak ID / deployment');
   });
 }
+function clearDep() {
+  depClear();
+  ST.depId = depPlaceholder(DEPLOYMENT_ID) ? '' : DEPLOYMENT_ID;
+  AC.loaded = false; AC.words = []; DUP.loaded = false; DUP.byIc = {}; DUP.byNama = {};
+  document.getElementById('curDepTxt').textContent = ST.depId ? depMask(ST.depId) + ' (dibenam dalam kod)' : '— tiada —';
+  toast(ST.depId ? '🗑 ID cache dipadam · guna ID dibenam dalam kod' : '🗑 ID dipadam dari peranti ini');
+}
+function depMask(dep){ return dep.length > 18 ? dep.slice(0,10)+'...'+dep.slice(-8) : dep; }
 
 /* ======== JENIS ======== */
 function pickJenis(j, el) {
@@ -879,7 +897,7 @@ function lastWord(val) {
 // Muat turun SEMUA perkataan (nama penerima + pasangan) -> simpan dalam ingatan.
 // onDone(ok, count) dipanggil bila siap/gagal supaya UI boleh papar status.
 function loadWords(onDone) {
-  if (!ST.depId || ST.depId === 'LETAK_DEPLOYMENT_ID_ANDA_DI_SINI') {
+  if (depPlaceholder(ST.depId)) {
     if (onDone) onDone(false, 0);
     return;
   }
@@ -912,7 +930,7 @@ function loadWords(onDone) {
 
 // Muat turun senarai Nama Taman/Projek (untuk suggest medan Taman)
 function loadTaman() {
-  if (!ST.depId || ST.depId === 'LETAK_DEPLOYMENT_ID_ANDA_DI_SINI') return;
+  if (depPlaceholder(ST.depId)) return;
   var cbName = 'pkjTaman_' + Date.now();
   var script = document.createElement('script');
   window[cbName] = function(resp) {
@@ -1091,7 +1109,7 @@ function cariDUN(lat, lng) {
 // Geocode via JSONP (Apps Script action=geocode)
 function geocodeJSONP(nama, mukim, daerah) {
   return new Promise(function(resolve){
-    if (!ST.depId || ST.depId === 'LETAK_DEPLOYMENT_ID_ANDA_DI_SINI') { resolve(null); return; }
+    if (depPlaceholder(ST.depId)) { resolve(null); return; }
     var cb = 'pkjGeo_' + Date.now();
     var s = document.createElement('script');
     var to = setTimeout(function(){ cleanup(); resolve(null); }, 12000);
@@ -1314,7 +1332,7 @@ function onCariInput(el) {
   var q = el.value.trim();
   clearTimeout(CARI.timer);
   if (q.length < 2) { cariClose(); return; }
-  if (!ST.depId || ST.depId === 'LETAK_DEPLOYMENT_ID_ANDA_DI_SINI') {
+  if (depPlaceholder(ST.depId)) {
     showCariNote('Tetapkan Deployment ID dahulu (tekan &#9881;).'); return;
   }
   showCariNote('Mencari...');
@@ -1475,7 +1493,7 @@ var DUNMAP = { byDaerah: {}, byMukim: {} };   // peta DUN belajar dari rekod
 
 // Muat turun peta DUN mengikut daerah/mukim
 function loadDunMap() {
-  if (!ST.depId || ST.depId === 'LETAK_DEPLOYMENT_ID_ANDA_DI_SINI') return;
+  if (depPlaceholder(ST.depId)) return;
   var cbName = 'pkjDun_' + Date.now();
   var script = document.createElement('script');
   window[cbName] = function(resp) {
@@ -1600,7 +1618,7 @@ function useRefLocal() {
 // Simpan rujukan ke Google Sheet (tab RUJUKAN) supaya dikongsi semua pengguna
 function uploadRefToSheet() {
   if (!REF.pending) return;
-  if (!ST.depId || ST.depId === 'LETAK_DEPLOYMENT_ID_ANDA_DI_SINI') {
+  if (depPlaceholder(ST.depId)) {
     toast('Tetapkan Deployment ID dahulu'); return;
   }
   applyRef(REF.pending);
@@ -1624,7 +1642,7 @@ function uploadRefToSheet() {
 
 // Muat turun peta rujukan dari Sheet (dipanggil masa set ID)
 function loadRef() {
-  if (!ST.depId || ST.depId === 'LETAK_DEPLOYMENT_ID_ANDA_DI_SINI') return;
+  if (depPlaceholder(ST.depId)) return;
   var cbName = 'pkjRef_' + Date.now();
   var script = document.createElement('script');
   window[cbName] = function(resp) {
@@ -1702,7 +1720,7 @@ function dupAdd(n, ic, sheet, row, role, jenis){
 // Muat indeks dari Google Sheet. cb(ok, bilangan) dipanggil bila siap.
 function loadDupIndex(cb){
   if (cb) DUP.waiters.push(cb);
-  if (!ST.depId || ST.depId === 'LETAK_DEPLOYMENT_ID_ANDA_DI_SINI') { flush(false,0); return; }
+  if (depPlaceholder(ST.depId)) { flush(false,0); return; }
   if (DUP.loading) return;
   DUP.loading = true;
   var cbName = 'pkjDup_' + Date.now();
@@ -1963,7 +1981,7 @@ function xlSemakSemua(){
   var tiadaLajur = [];
   xlEachOn(function(f, s){ if (s.cN < 0 && s.cI < 0 && s.cNP < 0 && s.cIP < 0) tiadaLajur.push(xlSrcLbl(f.name, s.name)); });
   if (tiadaLajur.length) { toast('Pilih lajur Nama/No. KP untuk: ' + tiadaLajur.join(', ')); return; }
-  if (!ST.depId || ST.depId === 'LETAK_DEPLOYMENT_ID_ANDA_DI_SINI') { toast('Tetapkan Deployment ID dahulu'); return; }
+  if (depPlaceholder(ST.depId)) { toast('Tetapkan Deployment ID dahulu'); return; }
   toast('⏳ Memuat rekod terkini dari Google Sheet...');
   loadDupIndex(function(ok){
     if (!ok) { toast('⚠️ Gagal muat rekod Google Sheet. Semak Deployment ID / redeploy Apps Script.'); return; }
@@ -2327,7 +2345,7 @@ function getForm() {
    Catatan HANYA wajib bila tekan butang "Tidak Layak" (semua jenis).
 */
 async function doSubmit(tidakLayak, force) {
-  if (!ST.depId || ST.depId === 'LETAK_DEPLOYMENT_ID_ANDA_DI_SINI') {
+  if (depPlaceholder(ST.depId)) {
     toast('Deployment ID belum ditetapkan dalam kod'); return;
   }
 
@@ -2457,11 +2475,11 @@ function toast(msg) {
 
 /* ======== INIT ======== */
 (function init() {
-  localStorage.removeItem('pkj_dep');   // buang sebarang ID lama tersangkut
   document.getElementById('fTarikh').value = defaultTarikh();  // default tahun 2026
   buildDaerah();
   loadWords();                          // muat turun perkataan sekali -> suggest pantas
   showS(1);
+  if (!ST.depId) setTimeout(function(){ openSettings(); toast('Masukkan Deployment ID untuk mula (disimpan di peranti ini)'); }, 400);
 })();
 </script>
 </body>
