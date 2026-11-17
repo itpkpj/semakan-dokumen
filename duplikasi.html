@@ -982,11 +982,32 @@ document.getElementById('butKosongkan').addEventListener('click',()=>{
 });
 
 function muatTurun(kumpulan){
-  const baris=[['No KP','Nama','Peranan','Jenis','Rujukan','Nama Berbeza','Bilangan','Fail','Sheet','Baris','Nilai Asal']];
-  kumpulan.forEach(k=>k.senarai.forEach(r=>{
-    baris.push([k.ic,r.nama,r.peran||'Penerima',k.jenis,r.rujukan?'YA':'',k.namaBerbeza?'YA':'',k.senarai.length,
-      r.namaFail,r.namaSheet,r.nomborBaris,r.mentah]);
-  }));
+  const baris=[['Kes','No KP','Nama','Peranan','Jenis','Rujukan','Nama Berbeza','Bilangan',
+                'Semua Lokasi','Fail','Sheet','Baris','Nilai Asal']];
+  let kes=0;
+  kumpulan.forEach(k=>{
+    kes++;
+    /* Senarai lokasi unik: "nama fail (nama sheet)", baris rujukan didahulukan */
+    const dilihat=new Set(), lokasi=[];
+    k.senarai.forEach(r=>{
+      const t=namaRingkas(r.namaFail)+'('+r.namaSheet+')';
+      if(!dilihat.has(t)){ dilihat.add(t); lokasi.push({t:t, rujukan:r.rujukan}); }
+    });
+    lokasi.sort((a,b)=>(b.rujukan?1:0)-(a.rujukan?1:0));
+    const semuaLokasi=lokasi.map(x=>x.t).join(', ');
+
+    /* Dalam setiap kes, baris rujukan di atas, kemudian ikut fail dan nombor baris */
+    const isih=k.senarai.slice().sort((a,b)=>
+      (b.rujukan?1:0)-(a.rujukan?1:0) ||
+      String(a.namaFail).localeCompare(String(b.namaFail)) ||
+      a.nomborBaris-b.nomborBaris);
+
+    isih.forEach(r=>{
+      baris.push([kes,k.ic,r.nama,r.peran||'Penerima',k.jenis,r.rujukan?'YA':'',
+        k.namaBerbeza?'YA':'',k.senarai.length,semuaLokasi,
+        r.namaFail,r.namaSheet,r.nomborBaris,r.mentah]);
+    });
+  });
   const csv='\uFEFF'+baris.map(b=>b.map(s=>'"'+String(s).replace(/"/g,'""')+'"').join(',')).join('\n');
   const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
   const a=document.createElement('a'); a.href=url; a.download='laporan-duplikat-ic.csv'; a.click();
