@@ -96,7 +96,25 @@ mark{background:#ffe9a8;color:inherit;padding:0 1px;border-radius:2px}
 .sheet-nama{font-size:14px;font-weight:600}
 .sheet-kira{font-size:12px;color:var(--neutral);margin-left:auto;font-variant-numeric:tabular-nums}
 .sheet-medan{display:grid;gap:9px}
-@media(min-width:560px){.sheet-medan{grid-template-columns:1fr 1fr}}
+@media(min-width:560px){.sheet-medan{grid-template-columns:1fr 1fr}
+  .sheet-medan.tiga{grid-template-columns:150px 1fr 1fr}}
+.brs-kawal{display:flex;align-items:stretch;gap:0}
+.brs-kawal input{width:100%;min-width:0;text-align:center;padding:8px 4px;
+  border:1px solid var(--garis);border-left:none;border-right:none;
+  font-family:inherit;font-size:14px;font-variant-numeric:tabular-nums;
+  background:#fff;color:var(--dakwat);-moz-appearance:textfield}
+.brs-kawal input::-webkit-outer-spin-button,.brs-kawal input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.brs-but{width:32px;flex-shrink:0;border:1px solid var(--garis);background:#fff;
+  color:var(--dakwat);font-size:15px;font-weight:600;cursor:pointer;line-height:1}
+.brs-but:first-child{border-radius:6px 0 0 6px}
+.brs-but:last-child{border-radius:0 6px 6px 0}
+.brs-but:hover{background:var(--kertas);border-color:var(--dakwat)}
+.tajuk-pratonton{margin-top:9px;font-size:11px;color:var(--neutral);
+  display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.cip{display:inline-block;background:var(--kertas);border:1px solid var(--garis);
+  border-radius:3px;padding:2px 6px;font-size:11px;color:var(--dakwat);font-weight:600;
+  max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cip.kosong-cip{color:var(--amaran);border-color:var(--amaran);background:var(--amaran-latar);font-weight:400}
 label.medan{display:block;font-size:11px;font-weight:600;margin-bottom:3px;color:var(--neutral);
   text-transform:uppercase;letter-spacing:.06em}
 select,button{font-family:inherit;font-size:14px}
@@ -260,7 +278,7 @@ function pisahCSV(teks){
     else if(c!=='\r'){ medan+=c; }
   }
   if(medan!==''||semasa.length){ semasa.push(medan); baris.push(semasa); }
-  return baris.filter(b=>b.some(v=>String(v).trim()!==''));
+  return baris;   /* baris kosong dikekalkan supaya nombor baris sepadan */
 }
 
 function bacaFail(f){
@@ -277,9 +295,9 @@ function bacaFail(f){
           const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellText:true,raw:false});
           const s=wb.SheetNames.map(n=>({
             namaSheet:n,
+            /* Semua baris dikekalkan supaya nombor baris sepadan dengan Excel */
             baris:XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:false})
-              .filter(b=>b.some(v=>String(v).trim()!==''))
-          })).filter(x=>x.baris.length>=2);
+          })).filter(x=>x.baris.filter(b=>b.some(v=>String(v).trim()!=='')).length>=2);
           if(!s.length) gagal(new Error(f.name+': tiada sheet yang mengandungi data.'));
           else tepat(s);
         }catch(err){ gagal(new Error(f.name+': fail Excel rosak atau tidak disokong.')); }
@@ -288,7 +306,8 @@ function bacaFail(f){
     } else {
       fr.onload=e=>{
         const baris=pisahCSV(e.target.result);
-        if(baris.length<2) gagal(new Error(f.name+': perlu ada baris tajuk dan sekurang-kurangnya satu baris data.'));
+        if(baris.filter(b=>b.some(v=>String(v).trim()!=='')).length<2)
+          gagal(new Error(f.name+': perlu ada baris tajuk dan sekurang-kurangnya satu baris data.'));
         else tepat([{namaSheet:f.name.replace(/\.[^.]+$/,''), baris:baris}]);
       };
       fr.readAsText(f,'UTF-8');
@@ -326,10 +345,12 @@ async function muatBanyak(senaraiFail){
       const sheets=await bacaFail(f);
       fail.push({
         id:'f'+(kiraId++), nama:f.name,
-        sheet: sheets.map((s,i)=>({
-          id:'s'+(kiraId++), namaSheet:s.namaSheet, tajuk:s.baris[0], baris:s.baris.slice(1),
-          guna:true, idxIC:-1, idxNama:-1
-        }))
+        sheet: sheets.map((s,i)=>{
+          const sh={ id:'s'+(kiraId++), namaSheet:s.namaSheet, semua:s.baris,
+                     brsTajuk:kesanBarisTajuk(s.baris), guna:true, idxIC:-1, idxNama:-1 };
+          petakan(sh);
+          return sh;
+        })
       });
     }catch(err){ ralat.push(err.message); }
   }
@@ -340,6 +361,37 @@ async function muatBanyak(senaraiFail){
 }
 
 function teka(tajuk,corak){ return tajuk.findIndex(t=>corak.test(String(t))); }
+
+/* Cari baris tajuk: baris dengan paling banyak sel teks unik dalam 20 baris pertama.
+   Baris tajuk laporan yang digabung biasanya ada 1-2 sel sahaja, jadi ia tidak terpilih. */
+function kesanBarisTajuk(semua){
+  const had=Math.min(20,semua.length);
+  let terbaik=1, skorTerbaik=-1;
+  for(let r=0;r<had;r++){
+    const sel=(semua[r]||[]).map(v=>String(v||'').trim()).filter(v=>v!=='');
+    if(sel.length<2) continue;
+    const unik=new Set(sel.map(v=>v.toUpperCase())).size;
+    const adaHuruf=sel.filter(v=>/[A-Za-z]/.test(v)).length;
+    /* utamakan baris penuh dengan label teks, bukan baris data */
+    const skor = unik*2 + adaHuruf - r*0.5;
+    if(skor>skorTerbaik){ skorTerbaik=skor; terbaik=r+1; }
+  }
+  return terbaik;
+}
+
+/* Petakan semula tajuk dan baris data berdasarkan brsTajuk (1-based).
+   nomborBaris disimpan supaya ia sentiasa merujuk baris sebenar dalam fail. */
+function petakan(sh){
+  const t=Math.max(1,Math.min(sh.brsTajuk,sh.semua.length));
+  sh.brsTajuk=t;
+  sh.tajuk=(sh.semua[t-1]||[]).map(v=>String(v||'').trim());
+  sh.baris=[];
+  for(let r=t;r<sh.semua.length;r++){
+    const b=sh.semua[r];
+    if(!b || !b.some(v=>String(v||'').trim()!=='')) continue;
+    sh.baris.push({sel:b, no:r+1});
+  }
+}
 
 function binaKonfig(){
   const bekas=document.getElementById('senaraiFail');
@@ -362,10 +414,20 @@ function binaKonfig(){
         '<div class="sheet-atas">'+
           '<input type="checkbox" '+(s.guna?'checked':'')+' data-guna="'+s.id+'" aria-label="Sertakan sheet ini">'+
           '<span class="sheet-nama">'+lepas(s.namaSheet)+'</span>'+
-          '<span class="sheet-kira">'+s.baris.length.toLocaleString()+' baris</span></div>'+
-        '<div class="sheet-medan">'+
+          '<span class="sheet-kira">'+s.baris.length.toLocaleString()+' baris data</span></div>'+
+        '<div class="sheet-medan tiga">'+
+          '<div><label class="medan">Baris tajuk</label>'+
+            '<div class="brs-kawal">'+
+              '<button type="button" class="brs-but" data-brs-turun="'+s.id+'" aria-label="Kurangkan">&minus;</button>'+
+              '<input type="number" min="1" max="'+s.semua.length+'" value="'+s.brsTajuk+'" data-brs="'+s.id+'">'+
+              '<button type="button" class="brs-but" data-brs-naik="'+s.id+'" aria-label="Tambah">+</button>'+
+            '</div></div>'+
           '<div><label class="medan">Lajur No. KP</label><select data-ic="'+s.id+'">'+ops+'</select></div>'+
           '<div><label class="medan">Lajur Nama</label><select data-nama="'+s.id+'"><option value="-1">— tiada —</option>'+ops+'</select></div>'+
+        '</div>'+
+        '<div class="tajuk-pratonton">Tajuk dikesan: '+
+          (s.tajuk.filter(t=>t!=='').slice(0,6).map(t=>'<span class="cip">'+lepas(t)+'</span>').join('')
+            || '<span class="cip kosong-cip">baris ini kosong</span>')+
         '</div></div>';
     });
     kad.innerHTML=html;
@@ -384,6 +446,24 @@ function binaKonfig(){
     const s=cariSheet(e.target.dataset.guna); s.guna=e.target.checked;
     e.target.closest('.sheet-baris').classList.toggle('mati',!e.target.checked);
     semakSedia();
+  }));
+  function tukarTajuk(id,nilai){
+    const sh=cariSheet(id);
+    sh.brsTajuk=nilai;
+    sh.idxIC=-1; sh.idxNama=-1;     /* teka semula ikut tajuk baharu */
+    petakan(sh);
+    binaKonfig();
+  }
+  bekas.querySelectorAll('[data-brs]').forEach(el=>el.addEventListener('change',e=>{
+    tukarTajuk(e.target.dataset.brs, parseInt(e.target.value,10)||1);
+  }));
+  bekas.querySelectorAll('[data-brs-naik]').forEach(el=>el.addEventListener('click',e=>{
+    const sh=cariSheet(e.currentTarget.dataset.brsNaik);
+    tukarTajuk(sh.id, sh.brsTajuk+1);
+  }));
+  bekas.querySelectorAll('[data-brs-turun]').forEach(el=>el.addEventListener('click',e=>{
+    const sh=cariSheet(e.currentTarget.dataset.brsTurun);
+    tukarTajuk(sh.id, Math.max(1,sh.brsTajuk-1));
   }));
   bekas.querySelectorAll('[data-ic]').forEach(el=>el.addEventListener('change',e=>{
     cariSheet(e.target.dataset.ic).idxIC=parseInt(e.target.value,10);
@@ -440,7 +520,8 @@ function jalankan(){
   let jumlah=0, tidakSah=0, kosong=0;
 
   semuaSheet().filter(x=>x.s.guna).forEach(({f,fi,s})=>{
-    s.baris.forEach((baris,i)=>{
+    s.baris.forEach(rec=>{
+      const baris=rec.sel;
       const mentah=baris[s.idxIC];
       const ic=normalisasiIC(mentah,pad);
       if(ic===''){ kosong++; if(abai) return; }
@@ -450,7 +531,7 @@ function jalankan(){
       if(!peta.has(ic)) peta.set(ic,[]);
       peta.get(ic).push({
         failNo:fi, namaFail:f.nama, namaSheet:s.namaSheet, kunciSheet:f.id+'§'+s.id,
-        nomborBaris:i+2, mentah:String(mentah||'').trim(), nama:nama,
+        nomborBaris:rec.no, mentah:String(mentah||'').trim(), nama:nama,
         rujukan: rujukNo!==null && fi===rujukNo
       });
     });
@@ -617,7 +698,7 @@ function binaIndeks(){
       indeks.push({
         ic:ic, icMentah:String(mentah||'').trim(), nama:nama, namaCari:normNama(nama),
         icLain:semuaIC, namaLain:semuaNama,
-        failNo:fi, namaFail:f.nama, namaSheet:s.namaSheet, nomborBaris:i+2
+        failNo:fi, namaFail:f.nama, namaSheet:s.namaSheet, nomborBaris:rec.no
       });
     });
   });
