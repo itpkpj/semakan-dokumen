@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Imbas No. IC (OCR)</title>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#0f172a;color:#e2e8f0}
+  header{padding:14px 16px;background:#1e293b;font-weight:600;font-size:18px}
+  main{max-width:640px;margin:0 auto;padding:16px}
+  .cam{position:relative;width:100%;aspect-ratio:4/3;background:#000;border-radius:12px;overflow:hidden}
+  video,#preview{width:100%;height:100%;object-fit:cover;display:block}
+  #preview{display:none}
+  .guide{position:absolute;inset:18% 8%;border:3px dashed #22c55e;border-radius:10px;pointer-events:none}
+  .guide span{position:absolute;top:-26px;left:0;font-size:12px;background:#22c55e;color:#000;padding:2px 8px;border-radius:6px}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+  button,label.btn{flex:1;min-width:120px;padding:12px;border:0;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;text-align:center}
+  .p{background:#22c55e;color:#000}.s{background:#334155;color:#e2e8f0}.d{background:#ef4444;color:#fff}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .card{background:#1e293b;border-radius:12px;padding:14px;margin-top:12px}
+  .bar{height:8px;background:#334155;border-radius:4px;overflow:hidden;margin-top:6px}
+  .bar div{height:100%;width:0;background:#22c55e;transition:width .2s}
+  .ic{font-size:28px;font-weight:700;letter-spacing:2px;color:#22c55e;word-break:break-all}
+  .muted{color:#94a3b8;font-size:13px}
+  textarea{width:100%;min-height:140px;background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:8px;padding:10px;font-family:monospace;font-size:13px}
+  table{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
+  td{padding:6px 4px;border-bottom:1px solid #334155}
+  .tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:6px;background:#334155;margin-left:6px}
+  ul{padding-left:18px;margin:6px 0}
+</style>
+</head>
+<body>
+<header>📷 Imbas No. Kad Pengenalan (OCR)</header>
+<main>
+  <div class="cam">
+    <video id="video" autoplay playsinline muted></video>
+    <img id="preview" alt="">
+    <div class="guide"><span>Letakkan IC dalam kotak</span></div>
+  </div>
+
+  <div class="btns">
+    <button class="s" id="btnStart">Buka Kamera</button>
+    <button class="p" id="btnScan" disabled>Imbas</button>
+    <label class="btn s">Muat Naik Gambar<input type="file" id="file" accept="image/*" hidden></label>
+  </div>
+  <div class="btns">
+    <button class="s" id="btnSwitch" disabled>Tukar Kamera</button>
+    <button class="d" id="btnReset">Set Semula</button>
+  </div>
+
+  <div class="card">
+    <div id="status" class="muted">Sedia. Tekan "Buka Kamera" atau muat naik gambar.</div>
+    <div class="bar"><div id="prog"></div></div>
+  </div>
+
+  <div class="card">
+    <div class="muted">No. IC dikesan</div>
+    <div class="ic" id="icOut">—</div>
+    <div id="icList"></div>
+    <table id="info" style="display:none">
+      <tr><td>Tarikh Lahir</td><td id="dob"></td></tr>
+      <tr><td>Umur</td><td id="age"></td></tr>
+      <tr><td>Negeri Lahir</td><td id="state"></td></tr>
+      <tr><td>Jantina</td><td id="gender"></td></tr>
+    </table>
+    <div class="btns"><button class="s" id="btnCopy" disabled>Salin No. IC</button></div>
+  </div>
+
+  <div class="card">
+    <div class="muted">Hasil teks penuh OCR</div>
+    <textarea id="raw" readonly placeholder="Teks hasil imbasan akan dipaparkan di sini..."></textarea>
+  </div>
+
+  <div class="card muted">
+    Tip: cahaya terang, elak silau, pegang IC rata dan dekat sehingga nombor jelas.
+    Semua proses berlaku dalam pelayar — gambar tidak dihantar ke mana-mana.
+  </div>
+</main>
+
+<canvas id="canvas" hidden></canvas>
+<script>
+const $ = id => document.getElementById(id);
+const video=$('video'), preview=$('preview'), canvas=$('canvas');
+let stream=null, facing='environment', worker=null;
+
+const STATES={'01':'Johor','21':'Johor','22':'Johor','23':'Johor','24':'Johor',
+'02':'Kedah','25':'Kedah','26':'Kedah','27':'Kedah','03':'Kelantan','28':'Kelantan','29':'Kelantan',
+'04':'Melaka','30':'Melaka','05':'Negeri Sembilan','31':'Negeri Sembilan','59':'Negeri Sembilan',
+'06':'Pahang','32':'Pahang','33':'Pahang','07':'Pulau Pinang','34':'Pulau Pinang','35':'Pulau Pinang',
+'08':'Perak','36':'Perak','37':'Perak','38':'Perak','39':'Perak','09':'Perlis','40':'Perlis',
+'10':'Selangor','41':'Selangor','42':'Selangor','43':'Selangor','44':'Selangor',
+'11':'Terengganu','45':'Terengganu','46':'Terengganu','12':'Sabah','47':'Sabah','48':'Sabah','49':'Sabah',
+'13':'Sarawak','50':'Sarawak','51':'Sarawak','52':'Sarawak','53':'Sarawak',
+'14':'WP Kuala Lumpur','54':'WP Kuala Lumpur','55':'WP Kuala Lumpur','56':'WP Kuala Lumpur','57':'WP Kuala Lumpur',
+'15':'WP Labuan','58':'WP Labuan','16':'WP Putrajaya','82':'Negeri tidak diketahui'};
+
+function status(t,p){ $('status').textContent=t; if(p!=null) $('prog').style.width=(p*100)+'%'; }
+
+async function startCam(){
+  try{
+    if(stream) stream.getTracks().forEach(t=>t.stop());
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1920},height:{ideal:1080}},audio:false});
+    video.srcObject=stream; video.style.display='block'; preview.style.display='none';
+    $('btnScan').disabled=false; $('btnSwitch').disabled=false;
+    status('Kamera aktif. Halakan ke IC dan tekan "Imbas".',0);
+  }catch(e){ status('Gagal buka kamera: '+e.message+' (perlu HTTPS / izin kamera)'); }
+}
+
+async function getWorker(){
+  if(worker) return worker;
+  status('Memuatkan enjin OCR (kali pertama agak lama)...',0);
+  worker=await Tesseract.createWorker('eng',1,{logger:m=>{
+    if(m.status==='recognizing text') status('Mengimbas... '+Math.round(m.progress*100)+'%',m.progress);
+  }});
+  return worker;
+}
+
+// Pra-proses: grayscale + kontras
+function preprocess(src,w,h){
+  const scale=Math.min(1,1600/w);
+  canvas.width=w*scale; canvas.height=h*scale;
+  const ctx=canvas.getContext('2d');
+  ctx.drawImage(src,0,0,canvas.width,canvas.height);
+  const img=ctx.getImageData(0,0,canvas.width,canvas.height), d=img.data;
+  for(let i=0;i<d.length;i+=4){
+    let g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+    g=(g-128)*1.6+128; g=g<0?0:g>255?255:g;
+    d[i]=d[i+1]=d[i+2]=g;
+  }
+  ctx.putImageData(img,0,0);
+  return canvas.toDataURL('image/png');
+}
+
+function fixDigits(s){
+  return s.replace(/[Oo]/g,'0').replace(/[Il|]/g,'1').replace(/S/g,'5').replace(/B/g,'8').replace(/Z/g,'2');
+}
+
+function validIC(ic){
+  const mm=+ic.slice(2,4), dd=+ic.slice(4,6);
+  return mm>=1&&mm<=12&&dd>=1&&dd<=31;
+}
+
+function findIC(text){
+  const found=new Set();
+  const lines=text.split(/\n/);
+  const re=/(\d{6})\s*[-–—~.\s]?\s*(\d{2})\s*[-–—~.\s]?\s*(\d{4})/g;
+  for(const line of lines){
+    const t=fixDigits(line);
+    let m; while((m=re.exec(t))){ const ic=m[1]+m[2]+m[3]; if(validIC(ic)) found.add(ic); }
+    const digits=t.replace(/\D/g,'');
+    for(let i=0;i+12<=digits.length;i++){ const c=digits.substr(i,12); if(validIC(c)&&/[-–]/.test(t)) found.add(c); }
+  }
+  return [...found];
+}
+
+function fmt(ic){ return ic.slice(0,6)+'-'+ic.slice(6,8)+'-'+ic.slice(8); }
+
+function showInfo(ic){
+  let yy=+ic.slice(0,2), mm=ic.slice(2,4), dd=ic.slice(4,6);
+  const cy=new Date().getFullYear()%100;
+  const year=(yy>cy?1900:2000)+yy;
+  const dob=new Date(year,+mm-1,+dd), now=new Date();
+  let age=now.getFullYear()-year; if(now<new Date(now.getFullYear(),+mm-1,+dd)) age--;
+  $('dob').textContent=`${dd}/${mm}/${year}`;
+  $('age').textContent=age+' tahun';
+  $('state').textContent=STATES[ic.slice(6,8)]||'Luar negara / lain-lain ('+ic.slice(6,8)+')';
+  $('gender').textContent=(+ic[11])%2?'Lelaki':'Perempuan';
+  $('info').style.display='table';
+}
+
+async function runOCR(src,w,h){
+  $('btnScan').disabled=true;
+  try{
+    const data=preprocess(src,w,h);
+    const wk=await getWorker();
+    const {data:{text}}=await wk.recognize(data);
+    $('raw').value=text.trim()||'(Tiada teks dikesan)';
+    const ics=findIC(text);
+    if(ics.length){
+      $('icOut').textContent=fmt(ics[0]); showInfo(ics[0]); $('btnCopy').disabled=false;
+      $('icList').innerHTML=ics.length>1?'<div class="muted">Calon lain: '+ics.slice(1).map(fmt).join(', ')+'</div>':'';
+      status('Berjaya! No. IC dikesan.',1);
+    }else{
+      $('icOut').textContent='Tidak dikesan'; $('info').style.display='none'; $('icList').innerHTML=''; $('btnCopy').disabled=true;
+      status('No. IC tidak dijumpai. Cuba dekatkan / terangkan cahaya. Lihat teks penuh di bawah.',1);
+    }
+  }catch(e){ status('Ralat OCR: '+e.message); }
+  $('btnScan').disabled=!stream;
+}
+
+$('btnStart').onclick=startCam;
+$('btnSwitch').onclick=()=>{ facing=facing==='environment'?'user':'environment'; startCam(); };
+$('btnScan').onclick=()=>{
+  if(!video.videoWidth) return;
+  // potong ikut kotak panduan
+  const vw=video.videoWidth, vh=video.videoHeight;
+  const tmp=document.createElement('canvas');
+  tmp.width=vw*0.84; tmp.height=vh*0.64;
+  tmp.getContext('2d').drawImage(video,vw*0.08,vh*0.18,tmp.width,tmp.height,0,0,tmp.width,tmp.height);
+  preview.src=tmp.toDataURL(); preview.style.display='block'; video.style.display='none';
+  runOCR(tmp,tmp.width,tmp.height).then(()=>{ setTimeout(()=>{ if(stream){video.style.display='block';preview.style.display='none';} },1500); });
+};
+$('file').onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const img=new Image();
+  img.onload=()=>{ preview.src=img.src; preview.style.display='block'; video.style.display='none'; runOCR(img,img.naturalWidth,img.naturalHeight); };
+  img.src=URL.createObjectURL(f); e.target.value='';
+};
+$('btnCopy').onclick=()=>{ navigator.clipboard.writeText($('icOut').textContent); status('No. IC disalin.'); };
+$('btnReset').onclick=()=>{
+  $('icOut').textContent='—'; $('raw').value=''; $('info').style.display='none'; $('icList').innerHTML='';
+  $('btnCopy').disabled=true; status('Sedia.',0);
+  if(stream){video.style.display='block';preview.style.display='none';}
+};
+</script>
+</body>
+</html>
