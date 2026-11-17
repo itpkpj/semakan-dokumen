@@ -109,6 +109,15 @@ mark{background:#ffe9a8;color:inherit;padding:0 1px;border-radius:2px}
 .brs-but:first-child{border-radius:6px 0 0 6px}
 .brs-but:last-child{border-radius:0 6px 6px 0}
 .brs-but:hover{background:var(--kertas);border-color:var(--dakwat)}
+.psg-blok{margin-top:10px;padding-top:10px;border-top:1px dashed var(--garis)}
+.psg-tajuk{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--neutral);margin-bottom:7px;display:flex;align-items:center;gap:6px}
+.pilihan{font-weight:600;letter-spacing:.04em;text-transform:none;background:var(--kertas);
+  border:1px solid var(--garis);border-radius:3px;padding:1px 5px;font-size:10px}
+.psg-kosong{display:none}
+@media(min-width:560px){.psg-kosong{display:block}}
+.peran-tanda{font-size:10px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
+  background:#efe7d8;color:#7a5a15;padding:2px 6px;border-radius:3px}
 .tajuk-pratonton{margin-top:9px;font-size:11px;color:var(--neutral);
   display:flex;align-items:center;gap:5px;flex-wrap:wrap}
 .cip{display:inline-block;background:var(--kertas);border:1px solid var(--garis);
@@ -259,7 +268,7 @@ footer{font-size:12px;color:var(--neutral);text-align:center;padding:20px 0}
 
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <script>
-let fail = [];      /* {id, nama, sheet:[{id,namaSheet,tajuk,baris,guna,idxIC,idxNama}]} */
+let fail = [];      /* {id, nama, sheet:[{id,namaSheet,tajuk,baris,guna,idxIC,idxNama,idxICp,idxNamap}]} */
 let kiraId = 0;
 
 /* ---------- Pembaca ---------- */
@@ -347,7 +356,8 @@ async function muatBanyak(senaraiFail){
         id:'f'+(kiraId++), nama:f.name,
         sheet: sheets.map((s,i)=>{
           const sh={ id:'s'+(kiraId++), namaSheet:s.namaSheet, semua:s.baris,
-                     brsTajuk:kesanBarisTajuk(s.baris), guna:true, idxIC:-1, idxNama:-1 };
+                     brsTajuk:kesanBarisTajuk(s.baris), guna:true,
+                     idxIC:-1, idxNama:-1, idxICp:-1, idxNamap:-1 };
           petakan(sh);
           return sh;
         })
@@ -360,7 +370,12 @@ async function muatBanyak(senaraiFail){
   binaKonfig();
 }
 
-function teka(tajuk,corak){ return tajuk.findIndex(t=>corak.test(String(t))); }
+function teka(tajuk,corak,tapis){
+  return tajuk.findIndex(t=>{
+    const h=String(t);
+    return corak.test(h) && (!tapis || tapis(h));
+  });
+}
 
 /* Cari baris tajuk: baris dengan paling banyak sel teks unik dalam 20 baris pertama.
    Baris tajuk laporan yang digabung biasanya ada 1-2 sel sahaja, jadi ia tidak terpilih. */
@@ -404,11 +419,16 @@ function binaKonfig(){
       '<span class="fail-nama">'+lepas(f.nama)+'</span>'+
       '<button class="fail-buang" data-buang="'+f.id+'">Buang</button></div>';
     f.sheet.forEach(s=>{
+      const RX_IC=/\b(ic|kp|k\/p|kad ?pengenalan|mykad|no ?kp|nokp|no ?ic)\b/i;
+      const RX_NAMA=/\b(nama|name|pemohon|penerima|nama ?penuh)\b/i;
+      const RX_PSG=/pasangan|suami|isteri|spouse|waris/i;
       if(s.idxIC===-1){
-        const t=teka(s.tajuk,/\b(ic|kp|k\/p|kad ?pengenalan|mykad|no ?kp|nokp|no ?ic)\b/i);
+        const t=teka(s.tajuk,RX_IC,h=>!RX_PSG.test(h));
         s.idxIC = t>=0?t:0;
       }
-      if(s.idxNama===-1) s.idxNama = teka(s.tajuk,/\b(nama|name|pemohon|penerima|nama ?penuh)\b/i);
+      if(s.idxNama===-1) s.idxNama = teka(s.tajuk,RX_NAMA,h=>!RX_PSG.test(h));
+      if(s.idxICp===-1)  s.idxICp  = teka(s.tajuk,RX_IC,h=>RX_PSG.test(h));
+      if(s.idxNamap===-1)s.idxNamap= teka(s.tajuk,RX_NAMA,h=>RX_PSG.test(h));
       const ops=s.tajuk.map((t,i)=>'<option value="'+i+'">'+lepas(t||('Lajur '+(i+1)))+'</option>').join('');
       html+='<div class="sheet-baris'+(s.guna?'':' mati')+'" data-baris="'+s.id+'">'+
         '<div class="sheet-atas">'+
@@ -425,6 +445,13 @@ function binaKonfig(){
           '<div><label class="medan">Lajur No. KP</label><select data-ic="'+s.id+'">'+ops+'</select></div>'+
           '<div><label class="medan">Lajur Nama</label><select data-nama="'+s.id+'"><option value="-1">— tiada —</option>'+ops+'</select></div>'+
         '</div>'+
+        '<div class="psg-blok">'+
+          '<div class="psg-tajuk">Bagi pasangan <span class="pilihan">pilihan</span></div>'+
+          '<div class="sheet-medan tiga">'+
+            '<div class="psg-kosong"></div>'+
+            '<div><label class="medan">Lajur No. KP pasangan</label><select data-icp="'+s.id+'"><option value="-1">— tiada —</option>'+ops+'</select></div>'+
+            '<div><label class="medan">Lajur Nama pasangan</label><select data-namap="'+s.id+'"><option value="-1">— tiada —</option>'+ops+'</select></div>'+
+          '</div></div>'+
         '<div class="tajuk-pratonton">Tajuk dikesan: '+
           (s.tajuk.filter(t=>t!=='').slice(0,6).map(t=>'<span class="cip">'+lepas(t)+'</span>').join('')
             || '<span class="cip kosong-cip">baris ini kosong</span>')+
@@ -435,6 +462,8 @@ function binaKonfig(){
     f.sheet.forEach(s=>{
       kad.querySelector('[data-ic="'+s.id+'"]').value=s.idxIC;
       kad.querySelector('[data-nama="'+s.id+'"]').value=s.idxNama;
+      kad.querySelector('[data-icp="'+s.id+'"]').value=s.idxICp;
+      kad.querySelector('[data-namap="'+s.id+'"]').value=s.idxNamap;
     });
   });
 
@@ -450,7 +479,7 @@ function binaKonfig(){
   function tukarTajuk(id,nilai){
     const sh=cariSheet(id);
     sh.brsTajuk=nilai;
-    sh.idxIC=-1; sh.idxNama=-1;     /* teka semula ikut tajuk baharu */
+    sh.idxIC=-1; sh.idxNama=-1; sh.idxICp=-1; sh.idxNamap=-1;  /* teka semula ikut tajuk baharu */
     petakan(sh);
     binaKonfig();
   }
@@ -471,6 +500,14 @@ function binaKonfig(){
   }));
   bekas.querySelectorAll('[data-nama]').forEach(el=>el.addEventListener('change',e=>{
     cariSheet(e.target.dataset.nama).idxNama=parseInt(e.target.value,10);
+    semakSedia();
+  }));
+  bekas.querySelectorAll('[data-icp]').forEach(el=>el.addEventListener('change',e=>{
+    cariSheet(e.target.dataset.icp).idxICp=parseInt(e.target.value,10);
+    semakSedia();
+  }));
+  bekas.querySelectorAll('[data-namap]').forEach(el=>el.addEventListener('change',e=>{
+    cariSheet(e.target.dataset.namap).idxNamap=parseInt(e.target.value,10);
     semakSedia();
   }));
   const sel=document.getElementById('failRujukan');
@@ -522,17 +559,27 @@ function jalankan(){
   semuaSheet().filter(x=>x.s.guna).forEach(({f,fi,s})=>{
     s.baris.forEach(rec=>{
       const baris=rec.sel;
-      const mentah=baris[s.idxIC];
-      const ic=normalisasiIC(mentah,pad);
-      if(ic===''){ kosong++; if(abai) return; }
-      jumlah++;
-      if(!/^\d{12}$/.test(ic)) tidakSah++;
-      const nama = s.idxNama>=0 ? String(baris[s.idxNama]||'').trim() : '';
-      if(!peta.has(ic)) peta.set(ic,[]);
-      peta.get(ic).push({
-        failNo:fi, namaFail:f.nama, namaSheet:s.namaSheet, kunciSheet:f.id+'§'+s.id,
-        nomborBaris:rec.no, mentah:String(mentah||'').trim(), nama:nama,
-        rujukan: rujukNo!==null && fi===rujukNo
+      /* Setiap baris boleh menghasilkan dua rekod: penerima dan pasangan */
+      const peranan=[{iIC:s.idxIC, iNama:s.idxNama, peran:'Penerima'}];
+      if(s.idxICp>=0 || s.idxNamap>=0)
+        peranan.push({iIC:s.idxICp, iNama:s.idxNamap, peran:'Pasangan'});
+
+      peranan.forEach(pr=>{
+        if(pr.iIC<0) return;
+        const mentah=baris[pr.iIC];
+        const ic=normalisasiIC(mentah,pad);
+        /* Baris tanpa pasangan adalah normal — jangan kira sebagai data hilang */
+        if(ic==='' && pr.peran==='Pasangan') return;
+        if(ic===''){ kosong++; if(abai) return; }
+        jumlah++;
+        if(!/^\d{12}$/.test(ic)) tidakSah++;
+        const nama = pr.iNama>=0 ? String(baris[pr.iNama]||'').trim() : '';
+        if(!peta.has(ic)) peta.set(ic,[]);
+        peta.get(ic).push({
+          failNo:fi, namaFail:f.nama, namaSheet:s.namaSheet, kunciSheet:f.id+'§'+s.id,
+          nomborBaris:rec.no, mentah:String(mentah||'').trim(), nama:nama, peran:pr.peran,
+          rujukan: rujukNo!==null && fi===rujukNo
+        });
       });
     });
   });
@@ -653,6 +700,7 @@ function paparHasil(kumpulan,jumlah,tidakSah,kosong,opsi){
           '<li><div>'+
           (r.nama?'<div class="orang">'+lepas(r.nama)+'</div>':'<div class="orang tiada">Nama tidak ditetapkan</div>')+
           '<div class="lokasi">'+(r.rujukan?'<span class="rujuk-tanda">Rujukan</span> ':'')+
+          (r.peran==='Pasangan'?'<span class="peran-tanda">Pasangan</span> ':'')+
           'Fail '+r.failNo+' &middot; <span class="sheet-tanda">'+lepas(r.namaSheet)+'</span> &middot; baris '+r.nomborBaris+
           '</div></div><div class="mentah">'+lepas(r.mentah)+'</div></li>').join('')+'</ul>';
       w.appendChild(d);
@@ -680,10 +728,9 @@ function binaIndeks(){
   const pad=document.getElementById('padZero').checked;
   indeks=[];
   semuaSheet().filter(x=>x.s.guna).forEach(({f,fi,s})=>{
-    s.baris.forEach((baris,i)=>{
-      const mentah=baris[s.idxIC];
-      const ic=normalisasiIC(mentah,pad);
-      const nama = s.idxNama>=0 ? String(baris[s.idxNama]||'').trim() : '';
+    s.baris.forEach(rec=>{
+      const baris=rec.sel;
+
       /* Simpan semua sel baris ini supaya carian tetap berjaya
          walaupun tetapan lajur tersilap */
       const semuaIC=[], semuaNama=[];
@@ -694,11 +741,21 @@ function binaIndeks(){
         if(/^\d{6,12}$/.test(n)) semuaIC.push(n);
         if(/[A-Za-z]/.test(t)) semuaNama.push(normNama(t));
       });
-      if(ic==='' && nama==='' && !semuaIC.length && !semuaNama.length) return;
-      indeks.push({
-        ic:ic, icMentah:String(mentah||'').trim(), nama:nama, namaCari:normNama(nama),
-        icLain:semuaIC, namaLain:semuaNama,
-        failNo:fi, namaFail:f.nama, namaSheet:s.namaSheet, nomborBaris:rec.no
+
+      const peranan=[{iIC:s.idxIC, iNama:s.idxNama, peran:'Penerima'}];
+      if(s.idxICp>=0 || s.idxNamap>=0)
+        peranan.push({iIC:s.idxICp, iNama:s.idxNamap, peran:'Pasangan'});
+
+      peranan.forEach(pr=>{
+        const mentah = pr.iIC>=0 ? baris[pr.iIC] : '';
+        const ic=normalisasiIC(mentah,pad);
+        const nama = pr.iNama>=0 ? String(baris[pr.iNama]||'').trim() : '';
+        if(ic==='' && nama==='') return;
+        indeks.push({
+          ic:ic, icMentah:String(mentah||'').trim(), nama:nama, namaCari:normNama(nama),
+          icLain:semuaIC, namaLain:semuaNama, peran:pr.peran,
+          failNo:fi, namaFail:f.nama, namaSheet:s.namaSheet, nomborBaris:rec.no
+        });
       });
     });
   });
@@ -751,7 +808,8 @@ function jalankanCarian(){
       '<span class="nama-p">'+(r.nama?tandaNama(r.nama,qNama,cariNama):'<span class="orang tiada">Nama tidak ditetapkan</span>')+'</span>'+
       (berulang?'<span class="tanda-dup">Berulang '+kiraIC[r.ic]+'&times;</span>':'')+
       '<span class="ic-p">'+(cariIC?tandaIC(r.ic,qIC):formatIC(r.ic))+'</span></div>'+
-      '<div class="lokasi">Fail '+r.failNo+' &middot; <span class="sheet-tanda">'+lepas(r.namaSheet)+'</span> &middot; baris '+r.nomborBaris+
+      '<div class="lokasi">'+(r.peran==='Pasangan'?'<span class="peran-tanda">Pasangan</span> ':'')+
+      'Fail '+r.failNo+' &middot; <span class="sheet-tanda">'+lepas(r.namaSheet)+'</span> &middot; baris '+r.nomborBaris+
       ' &middot; <span class="mentah">'+lepas(r.icMentah)+'</span></div></div>';
   });
   bekas.innerHTML=html;
@@ -797,9 +855,9 @@ document.getElementById('butKosongkan').addEventListener('click',()=>{
 });
 
 function muatTurun(kumpulan){
-  const baris=[['No KP','Nama','Jenis','Rujukan','Nama Berbeza','Bilangan','Fail','Nama Fail','Sheet','Baris','Nilai Asal']];
+  const baris=[['No KP','Nama','Peranan','Jenis','Rujukan','Nama Berbeza','Bilangan','Fail','Nama Fail','Sheet','Baris','Nilai Asal']];
   kumpulan.forEach(k=>k.senarai.forEach(r=>{
-    baris.push([k.ic,r.nama,k.jenis,r.rujukan?'YA':'',k.namaBerbeza?'YA':'',k.senarai.length,
+    baris.push([k.ic,r.nama,r.peran||'Penerima',k.jenis,r.rujukan?'YA':'',k.namaBerbeza?'YA':'',k.senarai.length,
       'Fail '+r.failNo,r.namaFail,r.namaSheet,r.nomborBaris,r.mentah]);
   }));
   const csv='\uFEFF'+baris.map(b=>b.map(s=>'"'+String(s).replace(/"/g,'""')+'"').join(',')).join('\n');
