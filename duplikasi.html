@@ -83,8 +83,9 @@ mark{background:#ffe9a8;color:inherit;padding:0 1px;border-radius:2px}
 .fail-kad{border:1px solid var(--garis);border-radius:8px;margin-bottom:12px;overflow:hidden;background:#fff}
 .fail-atas{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 13px;
   background:var(--dakwat);color:#fff}
-.fail-tanda{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
-  background:rgba(255,255,255,.16);padding:2px 7px;border-radius:3px}
+.fail-tanda{font-size:11px;font-weight:700;background:rgba(255,255,255,.2);
+  width:21px;height:21px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;flex-shrink:0}
 .fail-nama{font-size:14px;font-weight:600;word-break:break-all}
 .fail-buang{margin-left:auto;background:none;border:1px solid rgba(255,255,255,.4);color:#fff;
   border-radius:4px;padding:3px 9px;font-size:12px;cursor:pointer}
@@ -116,6 +117,17 @@ mark{background:#ffe9a8;color:inherit;padding:0 1px;border-radius:2px}
   border:1px solid var(--garis);border-radius:3px;padding:1px 5px;font-size:10px}
 .psg-kosong{display:none}
 @media(min-width:560px){.psg-kosong{display:block}}
+.fail-tanda-kecil{font-weight:600;color:var(--dakwat)}
+.simpan-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:9px 12px;margin-bottom:12px;border-radius:6px;font-size:12.5px;
+  background:var(--kertas);border:1px solid var(--garis)}
+.simpan-ok{color:var(--selamat);font-weight:600}
+.simpan-kosong{color:var(--neutral)}
+.simpan-ralat{color:var(--amaran);font-weight:600}
+button.kedua.kecil{padding:4px 10px;font-size:12px;margin-left:auto}
+.pulih-tanda{font-size:9px;text-transform:uppercase;letter-spacing:.07em;font-weight:700;
+  background:var(--selamat-latar);color:var(--selamat);border:1px solid var(--selamat);
+  padding:1px 5px;border-radius:3px}
 .peran-tanda{font-size:10px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;
   background:#efe7d8;color:#7a5a15;padding:2px 6px;border-radius:3px}
 .tajuk-pratonton{margin-top:9px;font-size:11px;color:var(--neutral);
@@ -196,6 +208,7 @@ footer{font-size:12px;color:var(--neutral);text-align:center;padding:20px 0}
     <input type="file" id="pilihFail" multiple accept=".csv,.tsv,.txt,.xlsx,.xls">
   </label>
   <div class="ralat sembunyi" id="ralat"></div>
+  <div class="simpan-bar" id="statusSimpan"></div>
 </div>
 
 <div class="kad peringatan">
@@ -337,6 +350,110 @@ function formatIC(ic){
   return ic;
 }
 function normNama(n){ return String(n||'').toUpperCase().replace(/[^A-Z0-9]/g,''); }
+/* ===== Simpanan tetapan (localStorage) =====
+   Tetapan disimpan mengikut nama fail + nama sheet. Lajur disimpan sebagai
+   TEKS tajuk, bukan nombor, supaya tetapan kekal sah walaupun susunan lajur
+   berubah sedikit pada fail baharu. */
+const KUNCI_SIMPAN='semakDuplikatIC.v1';
+let simpanan={sheet:{},umum:{}};
+let simpananAda=false;
+
+function bacaSimpanan(){
+  try{
+    const mentah=localStorage.getItem(KUNCI_SIMPAN);
+    if(!mentah) return;
+    const d=JSON.parse(mentah);
+    if(d && typeof d==='object'){
+      simpanan={sheet:d.sheet||{},umum:d.umum||{}};
+      simpananAda=Object.keys(simpanan.sheet).length>0;
+    }
+  }catch(e){ /* mod peribadi atau storan disekat — abaikan */ }
+}
+
+function tulisSimpanan(){
+  try{
+    localStorage.setItem(KUNCI_SIMPAN,JSON.stringify(simpanan));
+    simpananAda=Object.keys(simpanan.sheet).length>0;
+    lukisStatusSimpan();
+  }catch(e){ lukisStatusSimpan('gagal'); }
+}
+
+function kunciSheet(namaFail,namaSheet){ return namaFail+'§'+namaSheet; }
+
+function simpanSheet(namaFail,sh){
+  const amb=i=>(i>=0 && sh.tajuk[i]!==undefined) ? sh.tajuk[i] : null;
+  simpanan.sheet[kunciSheet(namaFail,sh.namaSheet)]={
+    brsTajuk:sh.brsTajuk, guna:sh.guna,
+    icH:amb(sh.idxIC), namaH:amb(sh.idxNama), icpH:amb(sh.idxICp), namapH:amb(sh.idxNamap)
+  };
+  tulisSimpanan();
+}
+
+/* Pulihkan tetapan: padan tajuk mengikut teks dahulu */
+function pulihSheet(namaFail,sh){
+  const d=simpanan.sheet[kunciSheet(namaFail,sh.namaSheet)];
+  if(!d) return false;
+  if(typeof d.brsTajuk==='number'){ sh.brsTajuk=d.brsTajuk; petakan(sh); }
+  const cari=t=>{
+    if(t===null||t===undefined) return -1;
+    const i=sh.tajuk.findIndex(x=>String(x).trim()===String(t).trim());
+    return i;
+  };
+  const ic=cari(d.icH), nm=cari(d.namaH), icp=cari(d.icpH), nmp=cari(d.namapH);
+  if(ic>=0) sh.idxIC=ic;
+  if(nm>=0) sh.idxNama=nm;
+  sh.idxICp   = icp;
+  sh.idxNamap = nmp;
+  if(typeof d.guna==='boolean') sh.guna=d.guna;
+  return true;
+}
+
+function simpanUmum(){
+  simpanan.umum={
+    padZero:document.getElementById('padZero').checked,
+    abaiKosong:document.getElementById('abaiKosong').checked,
+    cariLuas:document.getElementById('cariLuas').checked,
+    mod:(document.querySelector('input[name="modSemak"]:checked')||{}).value,
+    rujukNama:(fail[parseInt(document.getElementById('failRujukan').value,10)-1]||{}).nama||null
+  };
+  tulisSimpanan();
+}
+
+function pulihUmum(){
+  const u=simpanan.umum||{};
+  const set=(id,v)=>{ if(typeof v==='boolean') document.getElementById(id).checked=v; };
+  set('padZero',u.padZero); set('abaiKosong',u.abaiKosong); set('cariLuas',u.cariLuas);
+  if(u.mod){
+    const r=document.querySelector('input[name="modSemak"][value="'+u.mod+'"]');
+    if(r){ r.checked=true; document.getElementById('pilihRujukan').classList.toggle('sembunyi',u.mod!=='rujukan'); }
+  }
+}
+
+function lukisStatusSimpan(keadaan){
+  const el=document.getElementById('statusSimpan');
+  if(!el) return;
+  if(keadaan==='gagal'){
+    el.innerHTML='<span class="simpan-ralat">Tetapan tidak dapat disimpan dalam pelayar ini.</span>';
+    return;
+  }
+  const bil=Object.keys(simpanan.sheet).length;
+  const adaUmum=simpanan.umum && Object.keys(simpanan.umum).length>0;
+  el.innerHTML = (bil||adaUmum)
+    ? '<span class="simpan-ok">Tetapan '+(bil?'untuk '+bil+' sheet ':'')+'disimpan dalam pelayar ini.</span>'+
+      '<button type="button" class="kedua kecil" id="butLupa">Lupakan tetapan</button>'
+    : '<span class="simpan-kosong">Belum ada tetapan disimpan. Ia akan disimpan automatik sebaik sahaja anda tetapkan lajur.</span>';
+  const b=document.getElementById('butLupa');
+  if(b) b.addEventListener('click',()=>{
+    if(!confirm('Buang semua tetapan tersimpan? Fail yang sedang dibuka tidak terjejas.')) return;
+    simpanan={sheet:{},umum:{}};
+    try{ localStorage.removeItem(KUNCI_SIMPAN); }catch(e){}
+    simpananAda=false;
+    fail.forEach(f=>f.sheet.forEach(sh=>{ sh.dipulih=false; }));
+    lukisStatusSimpan();
+  });
+}
+
+function namaRingkas(n){ return String(n||'').replace(/\.[^.]+$/,''); }
 function lepas(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 /* ---------- Muat ---------- */
@@ -359,6 +476,7 @@ async function muatBanyak(senaraiFail){
                      brsTajuk:kesanBarisTajuk(s.baris), guna:true,
                      idxIC:-1, idxNama:-1, idxICp:-1, idxNamap:-1 };
           petakan(sh);
+          sh.dipulih = pulihSheet(f.name, sh);
           return sh;
         })
       });
@@ -415,7 +533,7 @@ function binaKonfig(){
     const kad=document.createElement('div');
     kad.className='fail-kad';
     let html='<div class="fail-atas">'+
-      '<span class="fail-tanda">Fail '+(fi+1)+'</span>'+
+      '<span class="fail-tanda">'+(fi+1)+'</span>'+
       '<span class="fail-nama">'+lepas(f.nama)+'</span>'+
       '<button class="fail-buang" data-buang="'+f.id+'">Buang</button></div>';
     f.sheet.forEach(s=>{
@@ -434,6 +552,7 @@ function binaKonfig(){
         '<div class="sheet-atas">'+
           '<input type="checkbox" '+(s.guna?'checked':'')+' data-guna="'+s.id+'" aria-label="Sertakan sheet ini">'+
           '<span class="sheet-nama">'+lepas(s.namaSheet)+'</span>'+
+          (s.dipulih?'<span class="pulih-tanda" title="Tetapan dipulihkan daripada simpanan">tersimpan</span>':'')+
           '<span class="sheet-kira">'+s.baris.length.toLocaleString()+' baris data</span></div>'+
         '<div class="sheet-medan tiga">'+
           '<div><label class="medan">Baris tajuk</label>'+
@@ -474,7 +593,7 @@ function binaKonfig(){
   bekas.querySelectorAll('[data-guna]').forEach(el=>el.addEventListener('change',e=>{
     const s=cariSheet(e.target.dataset.guna); s.guna=e.target.checked;
     e.target.closest('.sheet-baris').classList.toggle('mati',!e.target.checked);
-    semakSedia();
+    simpanSheet(failBagi(s).nama,s); semakSedia();
   }));
   function tukarTajuk(id,nilai){
     const sh=cariSheet(id);
@@ -482,6 +601,7 @@ function binaKonfig(){
     sh.idxIC=-1; sh.idxNama=-1; sh.idxICp=-1; sh.idxNamap=-1;  /* teka semula ikut tajuk baharu */
     petakan(sh);
     binaKonfig();
+    simpanSheet(failBagi(sh).nama,sh);
   }
   bekas.querySelectorAll('[data-brs]').forEach(el=>el.addEventListener('change',e=>{
     tukarTajuk(e.target.dataset.brs, parseInt(e.target.value,10)||1);
@@ -495,29 +615,34 @@ function binaKonfig(){
     tukarTajuk(sh.id, Math.max(1,sh.brsTajuk-1));
   }));
   bekas.querySelectorAll('[data-ic]').forEach(el=>el.addEventListener('change',e=>{
-    cariSheet(e.target.dataset.ic).idxIC=parseInt(e.target.value,10);
-    semakSedia();
+    const sh=cariSheet(e.target.dataset.ic); sh.idxIC=parseInt(e.target.value,10);
+    simpanSheet(failBagi(sh).nama,sh); semakSedia();
   }));
   bekas.querySelectorAll('[data-nama]').forEach(el=>el.addEventListener('change',e=>{
-    cariSheet(e.target.dataset.nama).idxNama=parseInt(e.target.value,10);
-    semakSedia();
+    const sh=cariSheet(e.target.dataset.nama); sh.idxNama=parseInt(e.target.value,10);
+    simpanSheet(failBagi(sh).nama,sh); semakSedia();
   }));
   bekas.querySelectorAll('[data-icp]').forEach(el=>el.addEventListener('change',e=>{
-    cariSheet(e.target.dataset.icp).idxICp=parseInt(e.target.value,10);
-    semakSedia();
+    const sh=cariSheet(e.target.dataset.icp); sh.idxICp=parseInt(e.target.value,10);
+    simpanSheet(failBagi(sh).nama,sh); semakSedia();
   }));
   bekas.querySelectorAll('[data-namap]').forEach(el=>el.addEventListener('change',e=>{
-    cariSheet(e.target.dataset.namap).idxNamap=parseInt(e.target.value,10);
-    semakSedia();
+    const sh=cariSheet(e.target.dataset.namap); sh.idxNamap=parseInt(e.target.value,10);
+    simpanSheet(failBagi(sh).nama,sh); semakSedia();
   }));
   const sel=document.getElementById('failRujukan');
   const dahulu=sel.value;
-  sel.innerHTML=fail.map((f,i)=>'<option value="'+(i+1)+'">Fail '+(i+1)+' — '+lepas(f.nama)+'</option>').join('');
+  sel.innerHTML=fail.map((f,i)=>'<option value="'+(i+1)+'">'+lepas(f.nama)+'</option>').join('');
   if(dahulu && sel.querySelector('option[value="'+dahulu+'"]')) sel.value=dahulu;
+  else if(simpanan.umum && simpanan.umum.rujukNama){
+    const i=fail.findIndex(f=>f.nama===simpanan.umum.rujukNama);
+    if(i>=0) sel.value=String(i+1);
+  }
   document.getElementById('kadMod').classList.toggle('sembunyi',fail.length<1);
   semakSedia();
 }
 
+function failBagi(sh){ return fail.find(f=>f.sheet.indexOf(sh)>=0)||{nama:''}; }
 function cariSheet(id){
   for(const f of fail){ const s=f.sheet.find(x=>x.id===id); if(s) return s; }
 }
@@ -543,9 +668,11 @@ function semakSedia(){
 document.getElementById('butJalan').addEventListener('click',jalankan);
 document.querySelectorAll('input[name="modSemak"]').forEach(el=>el.addEventListener('change',e=>{
   document.getElementById('pilihRujukan').classList.toggle('sembunyi',e.target.value!=='rujukan');
+  simpanUmum();
 }));
+document.getElementById('failRujukan').addEventListener('change',simpanUmum);
 ['padZero','abaiKosong'].forEach(id=>document.getElementById(id)
-  .addEventListener('change',()=>{ if(fail.length){ binaIndeks(); jalankanCarian(); } }));
+  .addEventListener('change',()=>{ simpanUmum(); if(fail.length){ binaIndeks(); jalankanCarian(); } }));
 
 function jalankan(){
   const pad=document.getElementById('padZero').checked;
@@ -611,7 +738,7 @@ function jalankan(){
       const failLain=new Set(luarRujukan.map(r=>r.failNo));
       const jenis = failLain.size>1
         ? 'Dalam rujukan + '+failLain.size+' fail lain'
-        : 'Dalam rujukan + Fail '+[...failLain][0];
+        : 'Dalam rujukan + '+namaRingkas((fail[[...failLain][0]-1]||{}).nama||'fail lain');
       kumpulan.push({ic,senarai,jenis,kelas:'silang',namaBerbeza});
       return;
     }
@@ -647,7 +774,7 @@ function paparHasil(kumpulan,jumlah,tidakSah,kosong,opsi){
   let html='<div class="kad"><div class="hasil-atas"><h2>4 &middot; Keputusan semakan</h2>'+
     ((kumpulan.length||opsi.tunggal.length)?'<button class="kedua" id="butMuat">Muat turun CSV</button>':'')+'</div>';
 
-  if(rujuk) html+='<div class="cari-nota" style="margin:-4px 0 12px">Fail rujukan: <strong>Fail '+opsi.rujukNo+' — '+lepas(namaRujuk)+'</strong>. Rekod yang tiada dalam fail ini tidak dilaporkan.</div>';
+  if(rujuk) html+='<div class="cari-nota" style="margin:-4px 0 12px">Fail rujukan: <strong>'+lepas(namaRujuk)+'</strong>. Rekod yang tiada dalam fail ini tidak dilaporkan.</div>';
 
   html+='<div class="integriti">'+
     '<div class="tanda"><div class="angka">'+jumlah.toLocaleString()+'</div><div class="label">Rekod disemak</div></div>'+
@@ -701,7 +828,7 @@ function paparHasil(kumpulan,jumlah,tidakSah,kosong,opsi){
           (r.nama?'<div class="orang">'+lepas(r.nama)+'</div>':'<div class="orang tiada">Nama tidak ditetapkan</div>')+
           '<div class="lokasi">'+(r.rujukan?'<span class="rujuk-tanda">Rujukan</span> ':'')+
           (r.peran==='Pasangan'?'<span class="peran-tanda">Pasangan</span> ':'')+
-          'Fail '+r.failNo+' &middot; <span class="sheet-tanda">'+lepas(r.namaSheet)+'</span> &middot; baris '+r.nomborBaris+
+          '<span class="fail-tanda-kecil">'+lepas(namaRingkas(r.namaFail))+'</span> &middot; <span class="sheet-tanda">'+lepas(r.namaSheet)+'</span> &middot; baris '+r.nomborBaris+
           '</div></div><div class="mentah">'+lepas(r.mentah)+'</div></li>').join('')+'</ul>';
       w.appendChild(d);
     });
@@ -809,7 +936,7 @@ function jalankanCarian(){
       (berulang?'<span class="tanda-dup">Berulang '+kiraIC[r.ic]+'&times;</span>':'')+
       '<span class="ic-p">'+(cariIC?tandaIC(r.ic,qIC):formatIC(r.ic))+'</span></div>'+
       '<div class="lokasi">'+(r.peran==='Pasangan'?'<span class="peran-tanda">Pasangan</span> ':'')+
-      'Fail '+r.failNo+' &middot; <span class="sheet-tanda">'+lepas(r.namaSheet)+'</span> &middot; baris '+r.nomborBaris+
+      '<span class="fail-tanda-kecil">'+lepas(namaRingkas(r.namaFail))+'</span> &middot; <span class="sheet-tanda">'+lepas(r.namaSheet)+'</span> &middot; baris '+r.nomborBaris+
       ' &middot; <span class="mentah">'+lepas(r.icMentah)+'</span></div></div>';
   });
   bekas.innerHTML=html;
@@ -847,7 +974,7 @@ document.getElementById('inputCari').addEventListener('input',()=>{
   masaTaip=setTimeout(jalankanCarian,180);
 });
 document.querySelectorAll('input[name="mod"]').forEach(el=>el.addEventListener('change',jalankanCarian));
-document.getElementById('cariLuas').addEventListener('change',jalankanCarian);
+document.getElementById('cariLuas').addEventListener('change',()=>{ simpanUmum(); jalankanCarian(); });
 document.getElementById('butKosongkan').addEventListener('click',()=>{
   document.getElementById('inputCari').value='';
   document.getElementById('hasilCari').innerHTML='';
@@ -855,10 +982,10 @@ document.getElementById('butKosongkan').addEventListener('click',()=>{
 });
 
 function muatTurun(kumpulan){
-  const baris=[['No KP','Nama','Peranan','Jenis','Rujukan','Nama Berbeza','Bilangan','Fail','Nama Fail','Sheet','Baris','Nilai Asal']];
+  const baris=[['No KP','Nama','Peranan','Jenis','Rujukan','Nama Berbeza','Bilangan','Fail','Sheet','Baris','Nilai Asal']];
   kumpulan.forEach(k=>k.senarai.forEach(r=>{
     baris.push([k.ic,r.nama,r.peran||'Penerima',k.jenis,r.rujukan?'YA':'',k.namaBerbeza?'YA':'',k.senarai.length,
-      'Fail '+r.failNo,r.namaFail,r.namaSheet,r.nomborBaris,r.mentah]);
+      r.namaFail,r.namaSheet,r.nomborBaris,r.mentah]);
   }));
   const csv='\uFEFF'+baris.map(b=>b.map(s=>'"'+String(s).replace(/"/g,'""')+'"').join(',')).join('\n');
   const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
@@ -866,6 +993,7 @@ function muatTurun(kumpulan){
   URL.revokeObjectURL(url);
 }
 
+bacaSimpanan(); pulihUmum(); lukisStatusSimpan();
 document.getElementById('jam').textContent=new Date().toLocaleDateString('ms-MY',{day:'numeric',month:'long',year:'numeric'});
 </script>
 </body>
