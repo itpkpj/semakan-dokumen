@@ -688,7 +688,7 @@ input.ic-bad  { border-color: var(--danger) !important; }
     <button class="btn btn-o btn-full btn-sm" style="margin-top:8px" onclick="bmCopy('dg',this)">&#128203; Salin kod diagnosis</button>
 
     <div class="bm-step" style="margin-top:16px">4. Semakan terus SPRN &amp; SHTJ</div>
-    <p style="font-size:12px;color:var(--text2);margin-bottom:8px">Seret kedua-dua butang ke bookmarks bar. URL halaman SPRN &amp; SHTJ ditetapkan di &#9881;&#65039; Tetapan.</p>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:8px">Seret kedua-dua butang ke bookmarks bar (selepas Deployment ID ditetapkan). URL di &#9881;&#65039; Tetapan adalah pilihan &mdash; untuk buka tab automatik jika belum bersambung.</p>
     <div class="bm-drop" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
       <a class="bm-link" id="snLink" href="#" onclick="bmNoClick(event)" draggable="true" style="background:#0f3d6e">PKJ&#8644;SPRN</a>
       <a class="bm-link" id="shLink" href="#" onclick="bmNoClick(event)" draggable="true" style="background:#155e3f">PKJ&#8644;SHTJ</a>
@@ -698,9 +698,10 @@ input.ic-bad  { border-color: var(--danger) !important; }
       <button class="btn btn-o btn-sm" style="flex:1" onclick="bmCopy('sh',this)">&#128203; Salin SHTJ</button>
     </div>
     <ol class="bm-ol" style="margin-top:8px">
-      <li>Dalam borang, isi No. KP &rarr; tekan <b>Semak SPRN / SHTJ</b>. Tab sistem dibuka (login seperti biasa jika perlu).</li>
-      <li><b>Sekali sahaja</b> setiap sesi: di tab itu (SHTJ: halaman carian), klik <b>PKJ&#8644;SPRN</b> / <b>PKJ&#8644;SHTJ</b>.</li>
-      <li>Selepas itu cukup tekan <b>Semak</b> dalam borang &mdash; hasil masuk terus, tab tak perlu disentuh lagi.</li>
+      <li>Buka tab SPRN &amp; SHTJ seperti biasa (login). SHTJ: halaman <b>Carian Hakmilik</b>.</li>
+      <li><b>Sekali sahaja</b> setiap sesi: klik <b>PKJ&#8644;SPRN</b> di tab SPRN &amp; <b>PKJ&#8644;SHTJ</b> di tab SHTJ.</li>
+      <li>Selepas itu cukup tekan <b>Semak</b> dalam borang &mdash; hasil masuk terus. Biarkan tab terbuka.</li>
+      <li>Bookmarklet ini khusus untuk pelayar ini (kod sambungan dibenam). Tukar Deployment ID &rarr; seret semula.</li>
     </ol>
 
     <div class="alert al-y" style="margin:14px 0 12px;font-size:12px"><span>&#9888;&#65039;</span><div>CAPTCHA mesti ditaip oleh staf. Guna hanya untuk IC pemohon/pasangan yang sedang berurusan di kaunter (PDPA).</div></div>
@@ -962,6 +963,7 @@ const DG_CODE = "!function(){function e(e){return String(null==e?\"\":e).replace
 function bmUrl(k){
   var code = k === 'dg' ? DG_CODE : k === 'sn' ? '(' + pkjLinkSPRN.toString() + ')();'
            : k === 'sh' ? '(' + pkjLinkSHTJ.toString() + ')();' : BM_CODE;
+  if (k === 'sn' || k === 'sh') code = code.split('__DEP__').join(ST.depId || '').split('__CH__').join(linkCh());
   return 'javascript:' + encodeURIComponent(code);
 }
 function openBm(){
@@ -969,6 +971,7 @@ function openBm(){
   document.getElementById('dgLink').href = bmUrl('dg');
   document.getElementById('snLink').href = bmUrl('sn');
   document.getElementById('shLink').href = bmUrl('sh');
+  if (depPlaceholder(ST.depId)) toast('⚠️ Tetapkan Deployment ID dahulu sebelum seret PKJ⇄SPRN / PKJ⇄SHTJ');
   document.getElementById('modalBm').classList.add('open');
 }
 function closeBm(){ document.getElementById('modalBm').classList.remove('open'); }
@@ -2541,26 +2544,37 @@ function sprNotFound(d){
 }
 
 /* ================================================================
-   SEMAKAN TERUS SPRN (SPRN/LHDNM/HIMS) & SHTJ — bookmarklet sambungan
-   1) Butang "Semak" -> jika tab sistem sudah bersambung: hantar IC terus
-      (tab tidak dimuat semula, tiada klik lain). Jika belum: buka tab
-      bernama PKJ_SPRN / PKJ_SHTJ.
-   2) Sekali sahaja sesi itu: klik bookmarklet PKJ⇄SPRN / PKJ⇄SHTJ di tab
-      tersebut -> ia kekal mendengar & "ping" borang setiap 4 saat.
-   3) Semakan dibuat DALAM halaman sistem (sesi login sedia ada, tiada CORS)
-      -> hasil dihantar balik ke borang melalui postMessage.
+   SEMAKAN TERUS SPRN (SPRN/LHDNM/HIMS) & SHTJ — melalui Apps Script
+   Laman SPRN/SHTJ memutuskan window.opener, jadi sambungan tab-ke-tab
+   tidak boleh digunakan. Aliran baru (perantara = Apps Script cache):
+   1) Borang  --lkreq-->  Apps Script (simpan permintaan ikut KOD SAMBUNGAN)
+   2) Bookmarklet di tab SPRN/SHTJ (klik SEKALI sesi) sentiasa long-poll
+      --lkpoll--> ambil permintaan -> semak dalam halaman (sesi login sedia ada)
+      --lkres-->  hantar hasil ke Apps Script
+   3) Borang  --lkget-->  ambil hasil & papar
+   Kod sambungan unik bagi setiap pelayar (kaunter) dibenam dalam bookmarklet,
+   jadi kaunter berlainan tidak bercampur.
 ================================================================ */
-// URL lalai (boleh dibenam di sini, atau tetapkan di ⚙️ Tetapan — disimpan di peranti)
+// URL lalai (pilihan) — untuk butang buka tab jika belum bersambung
 const SPRN_URL_DEF = '';
 const SHTJ_URL_DEF = '';
-var LINK = { win:{}, alive:{}, pending:{}, seq:0, res:{}, prog:{} };
+var LINK = { pending:{}, res:{}, prog:{}, aliveAgo:{}, tick:null };
 
+function linkCh(){
+  var c = ''; try { c = localStorage.getItem('pkj_lk_ch') || ''; } catch(e){}
+  if (!/^[A-Z0-9]{8}$/.test(c)) {
+    var A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; c = '';
+    var r = new Uint32Array(8); (window.crypto || {}).getRandomValues ? crypto.getRandomValues(r) : r.forEach(function(_, i){ r[i] = Math.random()*1e9; });
+    for (var i = 0; i < 8; i++) c += A[r[i] % A.length];
+    try { localStorage.setItem('pkj_lk_ch', c); } catch(e){}
+  }
+  return c;
+}
 function linkUrl(sys){
   var k = sys === 'SPRN' ? 'pkj_sprn_url' : 'pkj_shtj_url';
   var u = ''; try { u = (localStorage.getItem(k) || '').trim(); } catch(e){}
   return u || (sys === 'SPRN' ? SPRN_URL_DEF : SHTJ_URL_DEF);
 }
-function linkOrigin(sys){ try { return new URL(linkUrl(sys)).origin; } catch(e){ return ''; } }
 function saveLinkUrls(){
   var bad = [];
   [['SPRN','fSprnUrl','pkj_sprn_url'],['SHTJ','fShtjUrl','pkj_shtj_url']].forEach(function(a){
@@ -2569,11 +2583,24 @@ function saveLinkUrls(){
     try { u ? localStorage.setItem(a[2], u) : localStorage.removeItem(a[2]); } catch(e){}
   });
   if (bad.length) { toast('⚠️ URL ' + bad.join(' & ') + ' mesti bermula https://'); return; }
-  linkStatus(); toast('✅ URL semakan disimpan di peranti ini');
+  toast('✅ URL disimpan di peranti ini');
 }
-function linkAlive(sys){ var w = LINK.win[sys]; return !!(w && !w.closed && LINK.alive[sys] && Date.now() - LINK.alive[sys] < 10000); }
+function linkExec(){ return 'https://script.google.com/macros/s/' + ST.depId + '/exec'; }
+function linkAlive(sys){ var a = LINK.aliveAgo[sys]; return a != null && a < 45000; }
 
-// Senarai IC untuk disemak: pemohon + pasangan (12 digit sahaja)
+// JSONP kecil
+function linkJsonp(params, cb){
+  var name = 'pkjLk_' + Date.now() + '_' + Math.floor(Math.random()*1e6);
+  var s = document.createElement('script'), done = false;
+  var to = setTimeout(function(){ fin(null); }, 15000);
+  function fin(r){ if (done) return; done = true; clearTimeout(to); try { delete window[name]; } catch(e){ window[name] = undefined; } if (s.parentNode) s.parentNode.removeChild(s); cb(r); }
+  window[name] = fin;
+  var q = Object.keys(params).map(function(k){ return k + '=' + encodeURIComponent(params[k]); }).join('&');
+  s.src = linkExec() + '?' + q + '&callback=' + name;
+  s.onerror = function(){ fin(null); };
+  document.body.appendChild(s);
+}
+
 function linkIcList(){
   var out = [];
   [['P', 'fIc', 'fNama'], ['S', 'fIcPsng', 'fNamaPsng']].forEach(function(a){
@@ -2584,65 +2611,76 @@ function linkIcList(){
 }
 
 function linkSemak(sys){
+  if (depPlaceholder(ST.depId)) { toast('Tetapkan Deployment ID dahulu'); return; }
   var list = linkIcList();
   if (!list.length) { toast('Isi No. KP pemohon / pasangan (12 digit) dahulu'); document.getElementById('fIc').focus(); return; }
-  var url = linkUrl(sys);
-  if (!url) { toast('Tetapkan URL ' + sys + ' di ⚙️ Tetapan dahulu'); openSettings(); return; }
-  var id = ++LINK.seq;
-  LINK.pending[sys] = { id:id, list:list, sent:false };
-  LINK.prog[sys] = '';
+  var id = String(Date.now()) + Math.floor(Math.random()*1000);
+  LINK.pending[sys] = { id:id, list:list, t:Date.now(), warned:false };
+  LINK.prog[sys] = 'menunggu tab ' + sys + '…';
   list.forEach(function(x){ LINK.res[x.ic] = LINK.res[x.ic] || {}; LINK.res[x.ic][sys] = { wait:true }; });
-  linkRender();
-  if (linkAlive(sys)) { linkSend(sys); return; }
-  // Belum bersambung -> buka / guna tab bernama (pengguna klik bookmarklet sekali)
-  var w = window.open(url, 'PKJ_' + sys);
-  if (!w) { toast('⚠️ Popup disekat — benarkan popup untuk laman ini'); return; }
-  LINK.win[sys] = w;
-  toast('🔗 Tab ' + sys + ' dibuka · klik bookmarklet PKJ⇄' + sys + ' sekali di tab itu');
-  linkStatus();
-}
-function linkSend(sys){
-  var p = LINK.pending[sys], w = LINK.win[sys];
-  if (!p || p.sent || !w || w.closed) return;
-  p.sent = true;
-  w.postMessage({ pkjlink:'req', sys:sys, id:p.id, list:p.list.map(function(x){ return { ic:x.ic, role:x.role }; }) }, linkOrigin(sys));
-  LINK.prog[sys] = 'menyemak…'; linkStatus();
+  linkRender(); linkStatus();
+
+  var fd = new FormData();
+  fd.append('mode', 'lkreq'); fd.append('ch', linkCh()); fd.append('sys', sys); fd.append('id', id);
+  fd.append('list', JSON.stringify(list.map(function(x){ return { ic:x.ic, role:x.role }; })));
+  fetch(linkExec(), { method:'POST', body:fd, mode:'no-cors' }).catch(function(){ toast('⚠️ Gagal hantar permintaan ' + sys + ' — semak internet'); });
+
+  // Tab belum bersambung -> buka (jika URL ditetapkan) & ingatkan klik bookmarklet
+  if (!linkAlive(sys)) {
+    var url = linkUrl(sys);
+    if (url) { var w = window.open(url, 'PKJ_' + sys); if (!w) toast('⚠️ Popup disekat — benarkan popup'); }
+    toast('🔗 ' + sys + ' belum bersambung · di tab ' + sys + ', klik bookmarklet PKJ⇄' + sys + ' sekali');
+  }
+  linkStartTick();
 }
 
-window.addEventListener('message', function(e){
-  var d = e.data;
-  if (!d || typeof d !== 'object' || !d.pkjlink || (d.sys !== 'SPRN' && d.sys !== 'SHTJ')) return;
-  var sys = d.sys;
-  if (!linkOrigin(sys) || e.origin !== linkOrigin(sys)) return;   // terima dari URL ditetapkan sahaja
-  LINK.win[sys] = e.source; LINK.alive[sys] = Date.now();
-  if (d.pkjlink === 'hello') {
-    linkStatus();
-    if (LINK.pending[sys] && !LINK.pending[sys].sent) linkSend(sys);
-  } else if (d.pkjlink === 'progress') {
-    LINK.prog[sys] = d.done + '/' + d.total; linkStatus();
-  } else if (d.pkjlink === 'busy') {
-    if (LINK.pending[sys] && LINK.pending[sys].id === d.id) LINK.pending[sys].sent = false;
-    LINK.prog[sys] = 'sibuk, cuba semula…'; linkStatus();
-    setTimeout(function(){ linkSend(sys); }, 2500);
-  } else if (d.pkjlink === 'error') {
-    if (LINK.pending[sys] && LINK.pending[sys].id === d.id) {
-      LINK.pending[sys].list.forEach(function(x){ LINK.res[x.ic][sys] = { err:d.msg || 'Ralat' }; });
-      delete LINK.pending[sys];
-    }
-    LINK.prog[sys] = ''; linkStatus(); linkRender();
-    toast('⚠️ ' + sys + ': ' + (d.msg || 'Ralat'));
-  } else if (d.pkjlink === 'result') {
-    var p = LINK.pending[sys];
-    if (!p || p.id !== d.id) return;            // hasil lama — abai
-    (d.rows || []).forEach(function(r){ LINK.res[r.ic] = LINK.res[r.ic] || {}; LINK.res[r.ic][sys] = r.r; });
-    delete LINK.pending[sys];
-    LINK.prog[sys] = ''; linkStatus(); linkRender();
-    vibrate([20,30,20]);
-    var ada = (d.rows || []).some(function(r){ return linkAnyAda(sys, r.r); });
-    toast((ada ? '⚠️ ' : '✅ ') + sys + ': ' + (d.rows || []).length + ' No. KP disemak' + (ada ? ' — ADA rekod' : ' — tiada rekod'));
-    try { window.focus(); } catch(x){}
-  }
-});
+function linkStartTick(){
+  if (LINK.tick) return;
+  LINK.tick = setInterval(function(){
+    var syss = Object.keys(LINK.pending);
+    if (!syss.length) { clearInterval(LINK.tick); LINK.tick = null; return; }
+    syss.forEach(function(sys){
+      var p = LINK.pending[sys];
+      if (p._busy) return; p._busy = true;
+      linkJsonp({ mode:'lkget', ch:linkCh(), sys:sys, id:p.id }, function(r){
+        p._busy = false;
+        if (LINK.pending[sys] !== p) return;
+        if (r && r.ok) {
+          LINK.aliveAgo[sys] = r.aliveAgo;
+          if (r.res) { linkApply(sys, r.res); return; }
+          if (r.taken === p.id) LINK.prog[sys] = 'sedang menyemak…';
+        }
+        if (Date.now() - p.t > 180000) {
+          p.list.forEach(function(x){ LINK.res[x.ic][sys] = { err:'Tiada jawapan dari tab ' + sys + ' (3 minit). Pastikan tab terbuka, sudah login & bookmarklet diklik.' }; });
+          delete LINK.pending[sys]; LINK.prog[sys] = ''; linkRender();
+        }
+        linkStatus();
+      });
+    });
+  }, 1500);
+}
+
+function linkApply(sys, R){
+  var p = LINK.pending[sys];
+  (R.rows || []).forEach(function(r){ LINK.res[r.ic] = LINK.res[r.ic] || {}; LINK.res[r.ic][sys] = r.r; });
+  delete LINK.pending[sys];
+  LINK.prog[sys] = ''; LINK.aliveAgo[sys] = 0;
+  linkStatus(); linkRender();
+  vibrate([20,30,20]);
+  var ada = (R.rows || []).some(function(r){ return linkAnyAda(sys, r.r); });
+  toast((ada ? '⚠️ ' : '✅ ') + sys + ': ' + (R.rows || []).length + ' No. KP disemak' + (ada ? ' — ADA rekod' : ' — tiada rekod'));
+}
+
+// Semak status sambungan berkala (bila halaman dilihat)
+function linkPing(){
+  if (depPlaceholder(ST.depId) || document.hidden) return;
+  ['SPRN','SHTJ'].forEach(function(sys){
+    if (LINK.pending[sys]) return;
+    linkJsonp({ mode:'lkget', ch:linkCh(), sys:sys, id:'-' }, function(r){ if (r && r.ok) { LINK.aliveAgo[sys] = r.aliveAgo; linkStatus(); } });
+  });
+}
+setInterval(linkPing, 20000);
+setTimeout(linkPing, 1500);
 
 function linkAnyAda(sys, r){
   if (!r) return false;
@@ -2652,12 +2690,10 @@ function linkAnyAda(sys, r){
 function linkStatus(){
   var el = document.getElementById('lkSt'); if (!el) return;
   el.innerHTML = ['SPRN','SHTJ'].map(function(s){
-    var on = linkAlive(s), url = linkUrl(s);
-    var t = !url ? 'URL belum ditetapkan' : on ? 'bersambung' : 'belum bersambung';
-    return '<span>' + s + ': <b class="' + (on ? 'on' : 'off') + '">' + (on ? '● ' : '○ ') + t + '</b>' + (LINK.prog[s] ? ' · ' + esc(LINK.prog[s]) : '') + '</span>';
-  }).join('');
+    var on = linkAlive(s);
+    return '<span>' + s + ': <b class="' + (on ? 'on' : 'off') + '">' + (on ? '● bersambung' : '○ belum bersambung') + '</b>' + (LINK.prog[s] ? ' · ' + esc(LINK.prog[s]) : '') + '</span>';
+  }).join('') + '<span>Kod: <b>' + linkCh() + '</b></span>';
 }
-setInterval(linkStatus, 5000);
 
 function lkBadge(st){ var s = st || 'WAIT'; return '<span class="lk-b ' + (/^(ADA|TIADA|SESI|RALAT|WAIT)$/.test(s) ? s : 'Q') + '">' + esc(s === 'WAIT' ? '…' : s) + '</span>'; }
 function linkRender(){
@@ -2723,9 +2759,9 @@ function pkjLinkSPRN(){
     n.style.background = bad ? '#C0392B' : '#0f3d6e'; n.textContent = 'PKJ⇄' + SYS + ' · ' + t;
     clearTimeout(n._t); n._t = setTimeout(function(){ if (n.parentNode) n.parentNode.removeChild(n); }, 6000);
   }
-  if (W[KEY]) { W[KEY].hello(true); return; }
-  var op = W.opener;
-  if (!op || op.closed) { note('Tiada sambungan ke borang PKJ.\nBuka halaman ini melalui butang "Semak SPRN" dalam borang Key-In.', 1); return; }
+  var EXEC = 'https://script.google.com/macros/s/__DEP__/exec', CH = '__CH__';
+  if (/^_/.test(CH)) { note('Bookmarklet tidak lengkap.\nSeret semula dari borang PKJ (butang \uD83D\uDD16).', 1); return; }
+  if (W[KEY]) { note('Sudah aktif \u2713 (kod ' + CH + ')\nTekan "Semak ' + SYS + '" dalam borang PKJ.'); return; }
   var EP = [['SPRN','/admin/check/sprn?q='],['LHDNM','/admin/check/lhdn?qby=&q='],['HIMS','/admin/check/hims?qby=&q=']];
   function txt(el){ return el ? el.textContent.replace(/\s+/g,' ').trim() : ''; }
   function parseResult(html, finalUrl, httpStatus){
@@ -2763,28 +2799,38 @@ function pkjLinkSPRN(){
     }
     return nx();
   }
-  var busy = false;
-  W.addEventListener('message', function(e){
-    var d = e.data;
-    if (e.source !== op || !d || d.pkjlink !== 'req' || d.sys !== SYS) return;
-    var org = e.origin;
-    if (busy) { op.postMessage({ pkjlink:'busy', sys:SYS, id:d.id }, org); return; }
+  var busy = false, fails = 0;
+  function post(o){
+    var b = new URLSearchParams(); b.append('mode', 'lkres'); b.append('ch', CH); b.append('sys', SYS);
+    for (var k in o) b.append(k, o[k]);
+    return fetch(EXEC, { method:'POST', mode:'no-cors', body:b });
+  }
+  function run(req){
     busy = true;
-    var list = d.list || [], out = [], i = 0;
-    note('Menyemak ' + list.length + ' No. K/P…');
+    var list = req.list || [], out = [], i = 0;
+    note('Menyemak ' + list.length + ' No. K/P\u2026');
     (function next(){
-      if (i >= list.length) { busy = false; op.postMessage({ pkjlink:'result', sys:SYS, id:d.id, rows:out }, org); note('✓ ' + list.length + ' semakan dihantar ke borang'); return; }
+      if (i >= list.length) {
+        post({ id:req.id, rows:JSON.stringify(out) })
+          .then(function(){ note('\u2713 ' + list.length + ' semakan dihantar ke borang'); })
+          .catch(function(er){ note('Gagal hantar hasil: ' + ((er && er.message) || er), 1); })
+          .then(function(){ busy = false; poll(); });
+        return;
+      }
       var it = list[i++];
-      checkIc(it.ic).then(function(r){
-        out.push({ ic:it.ic, role:it.role, r:r });
-        op.postMessage({ pkjlink:'progress', sys:SYS, id:d.id, done:i, total:list.length }, org);
-        setTimeout(next, 300);
-      });
+      checkIc(it.ic).then(function(r){ out.push({ ic:it.ic, role:it.role, r:r }); next(); });
     })();
-  });
-  W[KEY] = { hello:function(loud){ try { op.postMessage({ pkjlink:'hello', sys:SYS }, '*'); } catch(x){} if (loud) note('Sambungan aktif ✓\nTekan "Semak SPRN" dalam borang PKJ.\nJangan tutup / muat semula tab ini.'); } };
-  W[KEY].hello(true);
-  setInterval(function(){ if (!op.closed) W[KEY].hello(false); }, 4000);
+  }
+  function poll(){
+    fetch(EXEC + '?mode=lkpoll&ch=' + CH + '&sys=' + SYS + '&_=' + Date.now(), { credentials:'omit' })
+      .then(function(r){ return r.json(); })
+      .then(function(j){ if (fails) note('Sambungan pulih \u2713'); fails = 0; if (j && j.req) run(j.req); })
+      .catch(function(er){ fails++; if (fails === 1 || fails % 15 === 0) note('Gagal hubungi Apps Script (' + ((er && er.message) || er) + ').\nJika berulang, laman ini mungkin menyekat sambungan luar (CSP).', 1); })
+      .then(function(){ if (busy) return; if (fails) setTimeout(poll, Math.min(30000, 2000 * fails)); else poll(); });
+  }
+  W[KEY] = true;
+  note('Sambungan aktif \u2713 (kod ' + CH + ')\nTekan "Semak ' + SYS + '" dalam borang PKJ.\nBiarkan tab ini terbuka (jangan muat semula).');
+  poll();
 }
 
 /* ---------- BOOKMARKLET PKJ⇄SHTJ (dijalankan DI halaman carian SHTJ) ---------- */
@@ -2796,9 +2842,9 @@ function pkjLinkSHTJ(){
     n.style.background = bad ? '#C0392B' : '#155e3f'; n.textContent = 'PKJ⇄' + SYS + ' · ' + t;
     clearTimeout(n._t); n._t = setTimeout(function(){ if (n.parentNode) n.parentNode.removeChild(n); }, 6000);
   }
-  if (W[KEY]) { W[KEY].hello(true); return; }
-  var op = W.opener;
-  if (!op || op.closed) { note('Tiada sambungan ke borang PKJ.\nBuka halaman ini melalui butang "Semak SHTJ" dalam borang Key-In.', 1); return; }
+  var EXEC = 'https://script.google.com/macros/s/__DEP__/exec', CH = '__CH__';
+  if (/^_/.test(CH)) { note('Bookmarklet tidak lengkap.\nSeret semula dari borang PKJ (butang \uD83D\uDD16).', 1); return; }
+  if (W[KEY]) { note('Sudah aktif \u2713 (kod ' + CH + ')\nTekan "Semak ' + SYS + '" dalam borang PKJ.'); return; }
   function txt(el){ return el ? el.textContent.replace(/\s+/g,' ').trim() : ''; }
   function stripTags(h){ var d = document.createElement('div'); d.innerHTML = h || ''; return (d.textContent || '').replace(/\s+/g,' ').trim(); }
   function getCtx(){
@@ -2877,29 +2923,38 @@ function pkjLinkSHTJ(){
       return seq.then(function(){ return { status:'ADA', count:items.length, blocks:blocks }; });
     }).catch(function(e){ return { status:'RALAT', detail:String((e && e.message) || e) }; });
   }
-  var busy = false;
-  W.addEventListener('message', function(e){
-    var d = e.data;
-    if (e.source !== op || !d || d.pkjlink !== 'req' || d.sys !== SYS) return;
-    var org = e.origin;
-    if (busy) { op.postMessage({ pkjlink:'busy', sys:SYS, id:d.id }, org); return; }
-    if (!getCtx()) { op.postMessage({ pkjlink:'error', sys:SYS, id:d.id, msg:'Tab SHTJ bukan di halaman Carian — buka Carian & klik bookmarklet semula' }, org); return; }
+  var busy = false, fails = 0;
+  function post(o){
+    var b = new URLSearchParams(); b.append('mode', 'lkres'); b.append('ch', CH); b.append('sys', SYS);
+    for (var k in o) b.append(k, o[k]);
+    return fetch(EXEC, { method:'POST', mode:'no-cors', body:b });
+  }
+  function run(req){
     busy = true;
-    var list = d.list || [], out = [], i = 0;
-    note('Menyemak ' + list.length + ' No. K/P…');
+    var list = req.list || [], out = [], i = 0;
+    note('Menyemak ' + list.length + ' No. K/P\u2026');
     (function next(){
-      if (i >= list.length) { busy = false; op.postMessage({ pkjlink:'result', sys:SYS, id:d.id, rows:out }, org); note('✓ ' + list.length + ' semakan dihantar ke borang'); return; }
+      if (i >= list.length) {
+        post({ id:req.id, rows:JSON.stringify(out) })
+          .then(function(){ note('\u2713 ' + list.length + ' semakan dihantar ke borang'); })
+          .catch(function(er){ note('Gagal hantar hasil: ' + ((er && er.message) || er), 1); })
+          .then(function(){ busy = false; poll(); });
+        return;
+      }
       var it = list[i++];
-      checkIc(it.ic).then(function(r){
-        out.push({ ic:it.ic, role:it.role, r:r });
-        op.postMessage({ pkjlink:'progress', sys:SYS, id:d.id, done:i, total:list.length }, org);
-        setTimeout(next, 500);
-      });
+      checkIc(it.ic).then(function(r){ out.push({ ic:it.ic, role:it.role, r:r }); next(); });
     })();
-  });
-  W[KEY] = { hello:function(loud){ try { op.postMessage({ pkjlink:'hello', sys:SYS }, '*'); } catch(x){} if (loud) note('Sambungan aktif ✓\nTekan "Semak SHTJ" dalam borang PKJ.\nJangan tutup / tukar halaman tab ini.'); } };
-  W[KEY].hello(true);
-  setInterval(function(){ if (!op.closed) W[KEY].hello(false); }, 4000);
+  }
+  function poll(){
+    fetch(EXEC + '?mode=lkpoll&ch=' + CH + '&sys=' + SYS + '&_=' + Date.now(), { credentials:'omit' })
+      .then(function(r){ return r.json(); })
+      .then(function(j){ if (fails) note('Sambungan pulih \u2713'); fails = 0; if (j && j.req) run(j.req); })
+      .catch(function(er){ fails++; if (fails === 1 || fails % 15 === 0) note('Gagal hubungi Apps Script (' + ((er && er.message) || er) + ').\nJika berulang, laman ini mungkin menyekat sambungan luar (CSP).', 1); })
+      .then(function(){ if (busy) return; if (fails) setTimeout(poll, Math.min(30000, 2000 * fails)); else poll(); });
+  }
+  W[KEY] = true;
+  note('Sambungan aktif \u2713 (kod ' + CH + ')\nTekan "Semak ' + SYS + '" dalam borang PKJ.\nBiarkan tab ini terbuka (jangan muat semula).');
+  poll();
 }
 
 /* ======== DAERAH DUN MENGUNDI (auto ikut DUN) + TARIKH BERKAHWIN ======== */
