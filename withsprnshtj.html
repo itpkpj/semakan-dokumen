@@ -2860,6 +2860,15 @@ async function doSubmit(tidakLayak, force) {
   }
 }
 
+var FORM_SID = '';
+function sahkanHantar(sid, n, cb){
+  jsonp({ mode:'subresult', sid:sid }, function(r){
+    if (r && (r.ok || r.error) && !r.pending) { cb(r); return; }
+    if (n >= 5) { cb(null); return; }
+    setTimeout(function(){ sahkanHantar(sid, n + 1, cb); }, 1200);
+  }, 8000);
+}
+
 /* ======== RESET — kosongkan medan tetapi KEKAL jenis inisiatif yang sama ======== */
 function resetAll() {
   // Kosongkan medan sahaja; ST.jenis TIDAK diubah -> borang kekal jenis sama
