@@ -1546,14 +1546,17 @@ function jsonp(params, cb, ms){
   var to = setTimeout(function(){ fin(null); }, ms || 20000);
   function fin(r){
     if (done) return; done = true; clearTimeout(to);
-    try { delete window[name]; } catch(e){ window[name] = undefined; }
+    window[name] = function(){};            // balasan lewat tidak menyebabkan ralat
     if (s.parentNode) s.parentNode.removeChild(s);
+    if (r && r._diag) console.warn('[PKJ] ' + (params.mode || 'hantar') + ': ' + r.error);
     cb(r);
   }
   window[name] = fin;
   var q = []; for (var k in params) q.push(encodeURIComponent(k) + '=' + encodeURIComponent(params[k]));
   s.src = 'https://script.google.com/macros/s/' + ST.depId + '/exec?' + q.join('&') + '&callback=' + name;
-  s.onerror = function(){ fin(null); };
+  // Skrip dimuat tetapi callback tidak dipanggil = server balas bukan JSONP (halaman ralat Google / kod lama)
+  s.onload  = function(){ setTimeout(function(){ if (!done) fin({ ok:false, _diag:true, error:'Server membalas dalam format tidak dijangka (kemungkinan kod Apps Script lama / ralat skrip). Semak Apps Script › Executions.' }); }, 100); };
+  s.onerror = function(){ fin({ ok:false, _diag:true, error:'Permintaan ke server gagal dimuat (rangkaian / Deployment ID / ralat server).' }); };
   document.body.appendChild(s);
 }
 
@@ -2838,14 +2841,16 @@ async function doSubmit(tidakLayak, force) {
   function keputusan(r){
     if (r && r.ok) { selepasBerjaya(); return; }
     document.getElementById('abar').style.display = 'flex';
-    if (r && r.error) openPopup('danger', '⛔ Tidak berjaya disimpan', '<p>' + esc(r.error) + '</p>');
-    else toast('⚠️ Belum dapat disahkan. Tekan Hantar semula (selamat, tiada pendua).');
+    if (r && r.error) openPopup('danger', '⛔ Tidak berjaya disimpan', '<p>' + esc(r.error) + '</p>' +
+      (r._diag ? '<p style="font-size:12px;color:var(--text2)">Data borang masih ada. Hantar semula adalah selamat (tiada pendua).</p>' : ''));
+    else toast('⚠️ Tiada balasan dari server. Tekan Hantar semula (selamat, tiada pendua).');
   }
   var panjang = 0; for (var k0 in d) if (d[k0] != null) panjang += encodeURIComponent(k0).length + encodeURIComponent(d[k0]).length + 2;
   if (panjang < 6000) {
     jsonp(d, function(r){
-      if (r) { keputusan(r); return; }
-      sahkanHantar(d.sid, 0, keputusan);     // balasan hilang -> semak sama ada sudah tersimpan
+      if (r && !r._diag) { keputusan(r); return; }
+      // balasan hilang / rosak -> semak sama ada sudah tersimpan di server
+      sahkanHantar(d.sid, 0, function(r2){ keputusan(r2 || r); });
     }, 45000);
     return;
   }
@@ -2863,7 +2868,7 @@ async function doSubmit(tidakLayak, force) {
 var FORM_SID = '';
 function sahkanHantar(sid, n, cb){
   jsonp({ mode:'subresult', sid:sid }, function(r){
-    if (r && (r.ok || r.error) && !r.pending) { cb(r); return; }
+    if (r && !r._diag && (r.ok || r.error) && !r.pending) { cb(r); return; }
     if (n >= 5) { cb(null); return; }
     setTimeout(function(){ sahkanHantar(sid, n + 1, cb); }, 1200);
   }, 8000);
@@ -2942,7 +2947,7 @@ function savePetugas(){
   h.textContent = 'Menyemak sambungan & No. KP...'; h.className = 'ic-hint';
   jsonp({ mode:'login', ic:ic }, function(r){
     btn.disabled = false;
-    if (!r) {                               // tiada balasan -> ID salah / deployment tak aktif
+    if (!r || r._diag) {                   // tiada balasan -> ID salah / deployment tak aktif
       if (depBaru) ST.depId = depLama;
       h.textContent = '❌ Tiada sambungan. Semak Deployment ID / deployment (akses "Anyone").'; h.className = 'ic-hint warn';
       petDepShow(true); return;
