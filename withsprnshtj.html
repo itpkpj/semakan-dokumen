@@ -352,6 +352,7 @@ body.th-bsr { background: var(--stripes), var(--g-bsr); background-attachment: f
     </div>
     <div class="gear" id="petugasChip" onclick="openPetugas()" title="Tukar petugas" style="width:auto;padding:0 10px;font-size:12px;font-weight:700;white-space:nowrap">&#128100; <span id="petugasNama">-</span></div>
     <div class="gear" onclick="openBm()" title="Bookmarklet SPR / SPRN / SHTJ">&#128278;</div>
+    <div class="gear" onclick="openDiag()" title="Semak Sistem">&#129658;</div>
     <div class="gear" onclick="openSettings()" title="Tetapan">&#9881;&#65039;</div>
   </div>
 </div>
@@ -705,6 +706,21 @@ body.th-bsr { background: var(--stripes), var(--g-bsr); background-attachment: f
     <div id="petugasHint" class="ic-hint" style="min-height:16px;margin:6px 0 10px"></div>
     <button class="btn btn-g btn-full" id="btnPetugas" onclick="savePetugas()">Mula Key-In</button>
     <div style="text-align:center;margin-top:10px"><a href="#" id="petDepToggle" onclick="petDepShow(true);return false" style="font-size:12px;color:var(--text2)">Tukar Deployment ID</a></div>
+  </div>
+</div>
+
+<!-- DIAGNOSIS MODAL -->
+<div class="modal-bg" id="modalDiag" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">&#129658; Semak Sistem</div>
+    <p style="font-size:12px;color:var(--text2);margin:-6px 0 10px">Uji setiap sambungan: Borang &rArr; Apps Script &rArr; Log Masuk / All Fasa / Sheet utama.</p>
+    <label style="display:flex;gap:6px;align-items:center;font-size:12px;margin-bottom:10px"><input type="checkbox" id="diagTulis" style="width:16px;height:16px"> Sertakan ujian tulis (sheet _DIAG)</label>
+    <div id="diagOut" style="font-size:12px;line-height:1.5;max-height:50vh;overflow:auto"></div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-o" style="flex:1" onclick="salinDiag()">&#128203; Salin laporan</button>
+      <button class="btn btn-g" style="flex:1" onclick="jalanDiag()">&#9654; Jalankan</button>
+    </div>
   </div>
 </div>
 
@@ -1558,6 +1574,41 @@ function jsonp(params, cb, ms){
   s.onload  = function(){ setTimeout(function(){ if (!done) fin({ ok:false, _diag:true, error:'Server membalas dalam format tidak dijangka (kemungkinan kod Apps Script lama / ralat skrip). Semak Apps Script › Executions.' }); }, 100); };
   s.onerror = function(){ fin({ ok:false, _diag:true, error:'Permintaan ke server gagal dimuat (rangkaian / Deployment ID / ralat server).' }); };
   document.body.appendChild(s);
+}
+
+/* ======== DIAGNOSIS SISTEM ======== */
+var DIAG_TXT = '';
+function openDiag(){ document.getElementById('modalDiag').classList.add('open'); jalanDiag(); }
+function jalanDiag(){
+  var o = document.getElementById('diagOut'), rows = [], txt = ['=== SEMAK SISTEM PKJ ' + new Date().toLocaleString('ms-MY') + ' ==='];
+  function baris(ok, nama, info, ms){
+    rows.push('<div style="padding:6px 8px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;background:' + (ok ? '#EEF7F1' : '#FDECEA') + '">' +
+      (ok ? '&#9989; ' : '&#10060; ') + '<strong>' + esc(nama) + '</strong>' + (ms != null ? ' <span style="color:var(--text3)">(' + ms + ' ms)</span>' : '') +
+      '<div style="color:var(--text2);word-break:break-word">' + esc(info || '') + '</div></div>');
+    txt.push((ok ? '[OK] ' : '[GAGAL] ') + nama + (ms != null ? ' (' + ms + 'ms)' : '') + ' — ' + (info || ''));
+    o.innerHTML = rows.join('');
+  }
+  o.innerHTML = 'Menguji...';
+  baris(!!navigator.onLine, 'Peranti: internet', navigator.onLine ? 'Online' : 'Offline');
+  baris(!depPlaceholder(ST.depId), 'Borang: Deployment ID', ST.depId ? depMask(ST.depId) : 'Belum ditetapkan');
+  baris(!!PETUGAS_NOW, 'Borang: Petugas log masuk', PETUGAS_NOW ? PETUGAS_NOW.nama : 'Belum log masuk');
+  if (depPlaceholder(ST.depId)) { DIAG_TXT = txt.join('\n'); return; }
+  var t0 = Date.now();
+  jsonp({ mode:'diag', tulis: document.getElementById('diagTulis').checked ? '1' : '0' }, function(r){
+    var ms = Date.now() - t0;
+    if (!r || r._diag || !r.langkah) {
+      baris(false, 'Borang ⇄ Apps Script', (r && r.error) || 'Tiada balasan. Punca biasa: Deployment ID salah, deployment bukan "New version", akses bukan "Anyone", atau mode=diag tiada (kod lama).', ms);
+    } else {
+      baris(true, 'Borang ⇄ Apps Script', 'Versi kod: ' + r.versi, ms);
+      r.langkah.forEach(function(l){ baris(l.ok, l.nama, l.ok ? l.info : l.error, l.ms); });
+      baris(true, 'Borang: indeks tempatan', 'Carian: ' + CARI.idx.length + ' · Duplikat: ' + (DUP.loaded ? 'dimuat' : 'belum') + ' · All Fasa: ' + XLIDX.n);
+    }
+    DIAG_TXT = txt.join('\n');
+  }, 60000);
+}
+function salinDiag(){
+  if (!DIAG_TXT) return;
+  try { navigator.clipboard.writeText(DIAG_TXT).then(function(){ toast('Laporan disalin'); }); } catch(e){}
 }
 
 /* ======== ALL FASA (Google Sheet lain, semakan semasa key-in) ======== */
