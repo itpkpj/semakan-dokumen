@@ -2854,7 +2854,7 @@ async function doSubmit(tidakLayak, force) {
   }
   // ID hantaran unik untuk borang ini: hantar semula = tiada pendua di server
   if (!FORM_SID) FORM_SID = 'S' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-  d.sid = FORM_SID;
+  d.subid = FORM_SID;
 
   document.getElementById('abar').style.display = 'none';
   toast(mengemaskini ? 'Mengemas kini rekod...' : 'Menghantar data...');
@@ -2901,7 +2901,7 @@ async function doSubmit(tidakLayak, force) {
     jsonp(d, function(r){
       if (r && !r._diag) { keputusan(r); return; }
       // balasan hilang / rosak -> semak sama ada sudah tersimpan di server
-      sahkanHantar(d.sid, 0, function(r2){ keputusan(r2 || r); });
+      sahkanHantar(d.subid, 0, function(r2){ keputusan(r2 || r); });
     }, 45000);
     return;
   }
@@ -2909,7 +2909,7 @@ async function doSubmit(tidakLayak, force) {
     var fd = new FormData();
     for (var key in d) { if (d[key] != null) fd.append(key, d[key]); }
     await fetch('https://script.google.com/macros/s/' + ST.depId + '/exec', { method:'POST', body:fd, mode:'no-cors' });
-    sahkanHantar(d.sid, 0, keputusan);
+    sahkanHantar(d.subid, 0, keputusan);
   } catch(err) {
     document.getElementById('abar').style.display = 'flex';
     toast('Ralat pengiriman. Semak sambungan internet.');
@@ -2918,7 +2918,7 @@ async function doSubmit(tidakLayak, force) {
 
 var FORM_SID = '';
 function sahkanHantar(sid, n, cb){
-  jsonp({ mode:'subresult', sid:sid }, function(r){
+  jsonp({ mode:'subresult', subid:sid }, function(r){
     if (r && !r._diag && (r.ok || r.error) && !r.pending) { cb(r); return; }
     if (n >= 5) { cb(null); return; }
     setTimeout(function(){ sahkanHantar(sid, n + 1, cb); }, 1200);
