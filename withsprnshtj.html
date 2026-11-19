@@ -19,9 +19,13 @@
   --accent:#1B4B3A; --accent-lt:#E8F2EE; --accent-dk:#143d2f;
   --danger:#C0392B; --danger-lt:#FDECEA;
   --warn:#92600A; --warn-lt:#FFF8E7;
-  --bbr:#185FA5; --bbr-lt:#E6F1FB;
-  --bmr:#1B4B3A; --bmr-lt:#E8F2EE;
-  --bsr:#854F0B; --bsr-lt:#FAEEDA;
+  --bbr:#9E0035; --bbr-lt:#FBE6EE;
+  --bmr:#0A1FA0; --bmr-lt:#E6EAFB;
+  --bsr:#7A0A80; --bsr-lt:#F6E6F7;
+  --g-bbr: linear-gradient(135deg,#c4004a 0%,#7a0022 45%,#5c0020 60%,#d10057 100%);
+  --g-bmr: linear-gradient(135deg,#0a1fa0 0%,#020f5c 45%,#010a45 60%,#0a23d6 100%);
+  --g-bsr: linear-gradient(135deg,#8a0f8f 0%,#45064f 45%,#4a0550 55%,#b5127a 100%);
+  --stripes: repeating-linear-gradient(135deg, rgba(255,255,255,.06) 0 2px, transparent 2px 14px);
   --r:12px; --rl:18px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bot: env(safe-area-inset-bottom, 0px);
@@ -186,6 +190,22 @@ input.ic-bad  { border-color: var(--danger) !important; }
 .jk.sel.bbr .jk-code { color: var(--bbr); }
 .jk.sel.bmr .jk-code { color: var(--bmr); }
 .jk.sel.bsr .jk-code { color: var(--bsr); }
+/* ---- Tema warna ikut jenis (gaya banner) ---- */
+.jk.bbr, .jk.bmr, .jk.bsr { border-color: transparent; color:#fff; position:relative; overflow:hidden; opacity:.82; }
+.jk.bbr { background: var(--g-bbr); }
+.jk.bmr { background: var(--g-bmr); }
+.jk.bsr { background: var(--g-bsr); }
+.jk.bbr::after, .jk.bmr::after, .jk.bsr::after { content:''; position:absolute; inset:0; background: var(--stripes); pointer-events:none; }
+.jk > * { position:relative; z-index:1; }
+.jk .jk-code, .jk .jk-name, .jk .jk-amt { color:#fff !important; }
+.jk .jk-name { opacity:.85; }
+.jk.sel { opacity:1; border-color:#fff !important; box-shadow: 0 0 0 3px rgba(0,0,0,.25), 0 8px 22px rgba(0,0,0,.25); transform: translateY(-2px); }
+.jk.sel.bbr, .jk.sel.bmr, .jk.sel.bsr { background-color: transparent; }
+.jk.sel.bbr { background: var(--g-bbr); } .jk.sel.bmr { background: var(--g-bmr); } .jk.sel.bsr { background: var(--g-bsr); }
+body.th-bbr, body.th-bmr, body.th-bsr { background-attachment: fixed; }
+body.th-bbr { background: var(--stripes), var(--g-bbr); background-attachment: fixed; }
+body.th-bmr { background: var(--stripes), var(--g-bmr); background-attachment: fixed; }
+body.th-bsr { background: var(--stripes), var(--g-bsr); background-attachment: fixed; }
 .jk-name  { font-size: 10px; color: var(--text3); line-height: 1.3; }
 .jk-amt   { font-size: 11px; font-weight: 600; color: var(--text3); margin-top: 2px; }
 .jk.sel.bbr .jk-amt { color: var(--bbr); }
@@ -417,7 +437,7 @@ input.ic-bad  { border-color: var(--danger) !important; }
       <div class="jk bsr" onclick="pickJenis('BSR',this)">
         <div class="jk-code">BSR</div>
         <div class="jk-name">Bantuan Sewa Rumah</div>
-        <div class="jk-amt">RM 200/bln</div>
+        <div class="jk-amt">RM 2,500</div>
       </div>
     </div>
   </div>
@@ -469,6 +489,24 @@ input.ic-bad  { border-color: var(--danger) !important; }
           <input type="text" id="fDaerahDunP" placeholder="auto ikut DUN" autocomplete="off" oninput="upperNama(this); document.getElementById('daerahDunPAuto').textContent=''">
         </div>
       </div>
+      <div class="frow">
+        <div class="field">
+          <label class="fl">Bangsa <span class="req">*</span></label>
+          <select id="fBangsa">
+            <option value="">-- Pilih --</option>
+            <option>MELAYU</option><option>CINA</option><option>INDIA</option>
+            <option>BUMIPUTERA SABAH</option><option>BUMIPUTERA SARAWAK</option>
+            <option>ORANG ASLI</option><option>LAIN-LAIN</option>
+          </select>
+        </div>
+        <div class="field" id="kategoriWrap" style="display:none">
+          <label class="fl">Kategori <span class="req">*</span></label>
+          <select id="fKategori">
+            <option value="">-- Pilih --</option>
+            <option>PEKERJA</option><option>PELAJAR</option>
+          </select>
+        </div>
+      </div>
       <div class="frow frow1">
         <div class="field">
           <label class="fl">Emel <span class="req">*</span></label>
@@ -476,7 +514,17 @@ input.ic-bad  { border-color: var(--danger) !important; }
         </div>
       </div>
 
-      <div class="fsub-ttl">Maklumat Pasangan <span>(jika berkahwin)</span></div>
+      <div class="frow frow1">
+        <div class="field">
+          <label class="fl">Status Perkahwinan <span class="req">*</span></label>
+          <select id="fStatusKahwin" onchange="statusKahwinChange()">
+            <option value="">-- Pilih --</option>
+            <option>BUJANG</option><option>BERKAHWIN</option>
+          </select>
+        </div>
+      </div>
+      <div id="psngBox" style="display:none">
+      <div class="fsub-ttl">Maklumat Pasangan</div>
       <div class="frow">
         <div class="field">
           <label class="fl">Tarikh Berkahwin <span class="req" id="kahwinReq" style="display:none">*</span></label>
@@ -514,6 +562,7 @@ input.ic-bad  { border-color: var(--danger) !important; }
           <label class="fl">Daerah DUN Mengundi Pasangan <span id="daerahDunSAuto" class="auto-tag"></span></label>
           <input type="text" id="fDaerahDunS" placeholder="auto ikut DUN" autocomplete="off" oninput="upperNama(this); document.getElementById('daerahDunSAuto').textContent=''">
         </div>
+      </div>
       </div>
     </div>
 
@@ -567,7 +616,7 @@ input.ic-bad  { border-color: var(--danger) !important; }
       <div class="frow">
         <div class="field">
           <label class="fl" id="hargaLbl">Harga Rumah (RM) <span class="req">*</span></label>
-          <input type="number" id="fHarga" placeholder="cth: 250000" inputmode="numeric">
+          <input type="text" id="fHarga" placeholder="cth: 250,000.00" inputmode="decimal" autocomplete="off" oninput="hargaInput(this)" onblur="hargaBlur(this)">
         </div>
         <div class="field" id="doc1Wrap">
           <label class="fl" id="doc1Lbl">Tarikh SPA</label>
@@ -577,7 +626,7 @@ input.ic-bad  { border-color: var(--danger) !important; }
       <div class="frow" id="doc2Row" style="display:none">
         <div></div>
         <div class="field">
-          <label class="fl">Tarikh Perjanjian Sewa (Hingga)</label>
+          <label class="fl">Tarikh Tamat Perjanjian</label>
           <input type="date" id="fDoc2">
         </div>
       </div>
@@ -984,6 +1033,27 @@ function clearDep() {
 }
 function depMask(dep){ return dep.length > 18 ? dep.slice(0,10)+'...'+dep.slice(-8) : dep; }
 
+/* ======== HARGA (format XXX,XXX.XX) ======== */
+function hargaRaw(s){ s = String(s||'').replace(/[^0-9.]/g,''); var i = s.indexOf('.'); if (i >= 0) s = s.slice(0,i+1) + s.slice(i+1).replace(/\./g,''); return s; }
+function hargaFmt(s){ var r = hargaRaw(s); if (r === '' || isNaN(parseFloat(r))) return ''; return parseFloat(r).toLocaleString('en-US',{ minimumFractionDigits:2, maximumFractionDigits:2 }); }
+function hargaInput(el){
+  var r = hargaRaw(el.value), p = r.split('.');
+  var ip = p[0].replace(/^0+(?=\d)/,'').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  el.value = p.length > 1 ? ip + '.' + p[1].slice(0,2) : ip;
+}
+function hargaBlur(el){ el.value = hargaFmt(el.value); }
+
+/* ======== JULAT TARIKH DOKUMEN ======== */
+const DOC1_RANGE = { BBR:['2022-01-01','2026-12-31'], BMR:['2025-01-01','2026-12-31'] };
+
+/* ======== STATUS PERKAHWINAN ======== */
+function statusKahwinChange(){
+  var k = v('fStatusKahwin') === 'BERKAHWIN';
+  document.getElementById('psngBox').style.display = k ? 'block' : 'none';
+  if (!k) ['fTkhKahwin','fNamaPsng','fIcPsng','fDunPsng','fDaerahDunS'].forEach(function(id){ document.getElementById(id).value=''; });
+  document.getElementById('kahwinReq').style.display = k ? 'inline' : 'none';
+}
+
 /* ======== JENIS ======== */
 function pickJenis(j, el) {
   document.querySelectorAll('.jk').forEach(c => c.classList.remove('sel'));
@@ -998,13 +1068,18 @@ function pickJenis(j, el) {
   document.getElementById('ttlA').textContent = isBSR ? 'A. Maklumat Pemohon' : 'A. Butiran Pemohon';
   document.getElementById('ttlB').textContent = isBSR ? 'B. Maklumat Sewa' : 'B. Maklumat Harta (Rumah)';
   document.getElementById('hargaLbl').innerHTML = (isBSR ? 'Bayaran Sewa Sebulan (RM)' : 'Harga Rumah (RM)') + ' <span class="req">*</span>';
-  document.getElementById('fHarga').placeholder = isBSR ? 'cth: 500' : 'cth: 250000';
+  document.getElementById('fHarga').placeholder = isBSR ? 'cth: 500.00' : 'cth: 250,000.00';
   document.getElementById('catatanLbl').innerHTML = 'Catatan';   // tak wajib untuk mana-mana jenis
   // Tarikh dokumen ikut jenis: BBR=SPA, BMR=VP/Carian Pindah Milik, BSR=Perjanjian Sewa (dari-hingga)
-  document.getElementById('doc1Lbl').textContent = { BBR:'Tarikh SPA', BMR:'Tarikh VP / Carian Pindah Milik', BSR:'Tarikh Perjanjian Sewa (Dari)' }[j];
+  document.getElementById('doc1Lbl').textContent = { BBR:'Tarikh SPA', BMR:'Tarikh VP / Carian Pindah Milik', BSR:'Tarikh Mula Perjanjian' }[j];
+  var d1 = document.getElementById('fDoc1'), rg = DOC1_RANGE[j];
+  if (rg) { d1.min = rg[0]; d1.max = rg[1]; } else { d1.removeAttribute('min'); d1.removeAttribute('max'); }
+  document.getElementById('kategoriWrap').style.display = isBSR ? '' : 'none';
+  if (!isBSR) document.getElementById('fKategori').value = '';
   document.getElementById('doc2Row').style.display = isBSR ? 'grid' : 'none';
   if (!isBSR) document.getElementById('fDoc2').value = '';
-  document.getElementById('btnHantar').style.background = {BBR:'#185FA5', BMR:'#1B4B3A', BSR:'#854F0B'}[j];
+  document.getElementById('btnHantar').style.background = {BBR:'#9E0035', BMR:'#0A1FA0', BSR:'#7A0A80'}[j];
+  document.body.classList.remove('th-bbr','th-bmr','th-bsr'); document.body.classList.add('th-' + j.toLowerCase());
 
   document.getElementById('formCard').style.display = 'block';
   document.getElementById('abar').style.display = 'flex';
@@ -1590,7 +1665,7 @@ function pilihRekod(i) {
   document.getElementById('fIcPsng').value     = o.icPsng || '';
   document.getElementById('fDunPsng').value    = o.dunPsng || '';
   document.getElementById('fTaman').value      = o.taman || '';
-  document.getElementById('fHarga').value      = o.harga || '';
+  document.getElementById('fHarga').value      = hargaFmt(o.harga);
   document.getElementById('fDaerah').value     = o.daerah || '';
   document.getElementById('fMukim').value      = o.mukim || '';
   document.getElementById('fDunTaman').value   = o.dunTaman || '';
@@ -1601,6 +1676,12 @@ function pilihRekod(i) {
   document.getElementById('fTkhKahwin').value  = o.tkhKahwin ? isoFromDisplay(o.tkhKahwin) : '';
   document.getElementById('fDoc1').value       = o.doc1 ? isoFromDisplay(o.doc1) : '';
   document.getElementById('fDoc2').value       = o.doc2 ? isoFromDisplay(o.doc2) : '';
+  document.getElementById('fBangsa').value     = String(o.bangsa || '').toUpperCase();
+  document.getElementById('fKategori').value   = String(o.kategori || '').toUpperCase();
+  var sk = String(o.statusKahwin || '').toUpperCase();
+  if (!sk && (o.namaPsng || o.icPsng)) sk = 'BERKAHWIN';
+  document.getElementById('fStatusKahwin').value = sk;
+  document.getElementById('psngBox').style.display = sk === 'BERKAHWIN' ? 'block' : 'none';
   kahwinWajib();
 
   // Masuk mod kemas kini
@@ -1952,7 +2033,7 @@ function openPopup(level, title, bodyHtml, buttons){
   head.className = 'dup-head ' + (level === 'danger' ? 'danger' : 'warn');
   head.innerHTML = title;
   document.getElementById('dupBody').innerHTML = bodyHtml;
-  POP.btns = buttons && buttons.length ? buttons : [{ label:'Faham', cls:'btn-g', fn:null }];
+  POP.btns = buttons && buttons.length ? buttons : [{ label:'Ok', cls:'btn-g', fn:null }];
   document.getElementById('dupFoot').innerHTML = POP.btns.map(function(b,i){
     return '<button class="btn ' + (b.cls||'btn-o') + '" onclick="popBtn(' + i + ')">' + b.label + '</button>';
   }).join('');
@@ -2331,15 +2412,15 @@ function xlPopup(){
       '<p><strong style="color:var(--danger)">Nama dan No. KP berikut sepadan tepat dengan rekod dalam Google Sheet.</strong></p>'
       + senarai(ex, 'danger')
       + (sp.length ? '<div class="dup-lbl">+ ' + sp.length + ' padanan separa (nama / IC sahaja)</div>' : '') + crNote,
-      [lihat, { label:'Faham', cls:'btn-r' }]);
+      [lihat, { label:'Ok', cls:'btn-r' }]);
   } else if (sp.length) {
     openPopup('warn', '⚠️ ' + sp.length + ' nama / No. KP telah wujud',
       '<p>Tiada padanan exact, tetapi rekod berikut sepadan pada nama <em>atau</em> No. KP sahaja.</p>' + senarai(sp, '') + crNote,
-      [lihat, { label:'Faham', cls:'btn-g' }]);
+      [lihat, { label:'Ok', cls:'btn-g' }]);
   } else if (cr.length) {
     openPopup('warn', '⇄ ' + cr.length + ' semakan bertindih antara fail/sheet',
       '<p>Tiada yang wujud dalam Google Sheet, tetapi ada nama/IC yang sama dalam lebih dari satu fail atau sheet yang diupload.</p>',
-      [{ label:'Lihat', cls:'btn-o', fn:function(){ document.getElementById('xlFilter').value='CROSS'; xlRender(); } }, { label:'Faham', cls:'btn-g' }]);
+      [{ label:'Lihat', cls:'btn-o', fn:function(){ document.getElementById('xlFilter').value='CROSS'; xlRender(); } }, { label:'Ok', cls:'btn-g' }]);
   } else {
     toast('✅ ' + XL.results.length + ' semakan disemak — tiada yang wujud');
   }
@@ -2520,7 +2601,7 @@ function autoDaerahDun(role){
 }
 // Ada nama/IC pasangan -> tanda * pada Tarikh Berkahwin
 function kahwinWajib(){
-  var ada = !!(v('fNamaPsng') || v('fIcPsng'));
+  var ada = v('fStatusKahwin') === 'BERKAHWIN' || !!(v('fNamaPsng') || v('fIcPsng'));
   document.getElementById('kahwinReq').style.display = ada ? 'inline' : 'none';
 }
 
@@ -2554,7 +2635,10 @@ function getForm() {
     icPsng:     v('fIcPsng'),
     dunPsng:    v('fDunPsng'),
     taman:      v('fTaman'),
-    harga:      v('fHarga'),
+    harga:      hargaRaw(v('fHarga')),
+    bangsa:     v('fBangsa'),
+    kategori:   ST.jenis === 'BSR' ? v('fKategori') : '',
+    statusKahwin: v('fStatusKahwin'),
     daerah:     v('fDaerah'),
     mukim:      v('fMukim'),
     dunTaman:   v('fDunTaman'),
@@ -2602,6 +2686,9 @@ async function doSubmit(tidakLayak, force) {
     if (!d.ic)     { toast('No. Kad Pengenalan wajib diisi'); return; }
     if (icDigits(d.ic) !== 12) { toast('No. KP tidak lengkap — perlu 12 digit'); return; }
     if (!d.tel)    { toast('No. Telefon wajib diisi'); return; }
+    if (!d.bangsa) { toast('Sila pilih Bangsa'); return; }
+    if (ST.jenis === 'BSR' && !d.kategori) { toast('Sila pilih Kategori (Pekerja / Pelajar)'); return; }
+    if (!d.statusKahwin) { toast('Sila pilih Status Perkahwinan'); return; }
     if (!d.emel)   { toast('Emel wajib diisi'); return; }
     if (!d.harga)  { toast('Harga Rumah / Sewa wajib diisi'); return; }
     if (!d.tarikh) { toast('Tarikh Penerimaan Kaunter wajib diisi'); return; }
@@ -2611,8 +2698,11 @@ async function doSubmit(tidakLayak, force) {
   if (d.icPsng && icDigits(d.icPsng) !== 12) { toast('No. KP Pasangan tidak lengkap — perlu 12 digit'); return; }
   // Ada pasangan -> Tarikh Berkahwin wajib (untuk Layak)
   if (!tidakLayak && (d.namaPsng || d.icPsng) && !d.tkhKahwin) { toast('Sila isi Tarikh Berkahwin (ada maklumat pasangan)'); document.getElementById('fTkhKahwin').focus(); return; }
+  // Julat tarikh SPA (BBR) / VP (BMR)
+  var rg = DOC1_RANGE[ST.jenis], d1v = v('fDoc1');
+  if (rg && d1v && (d1v < rg[0] || d1v > rg[1])) { toast((ST.jenis === 'BBR' ? 'Tarikh SPA mesti antara 2022 - 2026' : 'Tarikh VP mesti antara 2025 - 2026')); document.getElementById('fDoc1').focus(); return; }
   // BSR: tarikh perjanjian sewa "Hingga" mesti selepas "Dari"
-  if (ST.jenis === 'BSR' && v('fDoc1') && v('fDoc2') && v('fDoc2') < v('fDoc1')) { toast('Tarikh Perjanjian Sewa (Hingga) mesti selepas tarikh Dari'); return; }
+  if (ST.jenis === 'BSR' && v('fDoc1') && v('fDoc2') && v('fDoc2') < v('fDoc1')) { toast('Tarikh Tamat Perjanjian mesti selepas Tarikh Mula'); return; }
 
   // SEMAKAN DUPLIKAT sebelum hantar: jika EXACT (nama + IC) -> minta pengesahan
   if (!force && (DUP.loaded || XLIDX.n)) {
@@ -2690,7 +2780,8 @@ async function doSubmit(tidakLayak, force) {
 /* ======== RESET — kosongkan medan tetapi KEKAL jenis inisiatif yang sama ======== */
 function resetAll() {
   // Kosongkan medan sahaja; ST.jenis TIDAK diubah -> borang kekal jenis sama
-  ['fNama','fIc','fDunPemohon','fTel','fEmel','fNamaPsng','fIcPsng','fDunPsng','fTaman','fHarga','fDaerah','fMukim','fDunTaman','fCatatan','fDaerahDunP','fDaerahDunS','fTkhKahwin','fDoc1','fDoc2'].forEach(id => document.getElementById(id).value = '');
+  ['fNama','fIc','fDunPemohon','fTel','fEmel','fNamaPsng','fIcPsng','fDunPsng','fTaman','fHarga','fDaerah','fMukim','fDunTaman','fCatatan','fDaerahDunP','fDaerahDunS','fTkhKahwin','fDoc1','fDoc2','fBangsa','fKategori','fStatusKahwin'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('psngBox').style.display = 'none';
   DUP.shown = {}; DUP.last = {};
   document.getElementById('kahwinReq').style.display = 'none';
   ['namaPAuto','namaSAuto','dunPAuto','dunSAuto','daerahDunPAuto','daerahDunSAuto'].forEach(function(id){ var t=document.getElementById(id); if(t) t.textContent=''; });
@@ -2725,7 +2816,50 @@ function toast(msg) {
 /* ======== PETUGAS (No. KP -> Nama) ========
    Tambah petugas baru di sini: 'NoKP (digit sahaja)': 'NAMA'  */
 const PETUGAS = {
-  '93121801579': 'SYAFIQ'
+  '811216015658': 'Norli',
+'990512015704': 'Zulaikha',
+'711022015440': 'Norzita',
+'800711065034': 'Roslina',
+'860802236614': 'Murni',
+'771004016284': 'Zanariah',
+'790921015274': 'Zaiton',
+'820425015018': 'Sharifah',
+'920609016822': 'Iziana',
+'730409015844': 'Mariati',
+'890903015703': 'Reimie',
+'950825015768': 'Syaza',
+'830930016387': 'Affendi',
+'920304015650': 'Azhani',
+'950714017760': 'Faziera',
+'940219016067': 'Farhan',
+'960504016750': 'Aqma',
+'920916016873': 'Mujib',
+'950103015950': 'Hanani',
+'891013016063': 'Asyraf',
+'970519016576': 'Raudhah',
+'950730016610': 'Faiqah',
+'980613015253': 'Zahid',
+'950713015405': 'Hisham',
+'850426015105': 'Nazri',
+'990409015386': 'Aqilla',
+'941213015279': 'Arief',
+'20810010162': 'Aini',
+'931218015279': 'Syafiq',
+'980910016877': 'Soleheen',
+'000720011307': 'Ammar',
+'960128075350': 'Hidayah',
+'950112015346': 'Afina',
+'990522015572': 'Syasha',
+'20814011584': 'Ain',
+'970113015856': 'Puteri',
+'870225235337': 'Zulfakar',
+'850601017037': 'Firdaus',
+'850122015181': 'Aesak',
+'910731016800': 'Nadzirah',
+
+  
+  
+  
 };
 const PETUGAS_KEY = 'pkj_petugas';
 let PETUGAS_NOW = null;   // { ic, nama }
