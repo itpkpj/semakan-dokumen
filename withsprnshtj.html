@@ -2833,33 +2833,31 @@ async function doSubmit(tidakLayak, force) {
     resetAll();
   }
 
-  // KEMAS KINI & HANTAR BARU: guna POST + no-cors (stabil, tiada had panjang URL).
-  // POST hantar semua medan dlm body (FormData), jadi Catatan panjang / banyak
-  // medan tak memecahkan permintaan seperti GET/JSONP.
+  // HANTAR: utama guna GET/JSONP (balasan server dapat dibaca terus).
+  // Jika data terlalu panjang untuk URL -> guna POST, kemudian sahkan melalui mode=subresult.
+  function keputusan(r){
+    if (r && r.ok) { selepasBerjaya(); return; }
+    document.getElementById('abar').style.display = 'flex';
+    if (r && r.error) openPopup('danger', '⛔ Tidak berjaya disimpan', '<p>' + esc(r.error) + '</p>');
+    else toast('⚠️ Belum dapat disahkan. Tekan Hantar semula (selamat, tiada pendua).');
+  }
+  var panjang = 0; for (var k0 in d) if (d[k0] != null) panjang += encodeURIComponent(k0).length + encodeURIComponent(d[k0]).length + 2;
+  if (panjang < 6000) {
+    jsonp(d, function(r){
+      if (r) { keputusan(r); return; }
+      sahkanHantar(d.sid, 0, keputusan);     // balasan hilang -> semak sama ada sudah tersimpan
+    }, 45000);
+    return;
+  }
   try {
     var fd = new FormData();
     for (var key in d) { if (d[key] != null) fd.append(key, d[key]); }
     await fetch('https://script.google.com/macros/s/' + ST.depId + '/exec', { method:'POST', body:fd, mode:'no-cors' });
-    // Sahkan keputusan sebenar dari server
-    sahkanHantar(d.sid, 0, function(r){
-      if (r && r.ok) { selepasBerjaya(); return; }
-      document.getElementById('abar').style.display = 'flex';
-      if (r && r.error) openPopup('danger', '⛔ Tidak berjaya disimpan', '<p>' + esc(r.error) + '</p>');
-      else toast('⚠️ Belum dapat disahkan. Tekan Hantar semula (selamat, tiada pendua).');
-    });
+    sahkanHantar(d.sid, 0, keputusan);
   } catch(err) {
     document.getElementById('abar').style.display = 'flex';
     toast('Ralat pengiriman. Semak sambungan internet.');
   }
-}
-
-var FORM_SID = '';
-function sahkanHantar(sid, n, cb){
-  jsonp({ mode:'subresult', sid:sid }, function(r){
-    if (r && (r.ok || r.error) && !r.pending) { cb(r); return; }
-    if (n >= 5) { cb(null); return; }
-    setTimeout(function(){ sahkanHantar(sid, n + 1, cb); }, 1200);
-  }, 8000);
 }
 
 /* ======== RESET — kosongkan medan tetapi KEKAL jenis inisiatif yang sama ======== */
