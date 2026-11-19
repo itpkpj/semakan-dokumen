@@ -340,10 +340,10 @@ body.th-bsr { background: var(--stripes), var(--g-bsr); background-attachment: f
 
 <!-- HEADER -->
 <div class="hdr">
-  <div class="hdr-logo">PKJ</div>
+  <div class="hdr-logo" style="background:#fff;padding:3px"><img src="pkpj.png" alt="PKPJ" style="width:100%;height:100%;object-fit:contain" onerror="this.parentNode.textContent='PKJ'"></div>
   <div class="hdr-info">
-    <div class="hdr-title">Sistem Key-In Borang</div>
-    <div class="hdr-sub">Perbadanan Kemajuan Johor</div>
+    <div class="hdr-title">Sistem Kemasukan Data</div>
+    <div class="hdr-sub">Perumahan Kasih Johor</div>
   </div>
   <div class="hdr-right">
     <div class="step-dots">
@@ -365,7 +365,7 @@ body.th-bsr { background: var(--stripes), var(--g-bsr); background-attachment: f
   <div class="card">
     <div class="card-ttl">&#128269; Cari Pemohon (Kemas Kini)</div>
     <div class="ac-wrap">
-      <input type="text" id="fCari" placeholder="Taip Nama atau No. KP pemohon..." autocomplete="off" oninput="onCariInput(this)" onkeydown="cariKeydown(event)">
+      <input type="text" id="fCari" placeholder="Taip Nama atau No. KP pemohon..." autocomplete="off" onfocus="cariIndexSegar()" oninput="onCariInput(this)" onkeydown="cariKeydown(event)">
       <div class="ac-list" id="cariList"></div>
     </div>
     <div id="editBanner" style="display:none" class="alert al-y" style="margin-top:10px">
@@ -376,49 +376,12 @@ body.th-bsr { background: var(--stripes), var(--g-bsr); background-attachment: f
     </div>
   </div>
 
-  <!-- SEMAKAN SENARAI EXCEL (MULTI FAIL) vs GOOGLE SHEET -->
+  <!-- SEMAKAN ALL FASA (Google Sheet "All Fasa") -->
   <div class="card">
-    <div class="card-ttl" style="cursor:pointer;margin-bottom:0" onclick="toggleXl()">&#128203; Semakan Senarai Excel (Nama / No. KP) <span id="xlArrow" style="margin-left:auto">&#9662;</span></div>
-    <div id="xlBody" style="display:none;margin-top:14px">
-      <div class="alert al-g">
-        <span>&#8505;&#65039;</span>
-        <div>Upload <strong>satu atau lebih</strong> fail Excel/CSV. Bagi setiap fail, tanda <strong>satu atau lebih sheet</strong> (cth BBR, BMR, BSR) dan pilih lajur <strong>Nama / No. KP</strong> pemohon &mdash; serta pasangan jika ada. Semua fail disemak serentak dengan rekod <strong>Google Sheet</strong> (BBR, BMR, BSR, TIDAK LAYAK &mdash; pemohon &amp; pasangan).</div>
-      </div>
-      <input type="file" id="xlFile" accept=".xlsx,.xls,.csv" multiple style="display:none" onchange="onXlFiles(this)">
-      <div id="xlDrop" class="xl-drop" onclick="document.getElementById('xlFile').click()"
-           ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')"
-           ondrop="event.preventDefault();this.classList.remove('over');xlAddFiles(event.dataTransfer.files)">
-        &#8682; <strong>Pilih / seret fail Excel</strong><br><span>boleh pilih banyak fail sekali gus &middot; boleh tambah lagi kemudian</span>
-      </div>
-      <div id="xlFileInfo" style="font-size:12px;color:var(--text3);margin-top:8px;text-align:center;min-height:16px"></div>
-      <div id="xlLiveInfo" style="font-size:12px;color:var(--accent);text-align:center"></div>
-      <div id="xlList"></div>
-      <div id="xlCfg" style="display:none">
-        <label style="display:flex;gap:8px;align-items:center;font-size:13px;margin:12px 0 0;cursor:pointer">
-          <input type="checkbox" id="xlCross" checked style="width:18px;height:18px"> Semak juga pertindihan <strong>antara fail / sheet</strong> yang diupload
-        </label>
-        <div style="display:flex;gap:8px;margin-top:12px">
-          <button class="btn btn-o" style="flex:.6" onclick="xlClearAll()">&#128465; Kosongkan</button>
-          <button class="btn btn-g" style="flex:1.4" onclick="xlSemakSemua()">&#128269; Semak Semua dengan Google Sheet</button>
-        </div>
-      </div>
-      <div id="xlResult" style="display:none">
-        <div class="xl-sum" id="xlSum"></div>
-        <div id="xlPerFile" style="margin-bottom:10px"></div>
-        <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-          <select id="xlFilterFile" onchange="xlRender()" style="flex:1;min-width:140px"></select>
-          <select id="xlFilter" onchange="xlRender()" style="flex:1;min-width:140px">
-            <option value="all">Papar semua</option>
-            <option value="found">Wujud sahaja (semua jenis)</option>
-            <option value="EXACT">Nama &amp; IC exact sahaja</option>
-            <option value="CROSS">Bertindih antara fail/sheet</option>
-            <option value="TIADA">Tiada dalam rekod</option>
-          </select>
-          <button class="btn btn-o btn-sm" onclick="xlExport()">&#11015; Excel</button>
-        </div>
-        <div class="xl-tbl-wrap"><table class="xl-tbl" id="xlTbl"></table></div>
-      </div>
-    </div>
+    <div class="card-ttl" style="display:flex;align-items:center;gap:8px">&#128203; Semakan Senarai All Fasa (Nama / No. KP)
+      <button class="btn btn-o btn-sm" style="margin-left:auto;width:auto" onclick="loadAllFasa(true)">&#10227; Muat semula</button></div>
+    <div id="afInfo" style="font-size:12px;color:var(--text2)">Belum dimuat.</div>
+    <div id="afSheets" style="font-size:11px;color:var(--text3);margin-top:4px;line-height:1.5"></div>
   </div>
 
   <div class="card">
@@ -449,12 +412,21 @@ body.th-bsr { background: var(--stripes), var(--g-bsr); background-attachment: f
     </div>
     <div class="alert al-y">
       <span>&#9888;&#65039;</span>
-      <span>Field bertanda <span class="req">*</span> wajib diisi untuk hantar sebagai <strong>Layak</strong>. Nama akan ditukar ke <strong>HURUF BESAR</strong> automatik.</span>
+      <span>Isi maklumat bertanda <span class="req">*</span> wajib diisi untuk hantar sebagai <strong>Layak</strong>. Nama akan ditukar ke <strong>HURUF BESAR</strong> automatik.</span>
     </div>
 
     <!-- A: Butiran Pemohon -->
     <div class="fsec">
       <div class="fsec-ttl" id="ttlA">A. Butiran Pemohon</div>
+      <div class="frow frow1" id="kategoriWrap" style="display:none">
+        <div class="field">
+          <label class="fl">Kategori <span class="req">*</span></label>
+          <select id="fKategori">
+            <option value="">-- Pilih --</option>
+            <option>PEKERJA</option><option>PELAJAR</option>
+          </select>
+        </div>
+      </div>
       <div class="frow frow1">
         <div class="field">
           <label class="fl">Nama Penerima <span class="req">*</span> <span id="namaPAuto" class="auto-tag"></span></label>
@@ -494,18 +466,10 @@ body.th-bsr { background: var(--stripes), var(--g-bsr); background-attachment: f
           <label class="fl">Bangsa <span class="req">*</span></label>
           <select id="fBangsa">
             <option value="">-- Pilih --</option>
-            <option>MELAYU</option><option>CINA</option><option>INDIA</option>
-            <option>BUMIPUTERA SABAH</option><option>BUMIPUTERA SARAWAK</option>
-            <option>ORANG ASLI</option><option>LAIN-LAIN</option>
+            <option>MELAYU</option><option>CINA</option><option>INDIA</option><option>LAIN-LAIN</option>
           </select>
         </div>
-        <div class="field" id="kategoriWrap" style="display:none">
-          <label class="fl">Kategori <span class="req">*</span></label>
-          <select id="fKategori">
-            <option value="">-- Pilih --</option>
-            <option>PEKERJA</option><option>PELAJAR</option>
-          </select>
-        </div>
+        <div></div>
       </div>
       <div class="frow frow1">
         <div class="field">
@@ -519,7 +483,7 @@ body.th-bsr { background: var(--stripes), var(--g-bsr); background-attachment: f
           <label class="fl">Status Perkahwinan <span class="req">*</span></label>
           <select id="fStatusKahwin" onchange="statusKahwinChange()">
             <option value="">-- Pilih --</option>
-            <option>BUJANG</option><option>BERKAHWIN</option>
+            <option>BUJANG</option><option>BERKAHWIN</option><option>JANDA/DUDA</option>
           </select>
         </div>
       </div>
@@ -628,6 +592,9 @@ body.th-bsr { background: var(--stripes), var(--g-bsr); background-attachment: f
         <div class="field">
           <label class="fl">Tarikh Tamat Perjanjian</label>
           <input type="date" id="fDoc2">
+          <label style="display:flex;gap:6px;align-items:center;font-size:12px;margin-top:6px;cursor:pointer;color:var(--text2)">
+            <input type="checkbox" id="fNoDoc2" onchange="noDoc2Change()" style="width:16px;height:16px"> Tiada tarikh tamat perjanjian
+          </label>
         </div>
       </div>
     </div>
@@ -1046,6 +1013,11 @@ function hargaBlur(el){ el.value = hargaFmt(el.value); }
 /* ======== JULAT TARIKH DOKUMEN ======== */
 const DOC1_RANGE = { BBR:['2022-01-01','2026-12-31'], BMR:['2025-01-01','2026-12-31'] };
 
+function noDoc2Change(){
+  var c = document.getElementById('fNoDoc2').checked, d = document.getElementById('fDoc2');
+  d.disabled = c; if (c) d.value = '';
+}
+
 /* ======== STATUS PERKAHWINAN ======== */
 function statusKahwinChange(){
   var k = v('fStatusKahwin') === 'BERKAHWIN';
@@ -1151,7 +1123,8 @@ function loadWords(onDone) {
     loadTaman();                 // muat juga senarai Nama Taman/Projek
     loadRef();                   // muat peta rujukan projek -> Mukim/Daerah
     loadDunMap();                // muat peta DUN belajar dari rekod
-    loadDupIndex();              // muat indeks semakan duplikat Nama/IC
+    loadDupIndex();              // muat indeks semakan duplikat Nama/IC + carian
+    loadAllFasa(false);          // muat senarai All Fasa
     finish(true, AC.words.length);
   };
   script.src = 'https://script.google.com/macros/s/' + ST.depId + '/exec'
@@ -1558,10 +1531,57 @@ function acKeydown(e, inputId, listId) {
   else if (e.key === 'Escape')    { acClose(listId); }
 }
 
-/* ======== CARI & KEMAS KINI REKOD PEMOHON ======== */
-var EDIT = { active: false, sheet: '', row: 0 };     // keadaan mod kemas kini
-var CARI = { items: [], hi: -1, timer: null, seq: 0 };
+/* ======== JSONP generik ======== */
+var _jpSeq = 0;
+function jsonp(params, cb, ms){
+  if (depPlaceholder(ST.depId)) { cb(null); return; }
+  var name = 'pkjJp_' + Date.now() + '_' + (++_jpSeq);
+  var s = document.createElement('script'), done = false;
+  var to = setTimeout(function(){ fin(null); }, ms || 20000);
+  function fin(r){
+    if (done) return; done = true; clearTimeout(to);
+    try { delete window[name]; } catch(e){ window[name] = undefined; }
+    if (s.parentNode) s.parentNode.removeChild(s);
+    cb(r);
+  }
+  window[name] = fin;
+  var q = []; for (var k in params) q.push(encodeURIComponent(k) + '=' + encodeURIComponent(params[k]));
+  s.src = 'https://script.google.com/macros/s/' + ST.depId + '/exec?' + q.join('&') + '&callback=' + name;
+  s.onerror = function(){ fin(null); };
+  document.body.appendChild(s);
+}
 
+/* ======== ALL FASA (Google Sheet lain, semakan semasa key-in) ======== */
+function loadAllFasa(force){
+  var info = document.getElementById('afInfo');
+  info.textContent = force ? 'Memuat semula dari All Fasa...' : 'Memuat senarai All Fasa...';
+  jsonp(force ? { mode:'allfasa', force:'1' } : { mode:'allfasa' }, function(r){
+    if (!r || !r.ok) { info.innerHTML = '<span style="color:var(--danger)">Gagal memuat All Fasa' + (r && r.error ? ': ' + esc(r.error) : '') + '</span>'; return; }
+    XLIDX = { byIc:{}, byNama:{}, n:0 };
+    (r.idx || []).forEach(function(x){
+      var e = { n:x[0], ic:normIc(x[1]), sheet:x[2], row:x[3], role:x[4], jenis:x[5], xl:true };
+      var nn = normNama(e.n);
+      if (nn) (XLIDX.byNama[nn] = XLIDX.byNama[nn] || []).push(e);
+      if (e.ic.length === 12) (XLIDX.byIc[e.ic] = XLIDX.byIc[e.ic] || []).push(e);
+      XLIDX.n++;
+    });
+    var t = r.at ? new Date(r.at).toLocaleString('ms-MY') : '';
+    info.innerHTML = '&#9889; <strong>' + XLIDX.n + '</strong> nama/IC dari All Fasa disemak secara langsung semasa key-in.' + (t ? ' <span style="color:var(--text3)">(data: ' + t + ')</span>' : '');
+    document.getElementById('afSheets').innerHTML = (r.sheets || []).map(function(s){
+      return esc(s.name) + ': ' + s.n + (s.kolum ? '' : ' <span style="color:var(--danger)">(lajur Nama/KP tak dikesan)</span>');
+    }).join(' &middot; ');
+  }, 60000);
+}
+
+/* ======== CARI & KEMAS KINI REKOD PEMOHON ========
+   Carian dibuat TEMPATAN atas indeks (pantas, tiada tunggu server setiap ketukan).
+   Bila rekod dipilih, data TERKINI rekod itu diambil dari server (mode=getrec). */
+var EDIT = { active: false, sheet: '', row: 0, id: '', ic: '' };     // keadaan mod kemas kini
+var CARI = { items: [], hi: -1, timer: null, seq: 0, idx: [], at: 0 };
+
+function cariIndexSegar(){
+  if (Date.now() - CARI.at > 60000) loadDupIndex();
+}
 function onCariInput(el) {
   var q = el.value.trim();
   clearTimeout(CARI.timer);
@@ -1569,8 +1589,28 @@ function onCariInput(el) {
   if (depPlaceholder(ST.depId)) {
     showCariNote('Tetapkan Deployment ID dahulu (tekan &#9881;).'); return;
   }
-  showCariNote('Mencari...');
-  CARI.timer = setTimeout(function(){ fetchCari(q); }, 350);
+  if (!CARI.idx.length) {          // indeks belum siap -> guna carian server
+    showCariNote('Mencari...');
+    CARI.timer = setTimeout(function(){ fetchCari(q); }, 350);
+    return;
+  }
+  CARI.timer = setTimeout(function(){ cariLokal(q); }, 80);
+}
+function cariLokal(q){
+  var Q = q.toUpperCase().replace(/\s+/g,' ').trim(), qd = Q.replace(/\D/g,'');
+  var words = Q.split(' ').filter(Boolean), hasil = [], seen = {};
+  var byIc = qd.length >= 4 && qd.length === Q.replace(/[\s\-]/g,'').length;
+  for (var i = 0; i < CARI.idx.length && hasil.length < 15; i++) {
+    var x = CARI.idx[i];
+    var ok = byIc ? (x.ic.indexOf(qd) >= 0) : words.every(function(w){ return x.n.indexOf(w) >= 0; });
+    if (!ok) continue;
+    var key = x.sheet + '|' + (x.id || x.row);
+    if (seen[key]) continue; seen[key] = 1;
+    hasil.push(x);
+  }
+  showCariResults(hasil.map(function(x){
+    return { _idx:true, nama:x.n, ic:x.ic, _sheet:x.sheet, _row:x.row, _id:x.id, _tl:x.sheet === 'TIDAK LAYAK', jenis:x.jenis, _role:x.role, _icP:x.icP };
+  }));
 }
 
 // JSONP: cari rekod di Google Sheet
@@ -1608,7 +1648,7 @@ function showCariResults(list) {
   if (!list.length) { showCariNote('Tiada rekod sepadan.'); return; }
   box.innerHTML = list.map(function(o, i) {
     var num = (i < 9) ? '<span class="ac-num">' + (i+1) + '</span>' : '<span class="ac-num ac-num-x"></span>';
-    var jenis = o._tl ? ('TL · ' + (o.jenis||'')) : o._sheet;
+    var jenis = (o._tl ? ('TL · ' + (o.jenis||'')) : o._sheet) + (o._role === 'S' ? ' · pasangan' : '');
     return '<div class="ac-item" data-i="' + i + '" onmousedown="pilihRekod(' + i + ')">' +
       num + '<span><strong>' + (o.nama||'') + '</strong>' +
       '<span style="display:block;font-size:11px;color:var(--text3)">' + (o.ic||'') + ' · ' + jenis + '</span></span>' +
@@ -1648,6 +1688,14 @@ function pilihRekod(i) {
   var o = CARI.items[i];
   cariClose();
   document.getElementById('fCari').value = '';
+  if (!o._idx) { isiRekod(o); return; }
+  toast('Memuat rekod terkini...');
+  jsonp({ mode:'getrec', sheet:o._sheet, id:o._id || '', row:o._row, ic:o._icP || '' }, function(r){
+    if (!r || !r.ok || !r.rec) { toast((r && r.error) || 'Gagal memuat rekod. Cuba lagi.'); loadDupIndex(); return; }
+    isiRekod(r.rec);
+  });
+}
+function isiRekod(o) {
 
   // Pilih jenis (dari sheet / jenis TL)
   var jenis = o._tl ? String(o.jenis||'').toUpperCase() : o._sheet;
@@ -1675,7 +1723,10 @@ function pilihRekod(i) {
   document.getElementById('fDaerahDunS').value = o.daerahDunS || '';
   document.getElementById('fTkhKahwin').value  = o.tkhKahwin ? isoFromDisplay(o.tkhKahwin) : '';
   document.getElementById('fDoc1').value       = o.doc1 ? isoFromDisplay(o.doc1) : '';
-  document.getElementById('fDoc2').value       = o.doc2 ? isoFromDisplay(o.doc2) : '';
+  var tiadaD2 = String(o.doc2 || '').trim().toUpperCase() === 'TIADA';
+  document.getElementById('fNoDoc2').checked   = tiadaD2;
+  document.getElementById('fDoc2').value       = (o.doc2 && !tiadaD2) ? isoFromDisplay(o.doc2) : '';
+  noDoc2Change();
   document.getElementById('fBangsa').value     = String(o.bangsa || '').toUpperCase();
   document.getElementById('fKategori').value   = String(o.kategori || '').toUpperCase();
   var sk = String(o.statusKahwin || '').toUpperCase();
@@ -1685,7 +1736,8 @@ function pilihRekod(i) {
   kahwinWajib();
 
   // Masuk mod kemas kini
-  EDIT.active = true; EDIT.sheet = o._sheet; EDIT.row = o._row;
+  EDIT.active = true; EDIT.sheet = o._sheet; EDIT.row = o._row; EDIT.id = o._id || ''; EDIT.ic = String(o.ic || '').replace(/\D/g,'');
+  FORM_SID = '';
   document.getElementById('editBanner').style.display = 'flex';
   document.getElementById('editInfo').textContent =
     (o.nama || 'rekod') + ' (' + o._sheet + ', baris ' + o._row + ')';
@@ -1724,7 +1776,7 @@ function isoFromDisplay(s) {
 }
 
 function batalEdit() {
-  EDIT.active = false; EDIT.sheet = ''; EDIT.row = 0;
+  EDIT.active = false; EDIT.sheet = ''; EDIT.row = 0; EDIT.id = ''; EDIT.ic = '';
   document.getElementById('editBanner').style.display = 'none';
   var bh = document.getElementById('btnHantar');
   if (bh) bh.innerHTML = 'Hantar (Layak) &#10003;';
@@ -1982,6 +2034,13 @@ function loadDupIndex(cb){
   window[cbName] = function(resp){
     if (!resp || !resp.ok || !resp.idx) { done(false,0); return; }
     DUP.byIc = {}; DUP.byNama = {};
+    var pIc = {};
+    resp.idx.forEach(function(r){ if (r[4] === 'P') pIc[r[2] + '|' + r[3]] = String(r[1]||''); });
+    CARI.idx = resp.idx.map(function(r){
+      return { n:String(r[0]||'').toUpperCase(), ic:String(r[1]||''), sheet:r[2], row:r[3], role:r[4], jenis:r[5], id:r[6] || '', icP: pIc[r[2] + '|' + r[3]] || '' };
+    });
+    CARI.idx.sort(function(a, b){ return a.role === b.role ? 0 : (a.role === 'P' ? -1 : 1); });
+    CARI.at = Date.now();
     resp.idx.forEach(function(r){ dupAdd(r[0], r[1], r[2], r[3], r[4], r[5]); });
     DUP.loaded = true;
     done(true, resp.idx.length);
@@ -2100,7 +2159,7 @@ function setDupHint(role, r){
   if (!h) return;
   if (!r || r.status === 'TIADA') { h.textContent = ''; h.className = 'ic-hint'; return; }
   var t = { EXACT:'⛔ NAMA & IC TELAH WUJUD', BOTH:'⚠️ Nama & IC wujud (rekod berlainan)', IC:'⚠️ No. KP telah wujud', NAMA:'⚠️ Nama telah wujud' }[r.status];
-  var src = [r.gs.status !== 'TIADA' ? 'Sheet' : '', r.xl.status !== 'TIADA' ? 'fail Excel' : ''].filter(String).join(' + ');
+  var src = [r.gs.status !== 'TIADA' ? 'Sheet' : '', r.xl.status !== 'TIADA' ? 'All Fasa' : ''].filter(String).join(' + ');
   h.textContent = t + ' (' + src + ') — klik untuk butiran';
   h.className = 'ic-hint ' + (r.status === 'EXACT' ? 'dupd' : 'dupw');
 }
@@ -2113,7 +2172,7 @@ function popupPerson(role, r){
       : 'Sila semak sama ada ini orang yang sama.') + '</p>'
     + '<div class="dm" style="margin-bottom:6px">Dimasukkan: <strong>' + esc(f.n||'-') + '</strong> · ' + esc(f.ic||'-') + '</div>';
   if (r.gs.status !== 'TIADA') body += '<div class="dup-src">&#128202; Dalam Google Sheet</div>' + dupResultHtml(r.gs);
-  if (r.xl.status !== 'TIADA') body += '<div class="dup-src">&#128203; Dalam fail Semakan Senarai Excel</div>' + dupResultHtml(r.xl);
+  if (r.xl.status !== 'TIADA') body += '<div class="dup-src">&#128203; Dalam senarai All Fasa</div>' + dupResultHtml(r.xl);
   openPopup(exact ? 'danger' : 'warn', title, body);
 }
 function liveDup(role){
@@ -2649,7 +2708,7 @@ function getForm() {
     tkhKahwin:  fmtDate(v('fTkhKahwin')),
     daerahDunS: v('fDaerahDunS'),
     doc1:       fmtDate(v('fDoc1')),
-    doc2:       ST.jenis === 'BSR' ? fmtDate(v('fDoc2')) : '',
+    doc2:       ST.jenis === 'BSR' ? (document.getElementById('fNoDoc2').checked ? 'TIADA' : fmtDate(v('fDoc2'))) : '',
     // Medan GEO (auto dari geocoding)
     lat:        v('fLat'),
     lng:        v('fLng'),
@@ -2713,7 +2772,7 @@ async function doSubmit(tidakLayak, force) {
       [['Pemohon', rP], ['Pasangan', rS]].forEach(function(p){
         if (!p[1] || p[1].status !== 'EXACT') return;
         if (p[1].gs.exact.length) body += '<div class="dup-lbl">' + p[0] + ' · Google Sheet</div>' + dupItemsHtml(p[1].gs.exact, 'danger');
-        if (p[1].xl.exact.length) body += '<div class="dup-lbl">' + p[0] + ' · fail Semakan Excel</div>' + dupItemsHtml(p[1].xl.exact, 'danger');
+        if (p[1].xl.exact.length) body += '<div class="dup-lbl">' + p[0] + ' · All Fasa</div>' + dupItemsHtml(p[1].xl.exact, 'danger');
       });
       openPopup('danger', '⛔ NAMA &amp; IC TELAH WUJUD', body, [
         { label:'Batal', cls:'btn-o' },
@@ -2730,7 +2789,12 @@ async function doSubmit(tidakLayak, force) {
   if (mengemaskini) {
     d.editSheet = EDIT.sheet;
     d.editRow   = EDIT.row;
+    d.editId    = EDIT.id;
+    d.editIc    = EDIT.ic;
   }
+  // ID hantaran unik untuk borang ini: hantar semula = tiada pendua di server
+  if (!FORM_SID) FORM_SID = 'S' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  d.sid = FORM_SID;
 
   document.getElementById('abar').style.display = 'none';
   toast(mengemaskini ? 'Mengemas kini rekod...' : 'Menghantar data...');
@@ -2749,14 +2813,14 @@ async function doSubmit(tidakLayak, force) {
     // Tambah ke indeks duplikat serta-merta (rekod seterusnya terus dikesan)
     if (d.nama || d.ic)         dupAdd(d.nama, d.ic, d.sheet, 0, 'P', ST.jenis);
     if (d.namaPsng || d.icPsng) dupAdd(d.namaPsng, d.icPsng, d.sheet, 0, 'S', ST.jenis);
-    setTimeout(function(){ loadWords(function(){}); }, 1200);   // turut muat semula indeks duplikat
+    setTimeout(function(){ loadDupIndex(); }, 500);
 
     vibrate([30,60,30]);
     if (mengemaskini)      toast('✅ ' + nama + ' → rekod dikemas kini');
     else if (tidakLayak)   toast('⛔ ' + nama + ' → TIDAK LAYAK (' + ST.jenis + ')');
     else                   toast('✅ ' + nama + ' → ' + ST.jenis + ' berjaya dihantar');
 
-    EDIT.active = false; EDIT.sheet = ''; EDIT.row = 0;
+    EDIT.active = false; EDIT.sheet = ''; EDIT.row = 0; EDIT.id = ''; EDIT.ic = '';
     document.getElementById('editBanner').style.display = 'none';
     var bh0 = document.getElementById('btnHantar');
     if (bh0) bh0.innerHTML = 'Hantar (Layak) &#10003;';
@@ -2770,11 +2834,26 @@ async function doSubmit(tidakLayak, force) {
     var fd = new FormData();
     for (var key in d) { if (d[key] != null) fd.append(key, d[key]); }
     await fetch('https://script.google.com/macros/s/' + ST.depId + '/exec', { method:'POST', body:fd, mode:'no-cors' });
-    selepasBerjaya();
+    // Sahkan keputusan sebenar dari server
+    sahkanHantar(d.sid, 0, function(r){
+      if (r && r.ok) { selepasBerjaya(); return; }
+      document.getElementById('abar').style.display = 'flex';
+      if (r && r.error) openPopup('danger', '⛔ Tidak berjaya disimpan', '<p>' + esc(r.error) + '</p>');
+      else toast('⚠️ Belum dapat disahkan. Tekan Hantar semula (selamat, tiada pendua).');
+    });
   } catch(err) {
     document.getElementById('abar').style.display = 'flex';
     toast('Ralat pengiriman. Semak sambungan internet.');
   }
+}
+
+var FORM_SID = '';
+function sahkanHantar(sid, n, cb){
+  jsonp({ mode:'subresult', sid:sid }, function(r){
+    if (r && (r.ok || r.error) && !r.pending) { cb(r); return; }
+    if (n >= 5) { cb(null); return; }
+    setTimeout(function(){ sahkanHantar(sid, n + 1, cb); }, 1200);
+  }, 8000);
 }
 
 /* ======== RESET — kosongkan medan tetapi KEKAL jenis inisiatif yang sama ======== */
@@ -2782,6 +2861,8 @@ function resetAll() {
   // Kosongkan medan sahaja; ST.jenis TIDAK diubah -> borang kekal jenis sama
   ['fNama','fIc','fDunPemohon','fTel','fEmel','fNamaPsng','fIcPsng','fDunPsng','fTaman','fHarga','fDaerah','fMukim','fDunTaman','fCatatan','fDaerahDunP','fDaerahDunS','fTkhKahwin','fDoc1','fDoc2','fBangsa','fKategori','fStatusKahwin'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('psngBox').style.display = 'none';
+  document.getElementById('fNoDoc2').checked = false; noDoc2Change();
+  FORM_SID = '';
   DUP.shown = {}; DUP.last = {};
   document.getElementById('kahwinReq').style.display = 'none';
   ['namaPAuto','namaSAuto','dunPAuto','dunSAuto','daerahDunPAuto','daerahDunSAuto'].forEach(function(id){ var t=document.getElementById(id); if(t) t.textContent=''; });
@@ -2813,58 +2894,10 @@ function toast(msg) {
   clearTimeout(_tt); _tt = setTimeout(() => el.classList.remove('on'), 3200);
 }
 
-/* ======== PETUGAS (No. KP -> Nama) ========
-   Tambah petugas baru di sini: 'NoKP (digit sahaja)': 'NAMA'  */
-const PETUGAS = {
-  
-'811216015658': 'Norli',
-'990512015704': 'Zulaikha',
-'711022015440': 'Norzita',
-'800711065034': 'Roslina',
-'860802236614': 'Murni',
-'771004016284': 'Zanariah',
-'790921015274': 'Zaiton',
-'820425015018': 'Sharifah',
-'920609016822': 'Iziana',
-'730409015844': 'Mariati',
-'890903015703': 'Reimie',
-'950825015768': 'Syaza',
-'830930016387': 'Affendi',
-'920304015650': 'Azhani',
-'950714017760': 'Faziera',
-'940219016067': 'Farhan',
-'960504016750': 'Aqma',
-'920916016873': 'Mujib',
-'950103015950': 'Hanani',
-'891013016063': 'Asyraf',
-'970519016576': 'Raudhah',
-'950730016610': 'Faiqah',
-'980613015253': 'Zahid',
-'950713015405': 'Hisham',
-'850426015105': 'Nazri',
-'990409015386': 'Aqilla',
-'941213015279': 'Arief',
-'20810010162': 'Aini',
-'931218015279': 'Syafiq',
-'980910016877': 'Soleheen',
-'000720011307': 'Ammar',
-'960128075350': 'Hidayah',
-'950112015346': 'Afina',
-'990522015572': 'Syasha',
-'20814011584': 'Ain',
-'970113015856': 'Puteri',
-'870225235337': 'Zulfakar',
-'850601017037': 'Firdaus',
-'850122015181': 'Aesak',
-'910731016800': 'Nadzirah',
-'840814016450': 'Fazlina'
-  
-  
-  
-};
+/* ======== PETUGAS — disemak dari Google Sheet "Log Masuk" › sheet "Petugas" (A=Nama, B=IC) ======== */
 const PETUGAS_KEY = 'pkj_petugas';
 let PETUGAS_NOW = null;   // { ic, nama }
-function petugasLoad(){ try { var o = JSON.parse(localStorage.getItem(PETUGAS_KEY) || 'null'); if (o && PETUGAS[o.ic]) return { ic:o.ic, nama:PETUGAS[o.ic] }; } catch(e){} return null; }
+function petugasLoad(){ try { var o = JSON.parse(localStorage.getItem(PETUGAS_KEY) || 'null'); if (o && o.ic && o.nama) return o; } catch(e){} return null; }
 function petugasSet(p){
   PETUGAS_NOW = p;
   document.getElementById('petugasNama').textContent = p ? p.nama : '-';
@@ -2879,12 +2912,25 @@ function openPetugas(){
 function savePetugas(){
   var ic = document.getElementById('fPetugasIc').value.replace(/\D/g,'');
   var h = document.getElementById('petugasHint');
-  if (!PETUGAS[ic]) { h.textContent = 'No. KP petugas tidak berdaftar.'; h.className = 'ic-hint warn'; return; }
-  var p = { ic:ic, nama:PETUGAS[ic] };
-  try { localStorage.setItem(PETUGAS_KEY, JSON.stringify({ ic:ic })); } catch(e){}
-  petugasSet(p);
-  document.getElementById('modalPetugas').classList.remove('open');
-  toast('Selamat bertugas, ' + p.nama);
+  if (!ic) { h.textContent = 'Sila masukkan No. KP.'; h.className = 'ic-hint warn'; return; }
+  if (depPlaceholder(ST.depId)) { h.textContent = 'Deployment ID belum ditetapkan.'; h.className = 'ic-hint warn'; return; }
+  h.textContent = 'Menyemak...'; h.className = 'ic-hint';
+  jsonp({ mode:'login', ic:ic }, function(r){
+    if (!r || !r.ok) { h.textContent = (r && r.error) || 'Tidak dapat menyemak. Cuba lagi.'; h.className = 'ic-hint warn'; return; }
+    var p = { ic:r.ic, nama:r.nama };
+    try { localStorage.setItem(PETUGAS_KEY, JSON.stringify(p)); } catch(e){}
+    petugasSet(p);
+    document.getElementById('modalPetugas').classList.remove('open');
+    toast('Selamat bertugas, ' + p.nama);
+  });
+}
+// Semak semula petugas tersimpan di latar belakang (jika dibuang dari senarai -> minta log masuk)
+function petugasSemakSemula(){
+  if (!PETUGAS_NOW || depPlaceholder(ST.depId)) return;
+  jsonp({ mode:'login', ic:PETUGAS_NOW.ic }, function(r){
+    if (r && r.ok) { var p = { ic:r.ic, nama:r.nama }; try { localStorage.setItem(PETUGAS_KEY, JSON.stringify(p)); } catch(e){} petugasSet(p); }
+    else if (r && r.error && /tidak berdaftar/i.test(r.error)) { try { localStorage.removeItem(PETUGAS_KEY); } catch(e){} petugasSet(null); openPetugas(); }
+  });
 }
 
 /* ======== INIT ======== */
@@ -2894,7 +2940,8 @@ function savePetugas(){
   loadWords();                          // muat turun perkataan sekali -> suggest pantas
   showS(1);
   petugasSet(petugasLoad());
-  if (!PETUGAS_NOW) openPetugas();
+  if (!PETUGAS_NOW) openPetugas(); else petugasSemakSemula();
+  setInterval(function(){ if (!document.hidden) loadDupIndex(); }, 180000);   // segar indeks carian setiap 3 minit
   if (!ST.depId) setTimeout(function(){ openSettings(); toast('Masukkan Deployment ID untuk mula (disimpan di peranti ini)'); }, 400);
 })();
 </script>
