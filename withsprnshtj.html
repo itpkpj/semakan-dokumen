@@ -696,9 +696,15 @@ body.th-bsr { background: var(--stripes), var(--g-bsr); background-attachment: f
   <div class="modal-sheet">
     <div class="modal-title">&#128100; Log Masuk Petugas</div>
     <p style="font-size:13px;color:var(--text2);margin:-6px 0 12px">Masukkan No. KP petugas sebelum mula key-in.</p>
+    <div id="petDepWrap" style="display:none;margin-bottom:10px">
+      <label class="fl">Deployment ID <span class="req">*</span></label>
+      <input type="text" id="fPetDep" placeholder="AKfycb... atau URL penuh /exec" autocomplete="off" style="width:100%;box-sizing:border-box">
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">Sambungan disemak semasa log masuk. ID disimpan di peranti ini.</div>
+    </div>
     <input type="text" id="fPetugasIc" inputmode="numeric" maxlength="14" placeholder="No. KP petugas" onkeydown="if(event.key==='Enter')savePetugas()" style="width:100%;box-sizing:border-box">
     <div id="petugasHint" class="ic-hint" style="min-height:16px;margin:6px 0 10px"></div>
-    <button class="btn btn-g btn-full" onclick="savePetugas()">Mula Key-In</button>
+    <button class="btn btn-g btn-full" id="btnPetugas" onclick="savePetugas()">Mula Key-In</button>
+    <div style="text-align:center;margin-top:10px"><a href="#" id="petDepToggle" onclick="petDepShow(true);return false" style="font-size:12px;color:var(--text2)">Tukar Deployment ID</a></div>
   </div>
 </div>
 
@@ -2902,8 +2908,14 @@ function petugasSet(p){
   PETUGAS_NOW = p;
   document.getElementById('petugasNama').textContent = p ? p.nama : '-';
 }
+function petDepShow(on){
+  document.getElementById('petDepWrap').style.display = on ? 'block' : 'none';
+  document.getElementById('petDepToggle').style.display = on ? 'none' : 'inline';
+  if (on) { document.getElementById('fPetDep').value = ''; setTimeout(function(){ document.getElementById('fPetDep').focus(); }, 100); }
+}
 function openPetugas(){
   var m = document.getElementById('modalPetugas');
+  petDepShow(!ST.depId);
   document.getElementById('fPetugasIc').value = '';
   var h = document.getElementById('petugasHint'); h.textContent=''; h.className='ic-hint';
   m.classList.add('open');
@@ -2912,11 +2924,30 @@ function openPetugas(){
 function savePetugas(){
   var ic = document.getElementById('fPetugasIc').value.replace(/\D/g,'');
   var h = document.getElementById('petugasHint');
+  var depBaru = document.getElementById('petDepWrap').style.display !== 'none'
+    ? document.getElementById('fPetDep').value.trim().replace(/^.*\/s\/([^\/]+)\/exec.*$/, '$1') : '';
+  if (document.getElementById('petDepWrap').style.display !== 'none' && !depBaru) { h.textContent = 'Sila masukkan Deployment ID.'; h.className = 'ic-hint warn'; document.getElementById('fPetDep').focus(); return; }
   if (!ic) { h.textContent = 'Sila masukkan No. KP.'; h.className = 'ic-hint warn'; return; }
-  if (depPlaceholder(ST.depId)) { h.textContent = 'Deployment ID belum ditetapkan.'; h.className = 'ic-hint warn'; return; }
-  h.textContent = 'Menyemak...'; h.className = 'ic-hint';
+  var depLama = ST.depId;
+  if (depBaru) ST.depId = depBaru;          // cuba ID baru dahulu
+  if (depPlaceholder(ST.depId)) { h.textContent = 'Deployment ID belum ditetapkan.'; h.className = 'ic-hint warn'; petDepShow(true); return; }
+  var btn = document.getElementById('btnPetugas'); btn.disabled = true;
+  h.textContent = 'Menyemak sambungan & No. KP...'; h.className = 'ic-hint';
   jsonp({ mode:'login', ic:ic }, function(r){
-    if (!r || !r.ok) { h.textContent = (r && r.error) || 'Tidak dapat menyemak. Cuba lagi.'; h.className = 'ic-hint warn'; return; }
+    btn.disabled = false;
+    if (!r) {                               // tiada balasan -> ID salah / deployment tak aktif
+      if (depBaru) ST.depId = depLama;
+      h.textContent = '❌ Tiada sambungan. Semak Deployment ID / deployment (akses "Anyone").'; h.className = 'ic-hint warn';
+      petDepShow(true); return;
+    }
+    // Ada balasan = sambungan OK -> simpan ID baru
+    if (depBaru && depBaru !== depLama) {
+      depSave(depBaru);
+      AC.loaded = false; AC.words = []; DUP.loaded = false; DUP.byIc = {}; DUP.byNama = {}; CARI.idx = [];
+      loadWords(function(){});
+    }
+    petDepShow(false);
+    if (!r.ok) { h.textContent = r.error || 'Log masuk gagal.'; h.className = 'ic-hint warn'; return; }
     var p = { ic:r.ic, nama:r.nama };
     try { localStorage.setItem(PETUGAS_KEY, JSON.stringify(p)); } catch(e){}
     petugasSet(p);
@@ -2942,7 +2973,7 @@ function petugasSemakSemula(){
   petugasSet(petugasLoad());
   if (!PETUGAS_NOW) openPetugas(); else petugasSemakSemula();
   setInterval(function(){ if (!document.hidden) loadDupIndex(); }, 180000);   // segar indeks carian setiap 3 minit
-  if (!ST.depId) setTimeout(function(){ openSettings(); toast('Masukkan Deployment ID untuk mula (disimpan di peranti ini)'); }, 400);
+
 })();
 </script>
 </body>
