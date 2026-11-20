@@ -352,6 +352,7 @@ body.th-bsr { background: var(--stripes), var(--g-bsr); background-attachment: f
     </div>
     <div class="gear" id="petugasChip" onclick="openPetugas()" title="Tukar petugas" style="width:auto;padding:0 10px;font-size:12px;font-weight:700;white-space:nowrap">&#128100; <span id="petugasNama">-</span></div>
     <div class="gear" onclick="openBm()" title="Bookmarklet SPR / SPRN / SHTJ">&#128278;</div>
+    <div class="gear" onclick="openRekodSaya()" title="Rekod Saya">&#128203;</div>
     <div class="gear" onclick="openDiag()" title="Semak Sistem">&#129658;</div>
     <div class="gear" onclick="openSettings()" title="Tetapan">&#9881;&#65039;</div>
   </div>
@@ -705,7 +706,30 @@ body.th-bsr { background: var(--stripes), var(--g-bsr); background-attachment: f
     <input type="text" id="fPetugasIc" inputmode="numeric" maxlength="14" placeholder="No. KP petugas" onkeydown="if(event.key==='Enter')savePetugas()" style="width:100%;box-sizing:border-box">
     <div id="petugasHint" class="ic-hint" style="min-height:16px;margin:6px 0 10px"></div>
     <button class="btn btn-g btn-full" id="btnPetugas" onclick="savePetugas()">Mula Key-In</button>
+    <div id="petLogoutWrap" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Sedang log masuk: <strong id="petNowNama"></strong></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-o" style="flex:1" onclick="document.getElementById('modalPetugas').classList.remove('open')">Batal</button>
+        <button class="btn btn-r" style="flex:1" onclick="logKeluar()">&#128682; Log Keluar</button>
+      </div>
+    </div>
     <div style="text-align:center;margin-top:10px"><a href="#" id="petDepToggle" onclick="petDepShow(true);return false" style="font-size:12px;color:var(--text2)">Tukar Deployment ID</a></div>
+  </div>
+</div>
+
+<!-- REKOD SAYA MODAL -->
+<div class="modal-bg" id="modalRekod" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">&#128203; Rekod Saya <span id="rsNama" style="font-size:12px;color:var(--text2);font-weight:500"></span></div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+      <select id="rsTapis" onchange="renderRekodSaya()" style="flex:1">
+        <option value="hari">Hari ini</option><option value="7">7 hari lepas</option><option value="semua">Semua</option>
+      </select>
+      <button class="btn btn-o btn-sm" style="width:auto" onclick="muatRekodSaya()">&#10227; Muat semula</button>
+    </div>
+    <div id="rsInfo" style="font-size:12px;color:var(--text2);margin-bottom:6px"></div>
+    <div id="rsList" style="max-height:55vh;overflow:auto;font-size:12px"></div>
   </div>
 </div>
 
@@ -1015,6 +1039,8 @@ function saveNewDep() {
 }
 function clearDep() {
   depClear();
+  try { localStorage.removeItem(PETUGAS_KEY); } catch(e){}
+  petugasSet(null);
   ST.depId = depPlaceholder(DEPLOYMENT_ID) ? '' : DEPLOYMENT_ID;
   AC.loaded = false; AC.words = []; DUP.loaded = false; DUP.byIc = {}; DUP.byNama = {};
   document.getElementById('curDepTxt').textContent = ST.depId ? depMask(ST.depId) + ' (dibenam dalam kod)' : '— tiada —';
@@ -1574,6 +1600,45 @@ function jsonp(params, cb, ms){
   s.onload  = function(){ setTimeout(function(){ if (!done) fin({ ok:false, _diag:true, error:'Server membalas dalam format tidak dijangka (kemungkinan kod Apps Script lama / ralat skrip). Semak Apps Script › Executions.' }); }, 100); };
   s.onerror = function(){ fin({ ok:false, _diag:true, error:'Permintaan ke server gagal dimuat (rangkaian / Deployment ID / ralat server).' }); };
   document.body.appendChild(s);
+}
+
+/* ======== REKOD SAYA (data terus dari Sheet) ======== */
+var RS = { data: [] };
+function openRekodSaya(){
+  if (!PETUGAS_NOW) { openPetugas(); toast('Sila log masuk dahulu'); return; }
+  document.getElementById('rsNama').textContent = '· ' + PETUGAS_NOW.nama;
+  document.getElementById('modalRekod').classList.add('open');
+  muatRekodSaya();
+}
+function muatRekodSaya(){
+  document.getElementById('rsInfo').textContent = 'Memuat dari Google Sheet...';
+  document.getElementById('rsList').innerHTML = '';
+  jsonp({ mode:'myrecs', petugas: PETUGAS_NOW.nama }, function(r){
+    if (!r || !r.ok) { document.getElementById('rsInfo').innerHTML = '<span style="color:var(--danger)">Gagal memuat' + (r && r.error ? ': ' + esc(r.error) : '') + '</span>'; return; }
+    RS.data = r.rekod || [];
+    renderRekodSaya();
+  }, 40000);
+}
+function renderRekodSaya(){
+  var f = document.getElementById('rsTapis').value, now = new Date();
+  var mula = f === 'hari' ? new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+           : f === '7' ? now.getTime() - 7 * 864e5 : 0;
+  var list = RS.data.filter(function(x){ return f === 'semua' || x.t >= mula; });
+  var kira = {}; list.forEach(function(x){ kira[x.sheet] = (kira[x.sheet] || 0) + 1; });
+  document.getElementById('rsInfo').innerHTML = '&#9989; <strong>' + list.length + '</strong> rekod disahkan ada dalam Sheet' +
+    (list.length ? ' (' + Object.keys(kira).map(function(k){ return k + ': ' + kira[k]; }).join(' · ') + ')' : '') +
+    '<br><span style="color:var(--text3)">Dikemas kini: ' + now.toLocaleTimeString('ms-MY') + '</span>';
+  document.getElementById('rsList').innerHTML = list.length ? list.map(function(x, i){
+    return '<div onclick="bukaRekodSaya(' + RS.data.indexOf(x) + ')" style="padding:8px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;cursor:pointer">' +
+      '<div style="display:flex;gap:8px"><strong style="flex:1">' + esc(x.nama) + '</strong><span style="color:var(--text3)">' + esc(x.masa) + '</span></div>' +
+      '<div style="color:var(--text2)">' + esc(x.ic) + ' · ' + esc(x.sheet === 'TIDAK LAYAK' ? 'TL · ' + x.jenis : x.sheet) + ' · BIL ' + esc(String(x.bil)) + '</div></div>';
+  }).join('') : '<div style="color:var(--text3);padding:10px;text-align:center">Tiada rekod untuk tempoh ini.</div>';
+}
+function bukaRekodSaya(i){
+  var x = RS.data[i]; if (!x) return;
+  document.getElementById('modalRekod').classList.remove('open');
+  CARI.items = [{ _idx:true, _sheet:x.sheet, _row:x.row, _id:x.id, _icP:x.ic }];
+  pilihRekod(0);
 }
 
 /* ======== DIAGNOSIS SISTEM ======== */
@@ -2979,6 +3044,8 @@ function petDepShow(on){
 function openPetugas(){
   var m = document.getElementById('modalPetugas');
   petDepShow(!ST.depId);
+  document.getElementById('petLogoutWrap').style.display = PETUGAS_NOW ? 'block' : 'none';
+  document.getElementById('petNowNama').textContent = PETUGAS_NOW ? PETUGAS_NOW.nama : '';
   document.getElementById('fPetugasIc').value = '';
   var h = document.getElementById('petugasHint'); h.textContent=''; h.className='ic-hint';
   m.classList.add('open');
@@ -3017,6 +3084,14 @@ function savePetugas(){
     document.getElementById('modalPetugas').classList.remove('open');
     toast('Selamat bertugas, ' + p.nama);
   });
+}
+function logKeluar(){
+  var n = PETUGAS_NOW ? PETUGAS_NOW.nama : '';
+  try { localStorage.removeItem(PETUGAS_KEY); } catch(e){}
+  petugasSet(null);
+  if (EDIT.active) batalEdit(); else if (ST.jenis) resetAll();
+  toast('Log keluar' + (n ? ': ' + n : ''));
+  openPetugas();
 }
 // Semak semula petugas tersimpan di latar belakang (jika dibuang dari senarai -> minta log masuk)
 function petugasSemakSemula(){
