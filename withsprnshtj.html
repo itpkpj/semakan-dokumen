@@ -354,7 +354,7 @@ body.th-bsr { background: var(--stripes), var(--g-bsr); background-attachment: f
     <div class="gear" onclick="openBm()" title="Bookmarklet SPR / SPRN / SHTJ">&#128278;</div>
     <div class="gear" id="admIcon" onclick="ADM.open()" title="Dashboard Admin" style="display:none">&#128202;</div>
     <div class="gear" onclick="openRekodSaya()" title="Rekod Saya">&#128203;</div>
-    <div class="gear" onclick="openDiag()" title="Semak Sistem">&#129658;</div>
+    <div class="gear" id="diagIcon" onclick="openDiag()" title="Semak Sistem" style="display:none">&#129658;</div>
     <div class="gear" onclick="openSettings()" title="Tetapan">&#9881;&#65039;</div>
   </div>
 </div>
@@ -3337,6 +3337,8 @@ function petugasSet(p){
   document.getElementById('petugasNama').textContent = p ? p.nama : '-';
   var adm = !!(p && p.peranan === 'ADMIN');
   document.getElementById('admIcon').style.display = adm ? '' : 'none';
+  document.getElementById('diagIcon').style.display = adm ? '' : 'none';
+  if (!adm) document.getElementById('modalDiag').classList.remove('open');
   if (!adm && typeof ADM !== 'undefined') ADM.tamat();
 }
 function petDepShow(on){
