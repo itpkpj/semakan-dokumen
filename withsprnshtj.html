@@ -512,8 +512,11 @@ body.th-bsr { background: var(--stripes), var(--g-bsr); background-attachment: f
       <div class="frow">
         <div class="field">
           <label class="fl">No. KP Pasangan <button type="button" class="spr-btn" onclick="sprOpen('S')" title="Semak Nama &amp; DUN pasangan di SPR">&#128270; SPR</button></label>
-          <input type="text" id="fIcPsng" placeholder="000000-00-0000" inputmode="numeric" autocomplete="off" maxlength="14" oninput="formatIC(this,'icPsngHint'); kahwinWajib()" onblur="liveDup('S')">
+          <input type="text" id="fIcPsng" placeholder="000000-00-0000" inputmode="numeric" autocomplete="off" maxlength="14" oninput="icPsngInput(this); kahwinWajib()" onblur="if(!psngAsing()) liveDup('S')">
           <div class="ic-hint" id="icPsngHint"></div>
+          <label style="display:flex;gap:6px;align-items:center;font-size:12px;margin-top:6px;cursor:pointer;color:var(--text2)">
+            <input type="checkbox" id="fPsngAsing" onchange="psngAsingChange()" style="width:16px;height:16px"> Pasangan bukan warganegara
+          </label>
         </div>
         <div></div>
       </div>
@@ -1067,6 +1070,26 @@ const DOC1_RANGE = { BBR:['2022-01-01','2026-12-31'], BMR:['2025-01-01','2026-12
 function noDoc2Change(){
   var c = document.getElementById('fNoDoc2').checked, d = document.getElementById('fDoc2');
   d.disabled = c; if (c) d.value = '';
+}
+
+/* ======== PASANGAN BUKAN WARGANEGARA (No. Pasport: huruf + nombor) ======== */
+function psngAsing(){ return document.getElementById('fPsngAsing').checked; }
+function icPsngInput(el){
+  if (psngAsing()) {
+    el.value = el.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 20);
+    var h = document.getElementById('icPsngHint'); h.textContent = el.value ? 'No. Pasport' : ''; h.className = 'ic-hint';
+    el.classList.remove('ic-bad');
+  } else formatIC(el, 'icPsngHint');
+}
+function psngAsingChange(noFocus){
+  var el = document.getElementById('fIcPsng'), a = psngAsing();
+  el.value = '';
+  el.placeholder = a ? 'No. Pasport (cth: A12345678)' : '000000-00-0000';
+  el.inputMode = a ? 'text' : 'numeric';
+  el.maxLength = a ? 20 : 14;
+  var h = document.getElementById('icPsngHint'); h.textContent = ''; h.className = 'ic-hint'; el.classList.remove('ic-bad');
+  document.getElementById('dupHintS') && (document.getElementById('dupHintS').innerHTML = '');
+  if (!noFocus) el.focus();
 }
 
 /* ======== STATUS PERKAHWINAN ======== */
@@ -2114,7 +2137,9 @@ function isiRekod(o) {
   document.getElementById('fTel').value        = o.tel || ''; formatTel(document.getElementById('fTel'));
   document.getElementById('fEmel').value       = o.emel || '';
   document.getElementById('fNamaPsng').value   = o.namaPsng || '';
-  document.getElementById('fIcPsng').value     = o.icPsng || '';
+  var icp = String(o.icPsng || ''), asing = !!icp && (/[A-Za-z]/.test(icp) || icp.replace(/\D/g,'').length !== 12);
+  document.getElementById('fPsngAsing').checked = asing; psngAsingChange(true);
+  document.getElementById('fIcPsng').value     = icp;
   document.getElementById('fDunPsng').value    = o.dunPsng || '';
   document.getElementById('fTaman').value      = o.taman || '';
   document.getElementById('fHarga').value      = hargaFmt(o.harga);
@@ -3158,7 +3183,8 @@ async function doSubmit(tidakLayak, force) {
   }
 
   // No. KP Pasangan — kalau diisi, mesti lengkap 12 digit (kedua-dua Layak & Tidak Layak)
-  if (d.icPsng && icDigits(d.icPsng) !== 12) { toast('No. KP Pasangan tidak lengkap — perlu 12 digit'); return; }
+  if (d.icPsng && !psngAsing() && icDigits(d.icPsng) !== 12) { toast('No. KP Pasangan tidak lengkap — perlu 12 digit'); return; }
+  if (d.icPsng && psngAsing() && d.icPsng.length < 5) { toast('No. Pasport pasangan terlalu pendek'); return; }
   // Ada pasangan -> Tarikh Berkahwin wajib (untuk Layak)
   if (!tidakLayak && (d.namaPsng || d.icPsng) && !d.tkhKahwin) { toast('Sila isi Tarikh Berkahwin (ada maklumat pasangan)'); document.getElementById('fTkhKahwin').focus(); return; }
   // Julat tarikh SPA (BBR) / VP (BMR)
@@ -3170,7 +3196,7 @@ async function doSubmit(tidakLayak, force) {
   // SEMAKAN DUPLIKAT sebelum hantar: jika EXACT (nama + IC) -> minta pengesahan
   if (!force && (DUP.loaded || XLIDX.n)) {
     var rP = dupBoth(d.nama, d.ic, true);
-    var rS = (d.namaPsng || d.icPsng) ? dupBoth(d.namaPsng, d.icPsng, true) : null;
+    var rS = (d.namaPsng || d.icPsng) ? dupBoth(d.namaPsng, psngAsing() ? '' : d.icPsng, true) : null;
     if (rP.status === 'EXACT' || (rS && rS.status === 'EXACT')) {
       var body = '<p><strong style="color:var(--danger)">Rekod dengan Nama &amp; No. KP yang sama sudah wujud.</strong> Teruskan hanya jika pasti ini bukan permohonan berulang.</p>';
       [['Pemohon', rP], ['Pasangan', rS]].forEach(function(p){
@@ -3231,7 +3257,7 @@ async function doSubmit(tidakLayak, force) {
     AC.words.sort();
     // Tambah ke indeks duplikat serta-merta (rekod seterusnya terus dikesan)
     if (d.nama || d.ic)         dupAdd(d.nama, d.ic, d.sheet, 0, 'P', ST.jenis);
-    if (d.namaPsng || d.icPsng) dupAdd(d.namaPsng, d.icPsng, d.sheet, 0, 'S', ST.jenis);
+    if (d.namaPsng || d.icPsng) dupAdd(d.namaPsng, psngAsing() ? '' : d.icPsng, d.sheet, 0, 'S', ST.jenis);
     setTimeout(function(){ loadDupIndex(); }, 500);
 
     vibrate([30,60,30]);
@@ -3303,6 +3329,7 @@ function resetAll() {
   ['icHint','icPsngHint','dupHintP','dupHintS'].forEach(id => { var h=document.getElementById(id); h.textContent=''; h.className='ic-hint'; });
   document.getElementById('fIc').classList.remove('ic-bad');
   document.getElementById('fIcPsng').classList.remove('ic-bad');
+  if (psngAsing()) { document.getElementById('fPsngAsing').checked = false; psngAsingChange(true); }
   document.getElementById('fTarikh').value = '';   // petugas isi sendiri
   document.getElementById('daerahAuto').textContent = '';
   document.getElementById('mukimAuto').textContent = '';
