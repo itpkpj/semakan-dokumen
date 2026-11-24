@@ -2082,7 +2082,7 @@ function showCariResults(list) {
   CARI.items = list; CARI.hi = -1;
   if (!list.length) { showCariNote('Tiada rekod sepadan.'); return; }
   box.innerHTML = list.map(function(o, i) {
-    var num = (i < 9) ? '<span class="ac-num">' + (i+1) + '</span>' : '<span class="ac-num ac-num-x"></span>';
+    var num = (i < 9 && !/\d/.test(document.getElementById('fCari').value)) ? '<span class="ac-num">' + (i+1) + '</span>' : '<span class="ac-num ac-num-x"></span>';
     var jenis = (o._tl ? ((o._sheet === 'TIDAK LENGKAP' ? 'TIDAK LENGKAP · ' : 'TL · ') + (o.jenis||'')) : o._sheet) + (o._role === 'S' ? ' · pasangan' : '');
     return '<div class="ac-item" data-i="' + i + '" onmousedown="pilihRekod(' + i + ')">' +
       num + '<span><strong>' + (o.nama||'') + '</strong>' +
@@ -2095,7 +2095,8 @@ function showCariResults(list) {
 function cariKeydown(e) {
   var box = document.getElementById('cariList');
   if (!box.classList.contains('open') || !CARI.items.length) return;
-  if (e.key >= '1' && e.key <= '9') {
+  // Pintasan 1-9 hanya untuk carian NAMA. Bila menaip No. KP, nombor ialah input biasa.
+  if (e.key >= '1' && e.key <= '9' && !/\d/.test(document.getElementById('fCari').value)) {
     var idx = parseInt(e.key,10) - 1;
     if (idx < CARI.items.length) { e.preventDefault(); pilihRekod(idx); return; }
   }
