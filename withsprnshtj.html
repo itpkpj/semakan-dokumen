@@ -449,6 +449,7 @@ body.th-bsr { background: var(--stripes), var(--g-bsr); background-attachment: f
         <div class="field">
           <label class="fl">No. Telefon <span class="req">*</span></label>
           <input type="text" id="fTel" placeholder="01X-XXXXXXX" inputmode="tel" autocomplete="tel" maxlength="13" oninput="formatTel(this)">
+          <label style="display:flex;gap:6px;align-items:center;font-size:12px;margin-top:6px;cursor:pointer;color:var(--text2)"><input type="checkbox" id="fNoTel" onchange="tiadaChange('fTel',this)" style="width:16px;height:16px"> Tiada nombor telefon</label>
         </div>
       </div>
       <div class="frow">
@@ -478,6 +479,7 @@ body.th-bsr { background: var(--stripes), var(--g-bsr); background-attachment: f
         <div class="field">
           <label class="fl">Emel <span class="req">*</span></label>
           <input type="text" id="fEmel" placeholder="nama (tekan Tab = +@gmail.com)" inputmode="email" autocomplete="email" onkeydown="emelKeydown(event)">
+          <label style="display:flex;gap:6px;align-items:center;font-size:12px;margin-top:6px;cursor:pointer;color:var(--text2)"><input type="checkbox" id="fNoEmel" onchange="tiadaChange('fEmel',this)" style="width:16px;height:16px"> Tiada emel</label>
         </div>
       </div>
 
@@ -1071,6 +1073,10 @@ function noDoc2Change(){
   var c = document.getElementById('fNoDoc2').checked, d = document.getElementById('fDoc2');
   d.disabled = c; if (c) d.value = '';
 }
+
+/* ======== TIADA TELEFON / EMEL ======== */
+function tiadaChange(fid, cb){ var el = document.getElementById(fid); el.disabled = cb.checked; if (cb.checked) el.value = ''; else el.focus(); }
+function tiadaSet(cid, fid, on){ var c = document.getElementById(cid), el = document.getElementById(fid); c.checked = on; el.disabled = on; if (on) el.value = ''; }
 
 /* ======== PASANGAN BUKAN WARGANEGARA (No. Pasport: huruf + nombor) ======== */
 function psngAsing(){ return document.getElementById('fPsngAsing').checked; }
@@ -2136,6 +2142,8 @@ function isiRekod(o) {
   document.getElementById('fDunPemohon').value = o.dunPemohon || '';
   document.getElementById('fTel').value        = o.tel || ''; formatTel(document.getElementById('fTel'));
   document.getElementById('fEmel').value       = o.emel || '';
+  tiadaSet('fNoEmel', 'fEmel', String(o.emel || '').trim().toUpperCase() === 'TIADA');
+  tiadaSet('fNoTel', 'fTel', String(o.tel || '').trim().toUpperCase() === 'TIADA');
   document.getElementById('fNamaPsng').value   = o.namaPsng || '';
   var icp = String(o.icPsng || ''), asing = !!icp && (/[A-Za-z]/.test(icp) || icp.replace(/\D/g,'').length !== 12);
   document.getElementById('fPsngAsing').checked = asing; psngAsingChange(true);
@@ -3117,8 +3125,8 @@ function getForm() {
     nama:       v('fNama'),
     ic:         v('fIc'),
     dunPemohon: v('fDunPemohon'),
-    tel:        v('fTel'),
-    emel:       v('fEmel'),
+    tel:        document.getElementById('fNoTel').checked ? 'TIADA' : v('fTel'),
+    emel:       document.getElementById('fNoEmel').checked ? 'TIADA' : v('fEmel'),
     namaPsng:   v('fNamaPsng'),
     icPsng:     v('fIcPsng'),
     dunPsng:    v('fDunPsng'),
@@ -3173,11 +3181,11 @@ async function doSubmit(tidakLayak, force) {
     if (!d.nama)   { toast('Nama Penerima wajib diisi'); return; }
     if (!d.ic)     { toast('No. Kad Pengenalan wajib diisi'); return; }
     if (icDigits(d.ic) !== 12) { toast('No. KP tidak lengkap — perlu 12 digit'); return; }
-    if (!d.tel)    { toast('No. Telefon wajib diisi'); return; }
+    if (!d.tel)    { toast('No. Telefon wajib diisi (atau tick Tiada nombor telefon)'); return; }
     if (!d.bangsa) { toast('Sila pilih Bangsa'); return; }
     if (ST.jenis === 'BSR' && !d.kategori) { toast('Sila pilih Kategori (Pekerja / Pelajar)'); return; }
     if (!d.statusKahwin) { toast('Sila pilih Status Perkahwinan'); return; }
-    if (!d.emel)   { toast('Emel wajib diisi'); return; }
+    if (!d.emel)   { toast('Emel wajib diisi (atau tick Tiada emel)'); return; }
     if (!d.harga)  { toast('Harga Rumah / Sewa wajib diisi'); return; }
     if (!d.tarikh) { toast('Tarikh Penerimaan Kaunter wajib diisi'); return; }
   }
@@ -3329,6 +3337,7 @@ function resetAll() {
   ['icHint','icPsngHint','dupHintP','dupHintS'].forEach(id => { var h=document.getElementById(id); h.textContent=''; h.className='ic-hint'; });
   document.getElementById('fIc').classList.remove('ic-bad');
   document.getElementById('fIcPsng').classList.remove('ic-bad');
+  tiadaSet('fNoTel','fTel',false); tiadaSet('fNoEmel','fEmel',false);
   if (psngAsing()) { document.getElementById('fPsngAsing').checked = false; psngAsingChange(true); }
   document.getElementById('fTarikh').value = '';   // petugas isi sendiri
   document.getElementById('daerahAuto').textContent = '';
